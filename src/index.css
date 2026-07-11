@@ -1,0 +1,62 @@
+@import './styles/tokens.css';
+
+@keyframes pageEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vocabPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-paper-warm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-margin);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-faint);
+}
+
+::-moz-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-moz-scrollbar-track {
+  background: var(--color-paper-warm);
+}
+
+::-moz-scrollbar-thumb {
+  background: var(--color-margin);
+  border-radius: 4px;
+}
+
+::-moz-scrollbar-thumb:hover {
+  background: var(--color-ink-faint);
+}

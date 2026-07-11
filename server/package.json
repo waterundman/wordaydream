@@ -1,0 +1,14 @@
+{
+  "name": "wordaydream-llm-proxy",
+  "version": "1.0.0",
+  "description": "LLM 代理服务 - 隐藏 API key, 转发请求到 OpenAI/Anthropic/DeepSeek",
+  "type": "module",
+  "scripts": {
+    "start": "node llm-proxy.js",
+    "dev": "node --watch llm-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5"
+  }
+}

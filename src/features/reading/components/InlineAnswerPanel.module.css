@@ -1,0 +1,206 @@
+.panel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(calc(-50% + var(--panel-offset-x, 0px)));
+  min-width: 18rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform-origin: top center;
+  transition:
+    max-height var(--transition-normal),
+    opacity var(--transition-fast),
+    transform var(--transition-normal);
+}
+
+.panel.open {
+  max-height: 400px;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.panel.closing {
+  max-height: 0;
+  opacity: 0;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+@keyframes panelEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.form {
+  position: relative;
+  padding: var(--space-3);
+}
+
+.reviewBadge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px var(--space-2);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-radius: 4px;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-sans);
+}
+
+.review {
+  border-color: var(--color-accent);
+}
+
+.inputRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  background: var(--color-bg);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 0 3px var(--color-accent-light),
+    0 0 12px rgba(45, 90, 77, 0.15);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submitBtn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedback {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.feedbackText {
+  font-weight: 500;
+}
+
+.hint {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+}
+
+.correct .feedback {
+  background: var(--color-correct-bg);
+  color: var(--color-correct);
+}
+
+.partial .feedback {
+  background: var(--color-partial-bg);
+  color: var(--color-partial);
+}
+
+.wrong .feedback {
+  background: var(--color-wrong-bg);
+  color: var(--color-wrong);
+}
+
+.closeBtn {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-lg);
+  color: var(--color-text-tertiary);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 767px) {
+  .panel {
+    left: 0;
+    right: 0;
+    transform: translateY(-4px);
+    min-width: auto;
+    width: calc(100vw - var(--space-8));
+    margin: 0 auto;
+    margin-top: var(--space-2);
+  }
+
+  .panel.open {
+    transform: translateY(0);
+  }
+
+  .form {
+    padding: var(--space-3);
+  }
+
+  .inputRow {
+    flex-wrap: wrap;
+  }
+
+  .submitBtn {
+    min-height: var(--touch-min-size);
+    flex: 1;
+  }
+
+  .input {
+    min-height: var(--touch-min-size);
+  }
+}

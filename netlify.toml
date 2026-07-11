@@ -1,0 +1,69 @@
+# Wordaydream v1.5.0 Netlify config
+#
+# v1.3.0: server-side LLM proxy to hide upstream API keys from the client
+# v1.4.1: SSE stream support (?action=stream 端点, body.stream=true)
+# v1.5.0: 完善 6 VITE 字段占位 + 3 API key 注入 (沙箱不注入, 真实部署由 Netlify UI 设置)
+# v1.5.0: context.production / context.staging 分支 + SPA redirects
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+
+# v1.3.0 Edge Function 路由
+[[edge_functions]]
+  path = "/.netlify/edge-functions/llm-proxy"
+  function = "llm-proxy"
+
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 5173
+
+# v1.5.0: 部署环境 (production|staging|branch-deploy)
+[context.production]
+  command = "npm run build"
+
+[context.staging]
+  command = "npm run build"
+
+# v1.5.0: 重定向规则 (SPA 路由 fallback)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# v1.5.0: 6 VITE 字段占位说明
+# ----------------------------------------------------------------------------
+# 真实部署时, 用户需在 Netlify UI (Site settings -> Environment variables) 设置:
+#   VITE_LLM_PROVIDER  (openai|anthropic|deepseek|mock)  默认 openai
+#   VITE_LLM_API_KEY   (留空, 客户端不直连, 服务端由 OPENAI_API_KEY 等注入 Edge Function)
+#   VITE_LLM_PROXY_URL (默认 https://your-site.netlify.app/.netlify/edge-functions/llm-proxy)
+#   VITE_LLM_GRAYSCALE (v1.5.0 Stage 4 灰度发布: 0-100, 0=全 mock, 100=全 openai)
+#   VITE_OFFLINE_FALLBACK (true|false, 默认 true, PWA offline mode)
+#   VITE_APP_VERSION   (默认 1.5.0, 显示在 SettingsPanel 关于页)
+#
+# 3 API key (服务端, Netlify UI 设置, 不带 VITE_ 前缀):
+#   OPENAI_API_KEY
+#   ANTHROPIC_API_KEY
+#   DEEPSEEK_API_KEY
+# ----------------------------------------------------------------------------
+
+# v1.5.0: 缓存头 (PWA 资源长期缓存, hash 文件名天然 cache-bust)
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

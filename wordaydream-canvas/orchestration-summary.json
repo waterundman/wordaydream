@@ -1,0 +1,80 @@
+{
+  "project": {
+    "operation": "create",
+    "name": "Wordaydream",
+    "deviceType": "desktop",
+    "styleContinuityAnchors": {
+      "colorSystem": "warm cream bg #faf9f5, terracotta accent #d97757, warm near-black text #1b1b19, solid surfaces (no glassmorphism, no gradients)",
+      "typographySystem": "serif: Newsreader/Lora/Georgia; sans: Poppins/system-ui; mono: Geist Mono/JetBrains Mono",
+      "shapeSystem": "radius-sm: 8px, radius-md: 12px, radius-lg: 16px, radius-full: 9999px",
+      "surfaceDepthModel": "static surfaces use thin border + subtle shadow (alpha <= 0.05); only floating layers (modals, toasts) use deeper elevation",
+      "motionSystem": "state transitions 0.15-0.3s ease-out-quart; only transform & opacity animated; no spring/overshoot; no breathing loops"
+    }
+  },
+  "designSource": {
+    "libraryIdentity": {
+      "name": "Claude Copy",
+      "id": "WC7449._YE0J6L",
+      "version": "1",
+      "scope": "custom-global",
+      "path": "c:\\Users\\wxy\\.trae-cn\\design_libraries\\WC7449._YE0J6L"
+    },
+    "cssPath": "c:\\Users\\wxy\\.trae-cn\\design_libraries\\WC7449._YE0J6L\\css\\colors_and_type.css",
+    "styleConstraints": {
+      "radiusMax": 16,
+      "staticShadowAlphaMax": 0.05
+    }
+  },
+  "pages": [
+    {
+      "id": "page-home",
+      "title": "首页",
+      "htmlSrc": "pages/home.html",
+      "visualNorthStar": "Clean editorial home page with today's reading card, progress ring, streak badge, and achievement wall. Warm cream background, solid surfaces, no glassmorphism or gradients.",
+      "continuityAnchors": ["warm cream bg #faf9f5", "terracotta accent #d97757", "solid surfaces no glassmorphism", "serif headings + sans body"]
+    },
+    {
+      "id": "page-reading",
+      "title": "阅读页",
+      "htmlSrc": "pages/reading.html",
+      "visualNorthStar": "Split-screen reading interface: left sidebar with language/difficulty controls and reading history, right panel with interactive passage text. Solid surfaces, clean borders.",
+      "continuityAnchors": ["warm cream bg #faf9f5", "terracotta accent #d97757", "solid surfaces no glassmorphism", "serif headings + sans body"]
+    },
+    {
+      "id": "page-settings",
+      "title": "设置",
+      "htmlSrc": "pages/settings.html",
+      "visualNorthStar": "Settings modal overlay on dimmed background. Solid panel with API provider selection, model input, theme toggle. No backdrop blur.",
+      "continuityAnchors": ["warm cream bg #faf9f5", "terracotta accent #d97757", "solid surfaces no glassmorphism", "serif headings + sans body"]
+    }
+  ],
+  "wiringPlan": [
+    {
+      "fromPageId": "page-home",
+      "toPageId": "page-reading",
+      "domId": "start-reading",
+      "transitionLabel": "开始阅读"
+    },
+    {
+      "fromPageId": "page-home",
+      "toPageId": "page-settings",
+      "domId": "open-settings",
+      "transitionLabel": "打开设置"
+    },
+    {
+      "fromPageId": "page-reading",
+      "toPageId": "page-home",
+      "domId": "back-home",
+      "hideEdge": true,
+      "transitionLabel": "返回首页"
+    },
+    {
+      "fromPageId": "page-settings",
+      "toPageId": "page-home",
+      "domId": "close-settings",
+      "hideEdge": true,
+      "transitionLabel": "关闭设置"
+    }
+  ],
+  "hiddenInteractionPlan": []
+}

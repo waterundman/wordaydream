@@ -1,0 +1,97 @@
+{
+  "data": [
+    {
+      "id": "page-settings",
+      "title": "设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1783695904000,
+      "canvasData": {
+        "x": 648,
+        "y": 252,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings.html",
+        "interactions": [
+          {
+            "domId": "close-settings",
+            "targetPageId": "page-home",
+            "hideEdge": true,
+            "transitionLabel": "关闭设置"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-home-v2",
+      "title": "首页 v2",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1783697036000,
+      "canvasData": {
+        "x": 0,
+        "y": 240,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/home-v2.html",
+        "interactions": [
+          {
+            "domId": "start-reading",
+            "targetPageId": "page-reading-v2",
+            "transitionLabel": "开始阅读"
+          },
+          {
+            "domId": "open-settings",
+            "targetPageId": "page-settings",
+            "transitionLabel": "打开设置"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-reading-v2",
+      "title": "阅读页 v2",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1783697036000,
+      "canvasData": {
+        "x": 624,
+        "y": 756,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reading-v2.html",
+        "interactions": [
+          {
+            "domId": "back-home",
+            "targetPageId": "page-home-v2",
+            "hideEdge": true,
+            "transitionLabel": "返回首页"
+          },
+          {
+            "domId": "open-settings",
+            "targetPageId": "page-settings",
+            "hideEdge": true,
+            "transitionLabel": "打开设置"
+          }
+        ]
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": false,
+    "deviceType": "desktop",
+    "projectName": "Wordaydream",
+    "designLibrary": {
+      "name": "Claude Copy",
+      "id": "WC7449._YE0J6L",
+      "version": "1",
+      "scope": "custom-global",
+      "path": "c:\\Users\\wxy\\.trae-cn\\design_libraries\\WC7449._YE0J6L",
+      "versionSource": "metadata.json"
+    },
+    "showEdge": true
+  }
+}

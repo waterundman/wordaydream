@@ -1,0 +1,28 @@
+.motionContainer {
+  display: inline;
+  position: relative;
+}
+
+.resolving {
+  animation: resolveUnderline var(--transition-slow) ease-out forwards;
+}
+
+.resolved {
+  opacity: 0.7;
+}
+
+@keyframes resolveUnderline {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resolving {
+    animation: none;
+    opacity: 0.7;
+  }
+}

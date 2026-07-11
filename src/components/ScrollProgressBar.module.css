@@ -1,0 +1,50 @@
+/* v1.5.2 Stage 3: ScrollProgressBar (Contract 29 NEW / D-1)
+ *
+ * 顶部 3px 阅读进度条样式. 使用项目现有 CSS variable:
+ *  - --color-accent (深绿) / --color-flame (橙) 做渐变填充
+ *  - z-index: 50, 低于 modal (--z-modal 1000/1100) 高于 hero
+ *  - pointer-events: none 不拦截点击
+ *  - data-theme="dark" 时背景微调
+ *  - prefers-reduced-motion 时关闭 width transition
+ *  - contain: strict 隔离重绘, 不影响 layout
+ */
+
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  z-index: 50;
+  pointer-events: none;
+  contain: strict;
+}
+
+.fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent, #2d5a4d) 0%,
+    var(--color-flame, #e07a3b) 100%
+  );
+  transition: width 80ms linear;
+  will-change: width;
+}
+
+/* Dark theme: 进度条轨道用低透明度白色微调, 在深色背景上仍可感知 */
+:global([data-theme='dark']) .bar {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Sepia theme: 进度条轨道用更柔的 ink 透明, 与奶油底色协调 */
+:global([data-theme='sepia']) .bar {
+  background: rgba(91, 70, 54, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}

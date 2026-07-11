@@ -1,0 +1,64 @@
+.chartContainer {
+  width: 100%;
+}
+
+.chart {
+  display: block;
+}
+
+.gridLines {
+  pointer-events: none;
+}
+
+.gridLine {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-analytics-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.area {
+  pointer-events: none;
+}
+
+.pointGroup {
+  cursor: pointer;
+}
+
+.point {
+  fill: var(--color-analytics-accent);
+  transition: r var(--transition-fast), opacity var(--transition-fast);
+}
+
+.label {
+  font-size: var(--text-xs);
+  fill: var(--color-text-tertiary);
+}
+
+.tooltip {
+  pointer-events: none;
+}
+
+.tooltipBg {
+  fill: var(--color-bg-elevated);
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.tooltipDate {
+  font-size: var(--text-xs);
+  fill: var(--color-text-tertiary);
+}
+
+.tooltipValue {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  fill: var(--color-analytics-accent);
+}

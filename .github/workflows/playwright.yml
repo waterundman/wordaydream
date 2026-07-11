@@ -1,0 +1,101 @@
+# Wordaydream v1.5.1 Stage 1 P0_4: Playwright E2E workflow
+#
+# 4 阻塞点 runbook 之一 (阻塞点 4: Playwright 4 场景真实 E2E)
+#   docs/OPERATIONS.md Section 4 包含 6 步骤 runbook.
+#
+# 真实跑分由 GitHub Actions runner 执行, 沙箱不执行 (无 Playwright Chromium).
+#
+# v1.5.1 强化:
+# - microsoft/playwright-github-action@v1 (社区主流, 缓存 browser binaries)
+# - 4 截图归档: T01-T04 每个场景的 page.screenshot, 存到 debug_shots_v151/
+# - 触发: PR + push to main/develop + 每周六 cron
+# - 报告: HTML + JSON, 30 天 artifacts
+# - browser 缓存: $PLAYWRIGHT_BROWSERS_PATH=0 (避免污染全局)
+#
+# 0 emoji (硬约束)
+
+name: Playwright E2E
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches: [main]
+  # 每周六 06:00 UTC cron (持续监控)
+  schedule:
+    - cron: '0 6 * * 6'
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    name: Playwright 4 场景 E2E (chromium / firefox / webkit / mobile-chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # v1.5.1 强化: 使用 microsoft/playwright-github-action@v1
+      # 内置 browser binaries 缓存, 避免每次都下载 ~300MB
+      - name: Install Playwright Browsers
+        uses: microsoft/playwright-github-action@v1
+        with:
+          # 缓存 browser binaries
+          cache: true
+          # 4 browser projects (与 playwright.config.ts projects 对齐)
+          # 全部安装: chromium / firefox / webkit
+          # mobile-chrome 复用 chromium
+          install-deps: true
+
+      - name: Build (mock provider, 避免真实 API key 触发)
+        run: npm run build
+        env:
+          VITE_LLM_PROVIDER: mock
+          VITE_LLM_PROXY_URL: 'http://localhost:8888/.netlify/edge-functions/llm-proxy'
+          VITE_LLM_GRAYSCALE: '0'
+          VITE_OFFLINE_FALLBACK: 'true'
+          VITE_APP_VERSION: '1.5.1'
+
+      - name: Run Playwright tests (4 scenarios)
+        run: npx playwright test
+        env:
+          # CI 模式, 启用 retries=1 (在 playwright.config.ts 已判断)
+          CI: 'true'
+
+      - name: Upload Playwright Report (HTML + JSON)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+      - name: Upload 4 截图归档 (T01-T04)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-shots-v151
+          path: debug_shots_v151/
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Playwright E2E run completed (4 scenarios: offline / install / SW / streaming)"
+          echo "4 browser projects: chromium / firefox / webkit / mobile-chrome"
+          echo "4 截图归档: debug_shots_v151/T01-T04-*.png (保留 30 天)"
+          echo "失败时: trace.zip + video.webm 保留 (见 playwright-report/)"

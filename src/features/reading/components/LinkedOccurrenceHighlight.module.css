@@ -1,0 +1,183 @@
+.highlight {
+  position: relative;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    opacity var(--transition-slow);
+  text-decoration: none;
+  display: inline;
+}
+
+.highlight::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-underline);
+  transition: background-color var(--transition-fast);
+}
+
+.highlight:hover {
+  background-color: var(--color-accent-soft);
+  animation: highlightBreath 1.5s ease-in-out infinite;
+}
+
+.highlight:hover::after {
+  background-color: var(--color-underline-hover);
+}
+
+@keyframes highlightBreath {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(45, 90, 77, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(45, 90, 77, 0.1);
+  }
+}
+
+.active {
+  background-color: var(--color-accent-light);
+}
+
+.active::after {
+  background-color: var(--color-underline-hover);
+}
+
+.passive {
+  background-color: var(--color-accent-soft);
+}
+
+.passive::after {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-underline) 0px,
+    var(--color-underline) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+.resolved {
+  cursor: default;
+  opacity: 1;
+  animation: dissolveOut var(--transition-slow) var(--ease-out-expo) forwards;
+}
+
+.resolved::after {
+  animation: dissolveOutUnderline var(--transition-slow) var(--ease-out-expo) forwards;
+}
+
+@keyframes dissolveOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0.7;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes dissolveOutUnderline {
+  0% {
+    opacity: 1;
+    background-color: var(--color-underline);
+  }
+  100% {
+    opacity: 0;
+    background-color: transparent;
+  }
+}
+
+.word {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes fadeOutUnderline {
+  from {
+    border-bottom-color: var(--color-underline);
+  }
+  to {
+    border-bottom-color: transparent;
+  }
+}
+
+.highlight:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.review {
+  background: linear-gradient(180deg, transparent 0%, var(--color-accent-soft) 100%);
+  cursor: pointer;
+}
+
+.review::after {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-accent) 0px,
+    var(--color-accent) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.review:hover {
+  background: linear-gradient(180deg, transparent 0%, var(--color-accent-light) 100%);
+}
+
+.reviewDot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  margin-right: 3px;
+  vertical-align: super;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.compound {
+  background: linear-gradient(180deg, transparent 0%, var(--color-compound-light) 100%);
+}
+
+.compound::after {
+  background-color: var(--color-compound);
+}
+
+.compound:hover {
+  background-color: var(--color-compound-light);
+}
+
+.compound.active {
+  background-color: var(--color-compound-light);
+}
+
+.compound.active::after {
+  background-color: var(--color-compound);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reviewDot { animation: none; }
+  .highlight {
+    transition: none;
+  }
+  .highlight:hover {
+    animation: none;
+    transition: none;
+  }
+  .resolved {
+    animation: none;
+    border-bottom-color: transparent;
+    opacity: 0.7;
+  }
+}

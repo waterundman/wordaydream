@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阅读页 v2</title>
+    <style id="theme-vars">
+:root {
+  --primary: #d97757;
+  --primary-foreground: #faf9f5;
+  --text-50: #1b1b19;
+  --text-100: #2c2c2b;
+  --text-200: #46443b;
+  --text-300: #6e6d68;
+  --text-400: #908e84;
+  --text-500: #b7b5a9;
+  --text-900: #faf9f5;
+  --bg-900: #faf9f5;
+  --brand-500: #d97757;
+  --surface-base: #faf9f5;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f5f4ee;
+  --border-700: #d8d6cd;
+  --border-800: #b7b5a9;
+  --destructive: #ef4444;
+  --font-display: "Newsreader", Georgia, ui-serif, serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", Georgia, ui-serif, serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-50);
+  --color-card: var(--surface-elevated);
+  --color-card-foreground: var(--text-50);
+  --color-muted: var(--surface-subtle);
+  --color-muted-foreground: var(--text-400);
+  --color-border: var(--border-700);
+  --color-input: var(--border-700);
+  --color-ring: var(--brand-500);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  
+  @layer base {
+    body { background: #ffffff; color: #0f172a; }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="flex h-screen w-screen overflow-hidden">
+        <!-- ============ LEFT SIDEBAR ============ -->
+        <aside class="sidebar flex w-[340px] shrink-0 flex-col">
+            <div class="no-scrollbar flex flex-col gap-6 overflow-y-auto p-6">
+
+                <!-- Back button -->
+                <button data-dom-id="back-home" class="back-btn inline-flex items-center gap-2 self-start px-3 py-1.5 text-sm">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                    <span>返回首页</span>
+                </button>
+
+                <!-- Wordmark -->
+                <div class="flex flex-col">
+                    <h1 class="font-display text-2xl font-semibold" style="text-wrap: balance;">Wordaydream</h1>
+                    <p class="text-sm" style="color: var(--text-muted);">在语境中学习词汇</p>
+                </div>
+
+                <!-- Language selector -->
+                <div class="flex flex-col gap-2">
+                    <p class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-faint);">语言</p>
+                    <div class="flex gap-2">
+                        <button class="lang-pill pill px-4 py-1.5 text-sm is-active">英语</button>
+                        <button class="lang-pill pill px-4 py-1.5 text-sm">德语</button>
+                    </div>
+                </div>
+
+                <!-- Difficulty selector -->
+                <div class="flex flex-col gap-2">
+                    <p class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-faint);">难度</p>
+                    <div class="flex items-center gap-2">
+                        <button class="diff-dot flex h-9 w-9 items-center justify-center text-sm font-medium">1</button>
+                        <button class="diff-dot is-active flex h-9 w-9 items-center justify-center text-sm font-medium">2</button>
+                        <button class="diff-dot flex h-9 w-9 items-center justify-center text-sm font-medium">3</button>
+                        <button class="diff-dot flex h-9 w-9 items-center justify-center text-sm font-medium">4</button>
+                        <button class="diff-dot flex h-9 w-9 items-center justify-center text-sm font-medium">5</button>
+                    </div>
+                    <div class="flex items-center justify-between px-1">
+                        <span class="text-xs" style="color: var(--text-faint);">入门</span>
+                        <span class="text-xs" style="color: var(--text-faint);">进阶</span>
+                    </div>
+                </div>
+
+                <!-- Generate new text -->
+                <button class="btn-primary w-full py-2.5 text-sm font-medium">生成新文本</button>
+
+                <!-- Learning progress (animated fill on load) -->
+                <div class="card flex flex-col gap-2 p-4">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-sm" style="color: var(--text-body);">学习进度</span>
+                        <span class="font-display text-lg font-semibold" style="color: var(--text-strong);">1 / 4</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill"></div></div>
+                </div>
+
+                <!-- Reading history -->
+                <div class="flex flex-col gap-3">
+                    <p class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-faint);">阅读历史</p>
+                    <ul class="flex flex-col">
+                        <li class="history-item flex flex-col gap-1 py-3">
+                            <div class="flex items-baseline justify-between gap-2">
+                                <p class="truncate text-sm font-medium" style="color: var(--text-strong);">The Quiet Revolution</p>
+                                <span class="shrink-0 text-xs" style="color: var(--text-faint);">2026-07-08</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <button class="text-btn">重新阅读</button>
+                                <button class="text-btn text-btn-danger">删除记录</button>
+                            </div>
+                        </li>
+                        <li class="history-item flex flex-col gap-1 py-3">
+                            <div class="flex items-baseline justify-between gap-2">
+                                <p class="truncate text-sm font-medium" style="color: var(--text-strong);">Coastal Currents</p>
+                                <span class="shrink-0 text-xs" style="color: var(--text-faint);">2026-07-05</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <button class="text-btn">重新阅读</button>
+                                <button class="text-btn text-btn-danger">删除记录</button>
+                            </div>
+                        </li>
+                        <li class="history-item flex flex-col gap-1 py-3">
+                            <div class="flex items-baseline justify-between gap-2">
+                                <p class="truncate text-sm font-medium" style="color: var(--text-strong);">A Maker's Inheritance</p>
+                                <span class="shrink-0 text-xs" style="color: var(--text-faint);">2026-07-01</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <button class="text-btn">重新阅读</button>
+                                <button class="text-btn text-btn-danger">删除记录</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- ============ RIGHT MAIN PANEL ============ -->
+        <section class="main-panel flex min-w-0 flex-1 flex-col">
+
+            <!-- Header bar -->
+            <header class="header-bar flex items-center gap-3 px-8 py-5">
+                <div class="min-w-0 flex-1">
+                    <h2 class="font-display truncate text-2xl font-semibold" style="text-wrap: balance;">The Quiet Revolution</h2>
+                    <p class="text-xs" style="color: var(--text-muted);">英语 · 难度 2 · 约 3 分钟</p>
+                </div>
+                <button class="play-btn" aria-label="朗读"><span class="play-triangle"></span></button>
+                <button class="icon-btn" aria-label="收起面板"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
+            </header>
+
+            <!-- Reading passage -->
+            <div class="flex-1 overflow-y-auto px-8 py-6">
+                <article class="passage mx-auto max-w-[680px] font-serif text-[15px]" style="color: var(--text-body); line-height: 1.8;">
+                    <p>In the small town of Almora, a quiet <button class="vocab" aria-describedby="tip-revolution">revolution</button><span class="vocab-tip" id="tip-revolution" role="tooltip">n. 革命，变革</span> had begun. <span class="grammar-wrap"><button class="grammar-tag">语法点: 时态</button><span class="grammar-tip" role="tooltip">过去完成时 · 先于另一过去动作</span></span> Not with banners or speeches, but with the steady hands of people who refused to let their craft disappear. Each morning the workshops opened before sunrise, and the sound of tools against wood and clay filled the narrow streets.</p>
+                    <p class="mt-5">The <button class="vocab" aria-describedby="tip-artisans">artisans</button><span class="vocab-tip" id="tip-artisans" role="tooltip">n. 工匠，手艺人</span> who had left for the cities were returning, drawn back by something they could not name. A potter taught her granddaughter to center clay on the wheel. A weaver rewove a pattern his grandmother had nearly taken to the grave. Knowledge passed hand to hand, quiet and unhurried.</p>
+                    <p class="mt-5">Visitors <button class="vocab" aria-describedby="tip-marveled">marveled</button><span class="vocab-tip" id="tip-marveled" role="tooltip">v. 惊叹，感到惊奇</span> at the transformation, at shelves lined with goods that carried the mark of real making. Within a few seasons the town had <button class="vocab" aria-describedby="tip-blossomed">blossomed</button><span class="vocab-tip" id="tip-blossomed" role="tooltip">v. 发展，繁荣，绽放</span> into a destination, not because it chased fame, but because it remembered what it was for.</p>
+                </article>
+            </div>
+
+            <!-- Bottom action bar -->
+            <footer class="action-bar flex items-center justify-between px-8 py-3">
+                <span class="text-sm" style="color: var(--text-muted);">今日 <span style="color: var(--text-strong); font-weight: 600;">1/8</span> 词</span>
+                <button data-dom-id="open-settings" class="icon-btn" aria-label="设置"><i data-lucide="settings" class="h-4 w-4"></i></button>
+            </footer>
+
+        </section>
+    </main>
+
+    <style>
+        /* ---- Design tokens (project palette — solid surfaces only) ---- */
+        :root {
+            --font-display: "Newsreader", Georgia, ui-serif, serif;
+            --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+            --font-serif: "Lora", Georgia, ui-serif, serif;
+
+            /* Surfaces (solid) */
+            --surface-base: #faf9f5;      /* warm cream — main panel */
+            --surface-sidebar: #f5f4ee;   /* sidebar shade */
+            --surface-card: #ffffff;     /* cards */
+            --surface-inset: #f1f1ef;    /* inset tracks */
+            --surface-dark: #1b1b19;     /* warm near-black */
+
+            /* Text */
+            --text-strong: #1b1b19;
+            --text-body: #2c2c2b;
+            --text-muted: #6e6d68;
+            --text-faint: #908e84;
+
+            /* Brand accent */
+            --accent: #d97757;           /* terracotta */
+            --accent-hover: #c96442;     /* deeper terracotta */
+            --accent-soft: #f8e3d8;      /* light terracotta */
+
+            /* Borders (solid) */
+            --border-line: #d8d6cd;
+            --border-strong: #b7b5a9;
+            --border-divider: #e9e6dc;
+
+            /* Panel shadow (subtle) */
+            --shadow-panel: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-tip: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* Override the skeleton's default white body with the cream token.
+           Unlayered rules take precedence over the @layer base block in <head>. */
+        body { background: var(--surface-base); color: var(--text-strong); }
+        main { font-family: var(--font-sans); }
+
+        .font-display { font-family: var(--font-display); }
+        .font-serif { font-family: var(--font-serif); }
+
+        .passage { text-wrap: pretty; }
+
+        /* ---- Surfaces & dividers (solid only) ---- */
+        .sidebar { background: var(--surface-sidebar); border-right: 1px solid var(--border-line); }
+        .main-panel { background: var(--surface-base); }
+        .header-bar { border-bottom: 1px solid var(--border-line); }
+        .action-bar { border-top: 1px solid var(--border-line); background: var(--surface-card); }
+
+        .card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-line);
+            border-radius: 16px;
+            box-shadow: var(--shadow-panel);
+        }
+
+        /* ---- Focus visibility (all interactive elements) ---- */
+        :where(button, a, input, [tabindex]):focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ---- Shared transition (specific properties, never `all`) ---- */
+        .pill { transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease; }
+
+        /* Language pills */
+        .lang-pill {
+            background: var(--surface-card);
+            border: 1px solid var(--border-line);
+            color: var(--text-body);
+            border-radius: 9999px;
+        }
+        .lang-pill.is-active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+        .lang-pill:not(.is-active):hover { border-color: var(--accent); }
+
+        /* ============================================================
+           MICRO-INTERACTION 7 — Difficulty dot: active press feedback
+           Active dot scales down on :active (0.98); non-active dots
+           get a subtle border-color transition on hover.
+           ============================================================ */
+        .diff-dot {
+            background: var(--surface-card);
+            border: 1px solid var(--border-line);
+            color: var(--text-body);
+            border-radius: 9999px;
+            transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+        }
+        .diff-dot:not(.is-active):hover { border-color: var(--accent); color: var(--accent); }
+        .diff-dot.is-active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+        .diff-dot.is-active:active { transform: scale(0.98); }
+
+        /* Primary dark button */
+        .btn-primary {
+            background: var(--surface-dark);
+            border: 1px solid var(--surface-dark);
+            color: var(--surface-base);
+            border-radius: 9999px;
+            transition: border-color 0.15s ease;
+        }
+        .btn-primary:hover { border-color: var(--accent); }
+
+        /* Back button */
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--border-line);
+            color: var(--text-body);
+            border-radius: 9999px;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ============================================================
+           MICRO-INTERACTION 1 — Vocabulary word: background highlight
+           sweep on hover. A solid accent color with animating coverage
+           (background-size 0% -> 100%); underline thickens too.
+           MICRO-INTERACTION 2 — tooltip reveal on :focus.
+           ============================================================ */
+        .vocab {
+            position: relative;
+            color: var(--text-strong);
+            text-decoration: underline;
+            text-decoration-color: var(--accent);
+            text-decoration-thickness: 1.5px;
+            text-underline-offset: 3px;
+            cursor: pointer;
+            /* Solid accent color whose coverage animates from 0% to 100%. */
+            background: linear-gradient(to top, rgba(217,119,87,0.08) 0%, rgba(217,119,87,0.08) 100%);
+            background-size: 100% 0%;
+            background-repeat: no-repeat;
+            background-position: bottom;
+            transition: background-size 0.2s ease-out, text-decoration-color 0.2s ease-out, text-decoration-thickness 0.2s ease-out;
+            border: 0;
+            border-radius: 3px;
+            padding: 0 2px;
+            font: inherit;
+        }
+        .vocab:hover {
+            background-size: 100% 100%;
+            text-decoration-thickness: 2.5px;
+        }
+        .vocab-tip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translate(-50%, 4px);
+            margin-top: 6px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-strong);
+            white-space: nowrap;
+            box-shadow: var(--shadow-tip);
+            opacity: 0;
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .vocab:focus + .vocab-tip {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        /* ============================================================
+           MICRO-INTERACTION 5 — Grammar tag: background-color transition
+           on hover + tooltip reveal on hover/focus.
+           ============================================================ */
+        .grammar-wrap { position: relative; display: inline-block; vertical-align: baseline; }
+        .grammar-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 8px;
+            border-radius: 9999px;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent);
+            color: var(--accent-hover);
+            font-size: 12px;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+        .grammar-tag:hover {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent-hover);
+        }
+        .grammar-tip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translate(-50%, 4px);
+            margin-top: 6px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-line);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-strong);
+            white-space: nowrap;
+            box-shadow: var(--shadow-tip);
+            opacity: 0;
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .grammar-wrap:hover .grammar-tip,
+        .grammar-tag:focus + .grammar-tip {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        /* Play button — solid accent disc with CSS-drawn triangle */
+        .play-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            transition: border-color 0.15s ease;
+        }
+        .play-btn:hover { border-color: var(--accent-hover); }
+        .play-triangle {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 6px 0 6px 10px;
+            border-color: transparent transparent transparent #ffffff;
+            margin-left: 2px;
+        }
+        /* ============================================================
+           MICRO-INTERACTION 4 — Play button: press ring ripple on
+           :active. A ring expands and fades out over 0.3s.
+           ============================================================ */
+        .play-btn:active::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            border: 2px solid var(--accent);
+            animation: ringPulse 0.3s ease-out;
+            pointer-events: none;
+        }
+        @keyframes ringPulse {
+            from { transform: scale(1); opacity: 0.6; }
+            to { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* Icon buttons (collapse, settings) */
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .icon-btn:hover { border-color: var(--border-line); color: var(--text-strong); }
+
+        /* Text buttons (history actions) */
+        .text-btn {
+            background: transparent;
+            border: 0;
+            color: var(--text-muted);
+            padding: 2px 0;
+            font-size: 12px;
+            transition: color 0.15s ease;
+        }
+        .text-btn:hover { color: var(--accent); }
+        .text-btn-danger:hover { color: #c43a39; }
+
+        /* History list dividers */
+        .history-item { border-bottom: 1px solid var(--border-divider); }
+        .history-item:last-child { border-bottom: 0; }
+
+        /* ---- Progress bar (solid track + solid fill) ---- */
+        .progress-track {
+            background: var(--surface-inset);
+            border-radius: 9999px;
+            height: 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: var(--accent);
+            height: 100%;
+            border-radius: 9999px;
+            /* MICRO-INTERACTION 3 — animated fill on load (0% -> 25%). */
+            animation: progressFill 0.8s ease-out forwards;
+        }
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 25%; }
+        }
+
+        /* ============================================================
+           MICRO-INTERACTION 6 — Reading passage: fade-in-up entrance
+           for each paragraph on load (staggered delays).
+           ============================================================ */
+        .passage p {
+            opacity: 0;
+            transform: translateY(8px);
+            animation: fadeUp 0.4s ease-out forwards;
+        }
+        .passage p:nth-child(1) { animation-delay: 0.1s; }
+        .passage p:nth-child(2) { animation-delay: 0.3s; }
+        .passage p:nth-child(3) { animation-delay: 0.5s; }
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---- Reduced motion: disable ALL animations & transitions ---- */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                animation-delay: 0ms !important;
+            }
+            .passage p { opacity: 1; transform: none; }
+            .progress-fill { width: 25%; animation: none; }
+            .vocab { background-size: 100% 0%; }
+            .vocab-tip, .grammar-tip { transition: none; }
+        }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

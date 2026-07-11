@@ -1,0 +1,73 @@
+.container {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 50%, transparent 100%);
+  z-index: 2;
+  transform: translateX(-100%);
+  animation: unveil 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.sparkle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  z-index: 3;
+  transform: translateY(-50%) translateX(-100%);
+  animation: sparkle 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes unveil {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+  0% {
+    transform: translateY(-50%) translateX(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50%) translateX(200%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mask,
+  .sparkle {
+    animation: none !important;
+    display: none;
+  }
+}

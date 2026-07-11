@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置</title>
+    <style id="theme-vars">
+:root {
+  --primary: #d97757;
+  --primary-foreground: #faf9f5;
+  --accent: #1a1915;
+  --text-50: #1b1b19;
+  --text-100: #2c2c2b;
+  --text-200: #46443b;
+  --text-300: #6e6d68;
+  --text-400: #908e84;
+  --text-500: #b7b5a9;
+  --text-600: #c3c0b6;
+  --text-700: #d8d6cd;
+  --text-800: #f1f1ef;
+  --text-900: #faf9f5;
+  --bg-900: #b7b5a9;
+  --border-700: #908e84;
+  --brand-500: #d97757;
+  --surface-base: #faf9f5;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f5f4ee;
+  --destructive: #ef4444;
+  --font-display: "Newsreader", Georgia, ui-serif, serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", Georgia, ui-serif, serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-destructive: var(--destructive);
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-50);
+  --color-card: var(--surface-elevated);
+  --color-card-foreground: var(--text-50);
+  --color-muted: var(--surface-subtle);
+  --color-muted-foreground: var(--text-400);
+  --color-border: var(--border-700);
+  --color-input: var(--border-700);
+  --color-ring: var(--brand-500);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  
+  @layer base {
+    body { background: #ffffff; color: #0f172a; }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="relative" style="font-family: var(--font-sans);">
+      <!-- Simplified home page (dimmed by overlay, NO blur) -->
+      <div class="min-h-screen" style="font-family: var(--font-sans);">
+        <!-- Top navigation -->
+        <nav class="flex items-center justify-between px-6 sm:px-8 py-5 border-b" style="border-color: var(--border-900);">
+          <span style="font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--text-50);">Wordaydream</span>
+          <div class="flex items-center gap-6">
+            <span class="text-sm whitespace-nowrap" style="color: var(--text-300);">首页</span>
+            <span class="text-sm whitespace-nowrap" style="color: var(--text-300);">阅读</span>
+            <span class="text-sm whitespace-nowrap" style="color: var(--text-300);">统计</span>
+          </div>
+        </nav>
+        <!-- Home content -->
+        <div class="px-6 sm:px-8 py-10">
+          <p class="text-sm mb-2 whitespace-nowrap" style="color: var(--text-400);">今日阅读</p>
+          <h1 class="mb-6" style="font-family: var(--font-display); font-size: 32px; font-weight: 600; color: var(--text-50); text-wrap: balance; word-break: keep-all; overflow-wrap: break-word;">The Art of Slow Reading</h1>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+            <div class="border p-5" style="border-color: var(--border-900); border-radius: var(--radius-xl);">
+              <p class="text-sm whitespace-nowrap" style="color: var(--text-400);">今日进度</p>
+              <p class="mt-1" style="font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--text-50);">12 / 20 篇</p>
+            </div>
+            <div class="border p-5" style="border-color: var(--border-900); border-radius: var(--radius-xl);">
+              <p class="text-sm whitespace-nowrap" style="color: var(--text-400);">连续天数</p>
+              <p class="mt-1" style="font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--text-50);">7 天</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal overlay — solid dark rgba(28,25,23,0.4), NO blur -->
+      <div class="modal-overlay" data-dom-id="close-settings">
+        <!-- Modal panel — solid cream #faf9f5, NO glassmorphism -->
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-8">
+            <h2 id="settings-title" style="font-family: var(--font-display); font-size: 24px; font-weight: 600; color: var(--text-50);">设置</h2>
+            <button class="close-btn" data-dom-id="close-settings" aria-label="关闭设置" type="button">
+              <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+
+          <!-- Settings sections (24px gaps) -->
+          <div class="flex flex-col gap-6">
+
+            <!-- 1. AI Provider -->
+            <section class="flex flex-col gap-3">
+              <span class="settings-label">AI 服务商</span>
+              <div class="grid grid-cols-3 gap-3">
+                <button class="provider-btn" type="button">OpenAI</button>
+                <button class="provider-btn selected" type="button">Anthropic</button>
+                <button class="provider-btn" type="button">DeepSeek</button>
+              </div>
+            </section>
+
+            <!-- 2. API Key -->
+            <section class="flex flex-col gap-3">
+              <span class="settings-label">API 密钥</span>
+              <div class="flex items-center gap-3">
+                <input type="text" class="settings-input min-w-0 flex-1" placeholder="sk-..." aria-label="API 密钥" />
+                <button class="test-btn" type="button">测试连接</button>
+              </div>
+            </section>
+
+            <!-- 3. Model -->
+            <section class="flex flex-col gap-3">
+              <span class="settings-label">模型</span>
+              <input type="text" class="settings-input" value="gpt-4o" aria-label="模型" />
+            </section>
+
+            <!-- 4. Preset -->
+            <section class="flex flex-col gap-3">
+              <span class="settings-label">预设方案</span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button class="preset-card" type="button">
+                  <span class="preset-name">经济模式</span>
+                  <span class="preset-desc line-clamp-2">GPT-4o-mini, 快速且经济</span>
+                </button>
+                <button class="preset-card selected" type="button">
+                  <span class="preset-name">平衡模式</span>
+                  <span class="preset-desc line-clamp-2">GPT-4o, 性能与速度平衡</span>
+                </button>
+                <button class="preset-card" type="button">
+                  <span class="preset-name">专业模式</span>
+                  <span class="preset-desc line-clamp-2">GPT-4 Turbo, 最高质量</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- 5. Theme -->
+            <section class="flex flex-col gap-3">
+              <span class="settings-label">主题</span>
+              <div class="flex gap-3">
+                <button class="theme-btn selected" type="button">浅色</button>
+                <button class="theme-btn" type="button">深色</button>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t" style="border-color: var(--border-900);">
+            <button class="btn-cancel" type="button">取消</button>
+            <button class="btn-save" type="button">保存</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --text-50: #1b1b19;
+        --text-100: #2c2c2b;
+        --text-200: #46443b;
+        --text-300: #6e6d68;
+        --text-400: #908e84;
+        --text-500: #b7b5a9;
+        --text-600: #c3c0b6;
+        --text-700: #d8d6cd;
+        --text-800: #f1f1ef;
+        --text-900: #faf9f5;
+
+        --brand-500: #d97757;
+        --brand-600: #e08d6f;
+        --brand-900: #f8e3d8;
+
+        --border-700: #908e84;
+        --border-800: #b7b5a9;
+        --border-900: #d8d6cd;
+
+        --font-display: 'Newsreader', Georgia, ui-serif, serif;
+        --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+        --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius: 16px;
+        --radius-xl: 20px;
+        --radius-full: 9999px;
+      }
+
+      body {
+        background: var(--text-900);
+        color: var(--text-50);
+        font-family: var(--font-sans);
+      }
+
+      /* Modal overlay — solid dark, NO blur, NO backdrop-filter */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(28, 25, 23, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 50;
+      }
+
+      /* Modal panel — solid cream background, NO glassmorphism */
+      .modal-panel {
+        background: var(--text-900);
+        border: 1px solid var(--border-900);
+        border-radius: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        padding: 32px;
+        max-width: 560px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      /* Settings label — 14px muted gray */
+      .settings-label {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-400);
+      }
+
+      /* Settings input — 16px, solid background, thin border */
+      .settings-input {
+        background: var(--text-900);
+        border: 1px solid var(--border-800);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        font-size: 16px;
+        font-family: var(--font-sans);
+        color: var(--text-100);
+        transition: border-color 0.2s ease-out;
+        width: 100%;
+      }
+      .settings-input::placeholder { color: var(--text-500); }
+      .settings-input:hover { border-color: var(--border-700); }
+      .settings-input:focus { border-color: var(--brand-500); outline: none; }
+      .settings-input:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      /* Close button — hover border-color only, NO transform */
+      .close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: var(--text-900);
+        border: 1px solid var(--border-900);
+        border-radius: var(--radius-sm);
+        color: var(--text-300);
+        cursor: pointer;
+        transition: border-color 0.2s ease-out, color 0.2s ease-out;
+      }
+      .close-btn:hover { border-color: var(--border-700); color: var(--text-100); }
+      .close-btn:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      /* Provider button — card-style, 2px border for stable layout, hover border-color only */
+      .provider-btn {
+        background: var(--text-900);
+        border: 2px solid var(--border-800);
+        border-radius: var(--radius-sm);
+        padding: 9px 12px;
+        font-size: 15px;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        color: var(--text-200);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s ease-out, color 0.2s ease-out;
+        white-space: nowrap;
+      }
+      .provider-btn:hover { border-color: var(--border-700); }
+      .provider-btn.selected { border-color: var(--brand-500); color: var(--brand-500); }
+      .provider-btn:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      /* Preset card — solid surface, hover border-color only, NO transform */
+      .preset-card {
+        background: var(--text-900);
+        border: 2px solid var(--border-800);
+        border-radius: var(--radius-md);
+        padding: 13px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.2s ease-out;
+      }
+      .preset-card:hover { border-color: var(--border-700); }
+      .preset-card.selected { border-color: var(--brand-500); }
+      .preset-card:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      .preset-name {
+        font-family: var(--font-sans);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-100);
+      }
+      .preset-card.selected .preset-name { color: var(--brand-500); }
+
+      .preset-desc {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--text-400);
+        line-height: 1.4;
+      }
+
+      /* Theme button — hover border-color only */
+      .theme-btn {
+        background: var(--text-900);
+        border: 2px solid var(--border-800);
+        border-radius: var(--radius-sm);
+        padding: 9px 24px;
+        font-size: 15px;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        color: var(--text-200);
+        cursor: pointer;
+        transition: border-color 0.2s ease-out, color 0.2s ease-out;
+        white-space: nowrap;
+      }
+      .theme-btn:hover { border-color: var(--border-700); }
+      .theme-btn.selected { border-color: var(--brand-500); color: var(--brand-500); }
+      .theme-btn:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      /* Test connection — text button */
+      .test-btn {
+        background: transparent;
+        border: none;
+        padding: 10px 4px;
+        font-size: 15px;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        color: var(--brand-500);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color 0.2s ease-out;
+      }
+      .test-btn:hover { color: var(--brand-600); }
+      .test-btn:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+      /* Cancel — text button */
+      .btn-cancel {
+        background: transparent;
+        border: none;
+        padding: 10px 20px;
+        font-size: 15px;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        color: var(--text-300);
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        transition: color 0.2s ease-out;
+      }
+      .btn-cancel:hover { color: var(--text-100); }
+      .btn-cancel:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      /* Save — solid accent, pill shape */
+      .btn-save {
+        background: var(--brand-500);
+        border: none;
+        border-radius: var(--radius-full);
+        padding: 10px 32px;
+        font-size: 15px;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        color: #ffffff;
+        cursor: pointer;
+        transition: background-color 0.2s ease-out;
+        white-space: nowrap;
+      }
+      .btn-save:hover { background: var(--brand-600); }
+      .btn-save:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+      /* Reduced motion */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

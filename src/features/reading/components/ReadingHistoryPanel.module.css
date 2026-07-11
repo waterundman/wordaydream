@@ -1,0 +1,151 @@
+.panel {
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.icon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.summary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.total {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+}
+
+.label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.chevron {
+  color: var(--color-text-tertiary);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.expanded .chevron {
+  transform: rotate(180deg);
+}
+
+.panelBody {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--transition-normal), opacity var(--transition-fast);
+  opacity: 0;
+}
+
+.bodyExpanded {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.historyList {
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.historyItem:hover {
+  background: var(--color-bg-hover);
+}
+
+.historyInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.historyTitle {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.historyMeta {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.metaItem {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  padding: 2px 6px;
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+}
+
+.progressBar {
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-analytics-accent);
+  border-radius: 2px;
+  transition: width var(--transition-normal);
+}
+
+.progressText {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.historyActions {
+  display: flex;
+  gap: var(--space-1);
+  margin-left: var(--space-3);
+}
+
+.actionButton {
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.actionButton:hover {
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+}

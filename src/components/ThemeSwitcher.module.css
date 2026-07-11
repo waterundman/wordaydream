@@ -1,0 +1,120 @@
+/* v1.5.2 Stage 1: ThemeSwitcher.module.css
+ *
+ * 三按钮主题切换 UI 样式:
+ * - 默认状态: 透明背景 + 细边框, 悬停高亮
+ * - 激活状态: 主题色边框 + 浅色背景 + 右侧勾选标记
+ * - 移动端 (< 480px): 三按钮保持单行, 调小 padding
+ * - 0 emoji, 仅用 inline SVG + 文字
+ */
+
+.themeSwitcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.themeBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration-fast) var(--ease-out-quart);
+  min-height: var(--touch-min-size);
+}
+
+.themeBtn:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-strong);
+}
+
+.themeBtn:active {
+  transform: scale(0.98);
+}
+
+.themeBtn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.themeBtn.active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.themeSwatch {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--swatch, var(--color-paper));
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 0 0 1px var(--color-bg-elevated);
+}
+
+.themeBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.themeLabel {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.themeDescription {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: var(--leading-snug);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.themeCheck {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+}
+
+/* 窄屏 (移动端): 三按钮保持单行, 调小 padding */
+@media (max-width: 480px) {
+  .themeSwitcher {
+    grid-template-columns: 1fr;
+  }
+
+  .themeBtn {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .themeDescription {
+    white-space: normal;
+  }
+}
+
+/* 平板及以上, 三按钮可放宽间距 */
+@media (min-width: 768px) {
+  .themeSwitcher {
+    gap: var(--space-3);
+  }
+}

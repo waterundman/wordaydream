@@ -1,0 +1,39 @@
+.wrap {
+  display: inline-block;
+}
+
+.ring {
+  display: block;
+}
+
+.progress {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.value {
+  font-size: 24px;
+  font-weight: 600;
+  fill: var(--color-ink, #1c1917);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.sublabel {
+  font-size: 12px;
+  fill: var(--color-text-tertiary, #6b655b);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.label {
+  font-size: var(--home-progress-label-size, 0.875rem);
+  color: var(--home-progress-label-color, #78716c);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  margin: 12px 0 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    transition: none;
+  }
+}

@@ -1,0 +1,90 @@
+.banner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-overlay, 100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  max-width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #fef3c7;
+  border-bottom: 1px solid #f59e0b;
+  border-left: 3px solid #92400e;
+  color: #1c1917;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  line-height: var(--leading-snug, 1.5);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  color: #1c1917;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  color: #92400e;
+  font-size: 1.125rem;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast, 200ms),
+    background-color var(--transition-fast, 200ms);
+}
+
+.close:hover {
+  color: #1c1917;
+  background-color: rgba(146, 64, 14, 0.1);
+}
+
+.close:focus-visible {
+  outline: 2px solid #92400e;
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .banner {
+    padding: 0.875rem 1.5rem;
+    font-size: var(--text-base, 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    /* 禁用 slide-in 动画 (与项目 tokens.css 全局规则一致) */
+    animation: none;
+    transition: none;
+  }
+  .close {
+    transition: none;
+  }
+}

@@ -1,0 +1,130 @@
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  font-family: var(--font-sans);
+}
+
+.emptyState.compact {
+  padding: var(--space-8) var(--space-4);
+}
+
+.emptyState.horizontal {
+  flex-direction: row;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  text-align: left;
+}
+
+.emptyState.horizontal .content {
+  flex: 1;
+  min-width: 0;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: var(--space-5);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-xl);
+  flex-shrink: 0;
+}
+
+.compact .iconWrapper {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--space-4);
+}
+
+.horizontal .iconWrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0;
+}
+
+.iconWrapper > svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  stroke-width: 1.5;
+}
+
+.compact .iconWrapper > svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-2);
+}
+
+.compact .title {
+  font-size: var(--text-base);
+}
+
+.horizontal .title {
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-1);
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+  line-height: var(--leading-relaxed);
+  max-width: 24rem;
+  margin-bottom: var(--space-5);
+}
+
+.compact .description {
+  font-size: var(--text-xs);
+  margin-bottom: var(--space-4);
+}
+
+.horizontal .description {
+  font-size: var(--text-xs);
+  margin-bottom: 0;
+  max-width: none;
+}
+
+.actionBtn {
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-inverse);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  transform-origin: center;
+}
+
+.actionBtn:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.actionBtn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emptyState,
+  .iconWrapper,
+  .actionBtn {
+    transition: none;
+  }
+}

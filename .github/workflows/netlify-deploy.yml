@@ -1,0 +1,151 @@
+# Wordaydream v1.5.0 Netlify 自动部署 workflow
+# v1.5.1 Stage 1 强化: 加 retry + health check + status badge
+#
+# 真实部署由 Netlify 自动触发 (推荐, 推荐保留此 workflow 仅作 CI 检查)
+# 此 workflow 提供 CI 检查 (lint + test + typecheck + build + PWA manifest verify)
+#   + 可选的 GitHub Actions 直接 deploy (deploy job, 默认 enabled)
+#   + v1.5.1: deploy job 加 retry on failure + post-deploy health check + status badge
+#
+# 沙箱不执行 (无 GitHub Actions runner), 仅作为配置层就绪.
+# 用户需在 GitHub repo Settings -> Secrets 配置以下 secrets:
+#   NETLIFY_AUTH_TOKEN  (Netlify Personal Access Token)
+#   NETLIFY_SITE_ID     (Netlify Site ID)
+#   VITE_LLM_PROVIDER   (openai|anthropic|deepseek|mock)
+#   VITE_LLM_PROXY_URL  (https://your-site.netlify.app/.netlify/edge-functions/llm-proxy)
+#   VITE_LLM_GRAYSCALE  (0-100)
+#   OPENAI_API_KEY      (可选, 阻塞点 2 runbook 配置)
+#   ANTHROPIC_API_KEY   (可选, 阻塞点 2 runbook 配置)
+#   DEEPSEEK_API_KEY    (可选, 阻塞点 2 runbook 配置)
+#
+# 完整 runbook 见 docs/OPERATIONS.md
+#   - Section 1: Netlify 部署 (8 步骤)
+#   - Section 2: 3 API key 配置 (15 步骤)
+#
+# 0 emoji (硬约束)
+
+name: Netlify Deploy CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: CI (lint + test + typecheck + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        # v1.5.2 fix M14: lint 改为 required, 失败即阻塞 CI (移除 || echo 容错)
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:run
+
+      - name: TypeScript check
+        run: npx tsc -b
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_LLM_PROVIDER: mock
+          VITE_LLM_PROXY_URL: ${{ secrets.VITE_LLM_PROXY_URL }}
+          VITE_LLM_GRAYSCALE: '0'
+
+      - name: Verify PWA manifest + SW
+        run: |
+          test -f dist/manifest.webmanifest && echo "manifest OK"
+          test -f dist/sw.js && echo "sw.js OK"
+
+  deploy:
+    name: Deploy to Netlify (main only)
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # v1.5.1 强化: 失败重试 2 次 (避免 transient network 错误)
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_LLM_PROVIDER: ${{ secrets.VITE_LLM_PROVIDER }}
+          VITE_LLM_PROXY_URL: ${{ secrets.VITE_LLM_PROXY_URL }}
+          VITE_LLM_GRAYSCALE: ${{ secrets.VITE_LLM_GRAYSCALE }}
+          VITE_OFFLINE_FALLBACK: 'true'
+          VITE_APP_VERSION: '1.5.1'
+
+      - name: Deploy to Netlify (attempt ${{ matrix.attempt }}/2)
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './dist'
+          production-deploy: true
+          deploy-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          netlify-site-id: ${{ secrets.NETLIFY_SITE_ID }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      # v1.5.1 强化: post-deploy health check
+      # 验证部署后 site 可访问 + manifest.webmanifest + sw.js 200 OK
+      - name: Post-deploy health check
+        if: success() && matrix.attempt == 2
+        run: |
+          SITE_URL="https://${{ secrets.NETLIFY_SITE_ID }}.netlify.app"
+          echo "Health check: $SITE_URL"
+          # 检查根路径
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL" || echo "000")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "FAIL: root path returned $HTTP_CODE"
+            exit 1
+          fi
+          # 检查 manifest
+          MANIFEST_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL/manifest.webmanifest" || echo "000")
+          if [ "$MANIFEST_CODE" != "200" ]; then
+            echo "FAIL: manifest.webmanifest returned $MANIFEST_CODE"
+            exit 1
+          fi
+          # 检查 sw.js
+          SW_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL/sw.js" || echo "000")
+          if [ "$SW_CODE" != "200" ]; then
+            echo "FAIL: sw.js returned $SW_CODE"
+            exit 1
+          fi
+          echo "OK: root=$HTTP_CODE manifest=$MANIFEST_CODE sw.js=$SW_CODE"
+          echo "See docs/OPERATIONS.md Section 1.7 for Edge Function verification (curl POST)."
+        env:
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      # v1.5.1 强化: status badge (在 README 显示)
+      # 见 https://github.com/badges/shields (workflow 状态徽章)
+      # 用户在 README 加: ![Netlify Deploy](https://github.com/<user>/wordaydream/actions/workflows/netlify-deploy.yml/badge.svg)

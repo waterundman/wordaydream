@@ -1,0 +1,42 @@
+.app {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.rightPanel {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  width: 18rem;
+  max-height: calc(100vh - 4rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  z-index: var(--z-elevated);
+}
+
+.rightPanelInner {
+  padding: var(--space-6) var(--space-5);
+}
+
+/* Responsive: small screens hide right panel, medium narrow it */
+@media (max-width: 767px) {
+  .rightPanel {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .rightPanel {
+    width: 14rem;
+    right: var(--space-4);
+    top: var(--space-4);
+    max-height: calc(100vh - var(--space-8));
+  }
+
+  .rightPanelInner {
+    padding: var(--space-4) var(--space-3);
+  }
+}

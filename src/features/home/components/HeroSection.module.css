@@ -1,0 +1,189 @@
+/* HeroSection (Stage 2 方案 A: Hero-First)
+ *
+ * 渐变背景 + 大字号 serif 标题 + 大 CTA 56px
+ * 入场: fade-in + slide-up 8px, 200ms ease-out-quart
+ * 响应式: 3 档 (mobile / tablet / desktop)
+ * prefers-reduced-motion: transform: none, 0.01ms
+ */
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 48px 32px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  width: 100%;
+  /* 入场动画: 初始隐藏, 等待 useScrollReveal 翻为 visible */
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration-fast) var(--ease-out-quart);
+  will-change: opacity, transform;
+}
+
+.heroVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 顶部小标签 */
+.eyebrow {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+/* 主标题 (serif, 大字号 clamp) */
+.title {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 600;
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px 0;
+  max-width: 18ch;
+}
+
+/* 副标题 (serif, 中字号) */
+.tagline {
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  font-weight: 500;
+  color: var(--color-ink-soft);
+  font-family: var(--font-serif);
+  line-height: 1.4;
+  margin: 0 0 24px 0;
+  max-width: 24ch;
+}
+
+/* 描述 (sans body) */
+.copy {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0 0 16px 0;
+  font-family: var(--font-sans);
+  max-width: 38ch;
+}
+
+/* v1.5.2 Stage 2 (Contract 28 NEW / D-2): 今日阅读时长提示
+ * 位于 copy 与 CTA 之间, 用 accent 绿 (--color-accent) 着色
+ * 强化阅读进度但不抢占 CTA 焦点
+ * 0 emoji, 0 动画, 适配 prefers-reduced-motion
+ */
+.readingTime {
+  font-size: 0.875rem;
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin: 0 0 24px 0;
+  padding: 0;
+}
+
+/* 大 CTA 按钮 (min-height 56px) */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 16px 32px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease-out-quart),
+    background 0.2s var(--ease-out-quart);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cta:hover {
+  background: var(--color-ink-soft);
+}
+
+.cta:active {
+  background: var(--color-ink-soft);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--color-flame);
+  outline-offset: 2px;
+}
+
+.ctaArrow {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* === Tablet (max-width: 1023px) === */
+@media (max-width: 1023px) {
+  .hero {
+    padding: 48px 24px;
+  }
+  .title {
+    font-size: clamp(2.25rem, 5.5vw, 3rem);
+  }
+  .cta {
+    padding: 14px 28px;
+    min-height: 52px;
+  }
+}
+
+/* === Mobile (max-width: 767px) === */
+@media (max-width: 767px) {
+  .hero {
+    padding: 32px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .title {
+    font-size: 2rem;
+  }
+  .tagline {
+    font-size: 1.0625rem;
+    margin-bottom: 16px;
+  }
+  .copy {
+    margin-bottom: 24px;
+  }
+  .cta {
+    width: 100%;
+    justify-content: center;
+    padding: 16px 24px;
+  }
+}
+
+/* === Reduced motion: 跳过 slide-up 动画, 立即显示 === */
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    transform: none;
+    opacity: 1;
+    transition: opacity 0.01ms;
+  }
+  .heroVisible {
+    transform: none;
+  }
+  .cta {
+    transition: background 0.01ms;
+  }
+  .cta:hover,
+  .cta:active {
+    transform: none;
+  }
+}

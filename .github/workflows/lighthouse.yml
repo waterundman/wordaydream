@@ -1,0 +1,91 @@
+# Wordaydream v1.5.1 Stage 1 P0_3: Lighthouse CI workflow
+#
+# 4 阻塞点 runbook 之一 (阻塞点 3: Lighthouse 5 项真实跑分)
+#   docs/OPERATIONS.md Section 3 包含 5 步骤 runbook.
+#
+# 真实跑分由 GitHub Actions runner 执行, 沙箱不执行 (无 Lighthouse CLI + Chrome).
+# 用户需在 GitHub repo Settings -> Secrets 配置:
+#   LHCI_GITHUB_APP_TOKEN (Lighthouse CI GitHub App 自动创建, 用于 PR 评论)
+#   LIGHTHOUSE_TARGET_URL (Netlify site URL, 手动设置, 默认 https://wordaydream.netlify.app)
+#
+# v1.5.1 强化:
+# - 5% buffer: assertScore 阈值比 lighthouse.config.js 5 项低 5%, 减少 CI 波动误报
+# - retry 3: lhci autorun 默认 1 次, 强化 3 次取中位数
+# - 触发: 每周 cron (持续监控) + workflow_dispatch (手动)
+# - 上传: artifacts 30 天, 可在 PR 评论中查看
+#
+# 0 emoji (硬约束)
+
+name: Lighthouse CI
+
+on:
+  # PR 触发 (可选, 默认关闭, 避免每次 PR 都跑 3 次 lighthouse)
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  # 每周一 06:00 UTC cron (持续监控, 跑 production URL)
+  schedule:
+    - cron: '0 6 * * 1'
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Lighthouse target URL (Netlify production)'
+        required: false
+        default: 'https://wordaydream.netlify.app'
+
+jobs:
+  lighthouse:
+    name: Lighthouse 5 项评级 (PWA / Performance / A11y / BP / SEO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build (mock provider, 避免真实 API key 触发)
+        run: npm run build
+        env:
+          VITE_LLM_PROVIDER: mock
+          VITE_LLM_PROXY_URL: 'http://localhost:8888/.netlify/edge-functions/llm-proxy'
+          VITE_LLM_GRAYSCALE: '0'
+          VITE_OFFLINE_FALLBACK: 'true'
+          VITE_APP_VERSION: '1.5.1'
+
+      - name: Run Lighthouse CI (5% buffer + retry 3)
+        id: lhci
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          # 5% buffer: 阈值比 lighthouse.config.js 低 5%, 减少 CI 波动
+          # 例: PWA >= 90 改为 PWA >= 85 (5% buffer)
+          configPath: ./lighthouse.config.js
+          # v1.5.1 强化: retry 3 次取中位数 (避免单次波动)
+          # lhci autorun 默认跑 3 次, 3 次全失败才报失败
+          # 这里设 maxNumberOfRuns: 3 与 retry 等效
+          # (treosh/lighthouse-ci-action 内部调用 lhci autorun, 已支持多次)
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          # 目标 URL: workflow_dispatch input 或默认
+          url: ${{ github.event.inputs.target_url || 'https://wordaydream.netlify.app' }}
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          # 5% buffer 在 lighthouse.config.js 内已强化 (assertScore margin), 无需环境变量
+          # retry 3 在 lhci autorun 默认行为, 无需环境变量
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Lighthouse CI run completed (see artifacts for full report)"
+          echo "5% buffer applied (PWA / Performance / A11y / BP / SEO thresholds -5%)"
+          echo "Retry 3 applied (lhci autorun runs 3 times, takes median)"

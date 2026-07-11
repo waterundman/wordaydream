@@ -1,0 +1,168 @@
+/* HomePage (Stage 2 Hero-First 重设计)
+ *
+ * Stage 2 变更:
+ * - .page max-width: 1024px (从 720px)
+ * - 移除 .brandTagline (header 紧凑化)
+ * - 新增 .split: 桌面 60/40 grid, 移动端 stack
+ * - 渐变 .pageBackground 保留 token 暖色
+ * - ultrawide (>1440px) max-width: 1200px
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  min-height: 100vh;
+  background: var(--color-paper);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.brandTitle {
+  font-size: clamp(1.5rem, 5vw, 1.875rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  margin: 0;
+  letter-spacing: -0.02em;
+  font-family: var(--font-serif, Georgia, serif);
+  line-height: 1.2;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settingsBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary, #4a4540);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.settingsBtn:hover {
+  color: var(--color-ink, #1c1917);
+  border-color: var(--color-border-strong);
+}
+
+.settingsBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+/* === Stage 2 main: 60/40 split (Hero | TodayCard+ProgressRing) === */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-8);
+  align-items: stretch;
+}
+
+.splitLeft {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.splitRight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.footer {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* === Tablet (max-width: 1023px): stack 单列 === */
+@media (max-width: 1023px) {
+  .split {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .page {
+    padding: var(--space-8) var(--space-5);
+  }
+}
+
+/* === Mobile (max-width: 767px) === */
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-6) var(--space-4);
+    gap: var(--space-6);
+  }
+  .brandTitle {
+    font-size: clamp(1.25rem, 6vw, 1.5rem);
+  }
+  .header {
+    gap: var(--space-3);
+  }
+  .split {
+    gap: var(--space-5);
+  }
+}
+
+/* === Ultrawide (min-width: 1440px): 加大 max-width === */
+@media (min-width: 1440px) {
+  .page {
+    max-width: 1200px;
+  }
+}
+
+/* === Stage 4 滚动揭示 (useScrollReveal Stage 4 增强版)
+ *
+ * 4 段叙事错峰入场: opacity 0->1 + translateY(16px)->0, 350ms ease-out-quart
+ * 初始态: .reveal (opacity 0 + translateY)
+ * 进入视口 + delayMs 后: .reveal.revealVisible (opacity 1 + translateY 0)
+ * prefers-reduced-motion: 立即 visible, 0 transform, 0 transition
+ * 0 layout shift: will-change: opacity, transform
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    transform var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+  will-change: opacity, transform;
+}
+
+.revealVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .revealVisible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+}
