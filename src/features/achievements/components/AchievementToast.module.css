@@ -48,7 +48,7 @@
   height: 40px;
   border-radius: 50%;
   background: var(--color-achievement-unlocked, #d4a574);
-  color: #ffffff;
+  color: var(--color-text-inverse, #ffffff);
   flex-shrink: 0;
 }
 
@@ -86,8 +86,8 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #e07a3b;
-  color: #ffffff;
+  background: var(--color-flame, #e07a3b);
+  color: var(--color-text-inverse, #ffffff);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.75rem;

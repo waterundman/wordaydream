@@ -101,6 +101,7 @@ export function GrammarPanel({ grammarPoint, onClose, anchorRef }: Props) {
       ref={panelRef}
       className={`${styles.panel} ${styles.expandAnimation}`}
       role="dialog"
+      aria-modal="true"
       aria-label="语法解释"
       style={panelStyle}
     >

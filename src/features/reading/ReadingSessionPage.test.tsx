@@ -23,7 +23,7 @@ import { useReadingSessionStore } from './store/useReadingSessionStore';
 import { useReadingHistoryStore } from './store/useReadingHistoryStore';
 import { useMemoryStore } from '../review/store/useMemoryStore';
 import { useWordlistStore } from '../wordlist/store/useWordlistStore';
-import { subscribe, clearAllListeners, type ReadingCompletedPayload } from '../../domain/events';
+import { clearAllListeners } from '../../domain/events';
 import type { Passage, ReadingSession, TokenOccurrence, Language, DifficultyLevel } from '../../types';
 
 function makeToken(
@@ -230,7 +230,7 @@ describe('ReadingSessionPage "读下一篇" CTA (v2.1.0 Stage 2 Contract 64)', (
     expect(loadSessionSpy).toHaveBeenCalledWith('en', 2);
   });
 
-  it('T11e: 全部 resolved 时 completeEntry 被调用 → 发布 reading:completed', () => {
+  it('T11e: 全部 resolved 时 completeEntry 被调用 → 标记 completedAt', () => {
     const tokens = [
       makeToken('t1', 'g1', true),
       makeToken('t2', 'g2', true),
@@ -254,16 +254,13 @@ describe('ReadingSessionPage "读下一篇" CTA (v2.1.0 Stage 2 Contract 64)', (
       maxHistory: 50,
     });
 
-    const received: ReadingCompletedPayload[] = [];
-    subscribe<ReadingCompletedPayload>('reading:completed', (p) => received.push(p));
-
     render(<ReadingSessionPage />);
 
-    // effect 在 mount 后同步执行 (useEffect), completeEntry 被调用 → publish
-    expect(received).toHaveLength(1);
-    expect(received[0].entryId).toBe('h-4');
-    expect(received[0].language).toBe('en');
-    expect(received[0].difficulty).toBe(2);
+    // effect 在 mount 后同步执行 (useEffect), completeEntry 被调用 → 设置 completedAt
+    const updated = useReadingHistoryStore.getState().getEntry('h-4');
+    expect(updated).toBeDefined();
+    expect(updated!.completedAt).toBeDefined();
+    expect(typeof updated!.completedAt).toBe('number');
   });
 });
 

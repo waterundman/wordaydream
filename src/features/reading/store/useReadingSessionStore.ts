@@ -47,6 +47,14 @@ interface ReadingSessionState {
   clearSession: () => void;
 }
 
+// v2.2.4 Stage 1 (D1-5): 序列化后的 ReadingSession 形状.
+// resolvedTokens 在 JSON 中序列化为 string[], 反序列化后由
+// onRehydrateStorage 还原为 Set<string>. 此类型用于 partialize 返回值,
+// 消除原 partialize 中的 `as unknown as Set<string>` 断言.
+type PersistedReadingSession = Omit<ReadingSession, 'resolvedTokens'> & {
+  resolvedTokens: string[];
+};
+
 export function buildReviewTokens(
   passage: Passage,
   dueCards: { lexemeGroupId: string; lemma: string; id: string; objectiveDifficulty: DifficultyLevel }[]
@@ -376,27 +384,28 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         session: state.session
-          ? {
+          ? ({
               ...state.session,
-              resolvedTokens: Array.from(state.session.resolvedTokens) as unknown as Set<string>,
-            }
+              resolvedTokens: Array.from(state.session.resolvedTokens),
+            } as PersistedReadingSession)
           : null,
         lastConfig: state.lastConfig,
         currentHistoryId: state.currentHistoryId,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state?.session) return;
-        if (Array.isArray(state.session.resolvedTokens)) {
-          state.session.resolvedTokens = new Set(state.session.resolvedTokens);
+        // v2.2.4 Stage 1 (D1-5): 反序列化后 resolvedTokens 是 string[],
+        // 用 PersistedReadingSession 类型断言访问, 还原为 Set<string>.
+        const persisted = state.session as unknown as PersistedReadingSession;
+        if (Array.isArray(persisted.resolvedTokens)) {
+          state.session.resolvedTokens = new Set(persisted.resolvedTokens);
         }
       },
-      // v1.5.2 fix L3: 占位 migrate, 未来 schema bump 需补真实迁移逻辑.
-      migrate: (persistedState) => persistedState,
     }
   )
 );
 
 // 暴露到 window 方便 E2E 测试 (dev/test only, 不影响生产 bundle 行为)
 if (typeof window !== 'undefined' && import.meta.env?.DEV) {
-  (window as unknown as { __READING_STORE__: typeof useReadingSessionStore }).__READING_STORE__ = useReadingSessionStore;
+  window.__READING_STORE__ = useReadingSessionStore;
 }

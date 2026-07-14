@@ -13,6 +13,12 @@
   padding: var(--space-2) var(--space-3);
   min-height: 44px;
   cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  border: none;
+  background: none;
+  color: inherit;
 }
 
 .icon {

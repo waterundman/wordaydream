@@ -44,6 +44,9 @@ export interface PassageJsonPayload {
     endIndex: number;
     partOfSpeech: string;
   }>;
+  // v2.2.4 Stage 1 (D1-1): grammarPoints 可选字段, 替代 llmAdapter 中
+  // 多处 as unknown as 断言访问.
+  grammarPoints?: Array<{ startIndex: number; endIndex: number; text: string }>;
 }
 
 /**
@@ -485,6 +488,7 @@ export function parseLLMResponse<T = PassagePayload>(
 ): ParseResult<T>;
 export function parseLLMResponse(
   raw: string,
+  // eslint-disable-next-line typescript/no-explicit-any -- ZodType<Input> 逆变, z.ZodObject 不可赋值给 z.ZodType<unknown>
   arg2?: Language | { schema?: z.ZodType<any>; expectedLanguage?: Language }
 ): ParseResult<PassagePayload> {
   if (!raw || typeof raw !== 'string') {
@@ -497,6 +501,7 @@ export function parseLLMResponse(
   // - arg2 undefined -> 旧签名无第二参数, 用默认 PassagePayloadSchema
   // 注: schema 用 z.ZodType<any> 而非 z.ZodType<unknown>, 因为 ZodType 在 Input
   // 类型上是逆变, z.ZodObject<PassagePayload> 不可赋值给 z.ZodType<unknown>.
+  // eslint-disable-next-line typescript/no-explicit-any -- ZodType<Input> 逆变
   let schema: z.ZodType<any> = PassagePayloadSchema;
   let expectedLanguage: Language | undefined;
   if (typeof arg2 === 'string') {
@@ -571,6 +576,7 @@ function finalizeParseResult(
   parsed: unknown,
   repaired: boolean,
   raw: string,
+  // eslint-disable-next-line typescript/no-explicit-any -- ZodType<Input> 逆变
   schema: z.ZodType<any>,
   expectedLanguage: Language | undefined
 ): ParseResult<PassagePayload> {

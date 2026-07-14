@@ -10,7 +10,7 @@ interface ReadingHistoryPanelProps {
 
 export function ReadingHistoryPanel({ onReRead }: ReadingHistoryPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const history = useReadingHistoryStore((state) => state.getHistory());
+  const history = useReadingHistoryStore((state) => state.history);
   const removeEntry = useReadingHistoryStore((state) => state.removeEntry);
 
   const formatDate = (timestamp: number) => {
@@ -58,7 +58,12 @@ export function ReadingHistoryPanel({ onReRead }: ReadingHistoryPanelProps) {
 
   return (
     <div className={`${styles.panel} ${isExpanded ? styles.expanded : ''}`}>
-      <div className={styles.panelHeader} onClick={() => setIsExpanded(!isExpanded)}>
+      <button
+        type="button"
+        className={styles.panelHeader}
+        onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+      >
         <div className={styles.icon}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -76,7 +81,7 @@ export function ReadingHistoryPanel({ onReRead }: ReadingHistoryPanelProps) {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
-      </div>
+      </button>
 
       <div className={`${styles.panelBody} ${isExpanded ? styles.bodyExpanded : ''}`}>
         <div className={styles.historyList}>

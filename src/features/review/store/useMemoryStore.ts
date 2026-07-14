@@ -13,7 +13,7 @@ interface MemoryStore {
 
   addCardFromToken: (token: TokenOccurrence, language?: Language) => MemoryCard;
   getCardByLexemeGroup: (groupId: string) => MemoryCard | undefined;
-  getCardByLemma: (lemma: string, language?: 'en' | 'de') => MemoryCard | undefined;
+  getCardByLemma: (lemma: string, language?: Language) => MemoryCard | undefined;
   getCardCount: () => number;
   getNewlyAdded: () => MemoryCard[];
   rateCard: (cardId: string, rating: Rating) => void;
@@ -21,7 +21,7 @@ interface MemoryStore {
   getRatingPreviews: (cardId: string) => Record<Rating, { card: MemoryCard; nextReviewAt: number }> | null;
   clearNewlyAdded: () => void;
   // v2.2.2 Stage 2 (Bug 7): states 可选参数, 让调用方按语义取卡 (向后兼容, 不传时返回全部 due 卡)
-  getDueCards: (language?: 'en' | 'de', now?: number, states?: MemoryCard['status'][]) => MemoryCard[];
+  getDueCards: (language?: Language, now?: number, states?: MemoryCard['status'][]) => MemoryCard[];
   getReviewingCards: () => MemoryCard[];
   resetAll: () => void;
 }
@@ -67,7 +67,7 @@ export const useMemoryStore = create<MemoryStore>()(
         return get().cards.get(groupId);
       },
 
-      getCardByLemma: (lemma: string, language?: 'en' | 'de') => {
+      getCardByLemma: (lemma: string, language?: Language) => {
         const target = lemma.toLowerCase();
         for (const card of get().cards.values()) {
           if (card.lemma.toLowerCase() !== target) continue;

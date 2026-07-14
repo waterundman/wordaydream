@@ -90,8 +90,6 @@ export const useAchievementStore = create<AchievementState>()(
           state.achievements = initialAchievements;
         }
       },
-      // v1.5.2 fix L3: 占位 migrate, 未来 schema bump 需补真实迁移逻辑.
-      migrate: (persistedState) => persistedState,
     },
   ),
 );

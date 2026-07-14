@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Passage, Language, DifficultyLevel } from '../../../types';
-import { publish } from '../../../domain/events';
 
 export interface HistoryEntry {
   id: string;
@@ -51,7 +50,9 @@ export const useReadingHistoryStore = create<ReadingHistoryState>()(
       completeEntry: (id) => {
         // v2.1.0 Stage 2 (Contract 63): 激活死代码 — 之前 completeEntry 全项目 0 调用点,
         // 现由 ReadingSessionPage 在所有 token resolved 时调用.
-        // 幂等性: 已完成的 entry 不重复 publish, 避免重复触发订阅方副作用.
+        // 幂等性: 已完成的 entry 不重复标记, 避免重复触发副作用.
+        // v2.2.4 Stage 2 (D2-1): 移除 'reading:completed' 事件发布 (死事件, 无生产订阅者),
+        // completeEntry 仅负责设置 completedAt.
         const existing = get().history.find((entry) => entry.id === id);
         if (!existing) return;
         if (existing.completedAt) return;
@@ -60,15 +61,6 @@ export const useReadingHistoryStore = create<ReadingHistoryState>()(
           entry.id === id ? { ...entry, completedAt: Date.now() } : entry
         );
         set({ history });
-
-        // v2.1.0 Stage 2 (Contract 63): 发布 'reading:completed' 事件,
-        // 供 ReviewPromptBanner / TodayCard 等订阅方响应阅读完成 (替代轮询).
-        publish('reading:completed', {
-          entryId: id,
-          passageId: existing.passage.id,
-          language: existing.language,
-          difficulty: existing.difficulty,
-        });
       },
 
       getEntry: (id) => {

@@ -71,8 +71,6 @@ export const useStreakStore = create<StreakState>()(
       name: 'wordaydream:streak',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      // v1.5.2 fix L3: 占位 migrate, 未来 schema bump 需补真实迁移逻辑.
-      migrate: (persistedState) => persistedState,
     },
   ),
 );

@@ -21,7 +21,7 @@
 .title {
   font-family: var(--font-serif);
   font-size: var(--text-2xl);
-  color: #c45c4a;
+  color: var(--color-danger);
   margin-bottom: var(--space-4);
 }
 
@@ -40,8 +40,8 @@
   justify-content: center;
   padding: var(--space-3) var(--space-8);
   border-radius: var(--radius-md);
-  background: #c45c4a;
-  color: #fff;
+  background: var(--color-danger);
+  color: var(--color-danger-text);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -50,5 +50,36 @@
 }
 
 .retryButton:hover {
-  background: #a84d3d;
+  background: var(--color-danger-hover);
+}
+
+/* v2.2.4 Stage 2 (D2-5): 操作按钮容器, 居中排列并留间距. */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* v2.2.4 Stage 2 (D2-5): 返回首页次级按钮 (描边样式, 全部用 CSS variables, 无硬编码颜色). */
+.homeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-8);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-strong);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.homeButton:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }

@@ -1,19 +1,33 @@
-v2.2.3: 组件优化迭代 — Token 存活率 + InteractivePassage + 代码质量
+v2.2.4: 全量代码审查优化 — 类型安全 + 架构清理 + UX/a11y + 文档同步
 
-Stage 1: Token 存活率提升
-- alignmentValidator 增加 Step 4.5 宽松匹配层 (trim/toLowerCase/词干化/indexOf 兜底)
-- passageGenerator wordlist 补偿 (token < 8 时从 wordlist 取未学词补齐)
-- 新增测试: T01-T06
+Stage 1: 类型安全 + 死代码清理
+- PassageJsonPayload 补充 grammarPoints 字段, 消除 4 处 as unknown as 断言
+- 16 处 'en' | 'de' 替换为 Language 类型
+- 删除 3 个未使用导出 (LEGACY_FIXTURES_V120, getActiveShortcutScope, getAllRegisteredShortcuts)
+- Window 全局类型声明, 消除 2 处 as unknown as 断言
+- Set 序列化类型修正 (PersistedReadingSession)
 
-Stage 2: InteractivePassage 优化
-- 添加 data-testid 属性 (passage-token / passage-grammar / token-trigger)
-- prefers-reduced-motion 支持 (段落 stagger 动画尊重用户偏好)
-- token 焦点可见性提升 (focused 状态增加背景色)
-- 新增测试: T07-T10
+Stage 2: 架构清理 + 状态管理
+- reading:completed 死事件清理 (publish 无生产 subscribe)
+- router.ts 6 处 empty catch 加日志 + safeNotify helper 提取
+- 5 个 store 占位 migrate 函数清理
+- useToastStore 移除无用 persist (partialize 持久化空对象)
+- ErrorBoundary 增加 onReset prop + "返回首页" 按钮
 
-Stage 3: 代码质量优化
-- WordlistPage inline style 清理 (CSV 预览 + 词库列表提取到 CSS module)
-- ReviewSessionPage statsLine useMemo + 实时计时器 (useState + setInterval)
-- 新增测试: T11-T14
+Stage 3: UX/a11y/CSS 一致性
+- tokens.css 补全 12 个状态色变量 (light/dark/sepia 三套主题)
+- ReadingHistoryPanel selector 反模式修复 + 折叠头键盘操作
+- SettingsPanel 确认弹窗 inline style 清理 (~80 行)
+- 6 个文件暗色模式硬编码颜色修复
+- 模态 a11y 补全 (aria-modal + ESC + useFocusTrap hook)
+- ReadingSessionPage source badge inline style 清理
 
-测试: 527/527 PASS (72 files), tsc 0 errors
+Stage 4: 文档同步 + 配置
+- CHANGELOG.md 补齐 v1.6.1 → v2.2.3 (10 个版本)
+- README.md 同步 (DeepSeek provider + 项目结构)
+- .env.example + docs/FSRS.md + docs/ARCHITECTURE.md 同步
+- vitest.config.ts 固化 pool: threads
+- package.json 增加 typecheck script
+- .oxlintrc.json no-explicit-any 从 warn 升级为 error
+
+测试: 520/520 PASS (71 files), tsc 0 errors

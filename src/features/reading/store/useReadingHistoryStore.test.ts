@@ -1,25 +1,26 @@
 /**
- * useReadingHistoryStore.completeEntry 测试 (v2.1.0 Stage 2, Contract 63)
+ * useReadingHistoryStore.completeEntry 测试
  *
  * 覆盖 test_spec:
- * - T8 [unit, critical]: completeEntry 发布 'reading:completed' 事件, payload 包含
- *   entryId / passageId / language / difficulty
- * - T9 [unit, critical]: completeEntry 幂等 — 重复调用不重复 publish
+ * - T8 [unit, critical]: completeEntry 设置 entry.completedAt 为当前时间戳
+ * - T9 [unit, critical]: completeEntry 幂等 — 重复调用不重复标记 / 不更新 completedAt
  *   (基于 entry.completedAt 检查)
- * - T10 [unit]: completeEntry 不存在的 id → no-op (不抛错, 不 publish)
- * - T10b [unit]: completeEntry 设置 entry.completedAt 为当前时间戳
+ * - T10 [unit]: completeEntry 不存在的 id → no-op (不抛错)
+ * - T10b [unit]: 已完成的 entry 再次调用 → no-op (不更新 completedAt)
+ *
+ * v2.2.4 Stage 2 (D2-1): 移除 'reading:completed' 事件后, 测试改为断言 completedAt
+ * 行为 (原先通过 events.subscribe 捕获事件 payload 的断言已删除).
  *
  * 实现策略:
  * - 通过 useReadingHistoryStore.setState 直接 seed history
- * - 通过 events.subscribe 捕获 'reading:completed' payload
- * - 调用 completeEntry, 断言 subscriber 收到 / 未收到事件
+ * - 调用 completeEntry, 断言 getEntry().completedAt 行为
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useReadingHistoryStore, type HistoryEntry } from './useReadingHistoryStore';
-import { subscribe, clearAllListeners, type ReadingCompletedPayload } from '../../../domain/events';
-import type { Passage } from '../../../types';
+import { clearAllListeners } from '../../../domain/events';
+import type { Passage, Language } from '../../../types';
 
-function makePassage(id: string, language: 'en' | 'de', difficulty: number): Passage {
+function makePassage(id: string, language: Language, difficulty: number): Passage {
   return {
     id,
     language,
@@ -49,32 +50,8 @@ afterEach(() => {
   clearAllListeners();
 });
 
-describe('useReadingHistoryStore.completeEntry v2.1.0 Stage 2 (Contract 63)', () => {
-  describe('T8: completeEntry 发布 reading:completed', () => {
-    it('T8a: 发布事件, payload 包含 entryId / passageId / language / difficulty', () => {
-      const passage = makePassage('passage-en-2', 'en', 2);
-      const entry = makeEntry({
-        id: 'h-1',
-        passage,
-        language: 'en',
-        difficulty: 2,
-      });
-      useReadingHistoryStore.setState({ history: [entry], maxHistory: 50 });
-
-      const received: ReadingCompletedPayload[] = [];
-      subscribe<ReadingCompletedPayload>('reading:completed', (p) => received.push(p));
-
-      useReadingHistoryStore.getState().completeEntry('h-1');
-
-      expect(received).toHaveLength(1);
-      expect(received[0]).toEqual({
-        entryId: 'h-1',
-        passageId: 'passage-en-2',
-        language: 'en',
-        difficulty: 2,
-      });
-    });
-
+describe('useReadingHistoryStore.completeEntry', () => {
+  describe('T8: completeEntry 标记 completedAt', () => {
     it('T8b: 完成后 entry.completedAt 被设置为时间戳', () => {
       const before = Date.now();
       const passage = makePassage('p-2', 'de', 3);
@@ -98,7 +75,7 @@ describe('useReadingHistoryStore.completeEntry v2.1.0 Stage 2 (Contract 63)', ()
   });
 
   describe('T9: completeEntry 幂等性', () => {
-    it('T9a: 重复调用同一 entry 只 publish 一次', () => {
+    it('T9a: 重复调用同一 entry 只标记一次 (completedAt 不变)', () => {
       const passage = makePassage('p-3', 'en', 1);
       const entry = makeEntry({
         id: 'h-3',
@@ -108,30 +85,39 @@ describe('useReadingHistoryStore.completeEntry v2.1.0 Stage 2 (Contract 63)', ()
       });
       useReadingHistoryStore.setState({ history: [entry], maxHistory: 50 });
 
-      const received: ReadingCompletedPayload[] = [];
-      subscribe<ReadingCompletedPayload>('reading:completed', (p) => received.push(p));
+      useReadingHistoryStore.getState().completeEntry('h-3');
+      const firstCompletedAt = useReadingHistoryStore.getState().getEntry('h-3')!.completedAt;
+      expect(firstCompletedAt).toBeDefined();
 
       useReadingHistoryStore.getState().completeEntry('h-3');
       useReadingHistoryStore.getState().completeEntry('h-3');
-      useReadingHistoryStore.getState().completeEntry('h-3');
 
-      expect(received).toHaveLength(1);
+      const finalCompletedAt = useReadingHistoryStore.getState().getEntry('h-3')!.completedAt;
+      expect(finalCompletedAt).toBe(firstCompletedAt);
     });
   });
 
   describe('T10: completeEntry 边界场景', () => {
-    it('T10a: 不存在的 id → no-op (不抛错, 不 publish)', () => {
-      const received: ReadingCompletedPayload[] = [];
-      subscribe<ReadingCompletedPayload>('reading:completed', (p) => received.push(p));
+    it('T10a: 不存在的 id → no-op (不抛错, 不修改任何 entry)', () => {
+      const passage = makePassage('p-other', 'en', 2);
+      const entry = makeEntry({
+        id: 'h-existing',
+        passage,
+        language: 'en',
+        difficulty: 2,
+      });
+      useReadingHistoryStore.setState({ history: [entry], maxHistory: 50 });
 
       expect(() => {
         useReadingHistoryStore.getState().completeEntry('non-existent-id');
       }).not.toThrow();
 
-      expect(received).toHaveLength(0);
+      // 已存在的 entry 不受影响, 仍未完成
+      const untouched = useReadingHistoryStore.getState().getEntry('h-existing');
+      expect(untouched!.completedAt).toBeUndefined();
     });
 
-    it('T10b: 已完成的 entry 再次调用 → no-op (不 publish, 不更新 completedAt)', () => {
+    it('T10b: 已完成的 entry 再次调用 → no-op (不更新 completedAt)', () => {
       const passage = makePassage('p-4', 'en', 2);
       const originalCompletedAt = Date.now() - 1000;
       const entry = makeEntry({
@@ -143,12 +129,8 @@ describe('useReadingHistoryStore.completeEntry v2.1.0 Stage 2 (Contract 63)', ()
       });
       useReadingHistoryStore.setState({ history: [entry], maxHistory: 50 });
 
-      const received: ReadingCompletedPayload[] = [];
-      subscribe<ReadingCompletedPayload>('reading:completed', (p) => received.push(p));
-
       useReadingHistoryStore.getState().completeEntry('h-4');
 
-      expect(received).toHaveLength(0);
       // completedAt 不变
       const updated = useReadingHistoryStore.getState().getEntry('h-4');
       expect(updated!.completedAt).toBe(originalCompletedAt);

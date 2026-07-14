@@ -17,7 +17,7 @@ export interface EvaluateInput {
   userAnswer: string;
   lemma: string;
   objectiveDifficulty: DifficultyLevel;
-  language: 'en' | 'de';
+  language: Language;
 }
 
 export async function evaluateAnswerViaLLM(input: EvaluateInput): Promise<AnswerEvaluation> {
@@ -202,25 +202,22 @@ export function normalizePassagePayload(
     endIndex: remapOffset(tok.endIndex, offsetMap),
   }));
 
-  // 可选字段: grammarPoints (Stage 1 jsonParser 暂未产出, 但为后续兼容预留)
-  const rawRecord = payload as unknown as { grammarPoints?: Array<{ startIndex: number; endIndex: number }> };
-  const remappedGrammarPoints = Array.isArray(rawRecord.grammarPoints)
-    ? rawRecord.grammarPoints.map((gp) => ({
+  // v2.2.4 Stage 1 (D1-1): grammarPoints 已在 PassageJsonPayload 中声明,
+  // 直接访问 payload.grammarPoints, 不再需要 as unknown as 断言.
+  const remappedGrammarPoints = Array.isArray(payload.grammarPoints)
+    ? payload.grammarPoints.map((gp) => ({
         ...gp,
         startIndex: remapOffset(gp.startIndex, offsetMap),
         endIndex: remapOffset(gp.endIndex, offsetMap),
       }))
-    : rawRecord.grammarPoints;
+    : payload.grammarPoints;
 
   const result: PassageJsonPayload = {
     ...payload,
     text: normalized,
     tokens: remappedTokens,
+    ...(remappedGrammarPoints ? { grammarPoints: remappedGrammarPoints } : {}),
   };
-  if (remappedGrammarPoints) {
-    (result as unknown as { grammarPoints: typeof remappedGrammarPoints }).grammarPoints =
-      remappedGrammarPoints;
-  }
 
   console.info(
     `[Normalize] text length: ${oldLen} -> ${newLen}, offsets recalculated: ${remappedTokens.length + (Array.isArray(remappedGrammarPoints) ? remappedGrammarPoints.length : 0)}`
@@ -336,24 +333,23 @@ function validateAndAlignPassagePayloadInternal(
     survivingTokenResults.push(r);
   }
 
-  // 3. grammarPoints 校验 + 校正 (可选字段, 当前 passage json 不产出,
-  //    但 alignmentValidator 必须兼容 — 直接读 rawRecord)
-  const rawRecord = payload as unknown as { grammarPoints?: GrammarPointLike[] };
+  // v2.2.4 Stage 1 (D1-1): grammarPoints 已在 PassageJsonPayload 中声明,
+  // 直接访问 payload.grammarPoints, 不再需要 as unknown as 断言.
   let alignedGrammarPoints: GrammarPointLike[] | undefined;
   let survivingGrammarResults: AlignmentResult[] = [];
   let allGrammarResultsForStats: AlignmentResult[] = [];
-  if (Array.isArray(rawRecord.grammarPoints)) {
-    allGrammarResultsForStats = rawRecord.grammarPoints.map((gp) =>
+  if (Array.isArray(payload.grammarPoints)) {
+    allGrammarResultsForStats = payload.grammarPoints.map((gp) =>
       validateToken(
         { startIndex: gp.startIndex, endIndex: gp.endIndex, surfaceForm: gp.text },
         text
       )
     );
     alignedGrammarPoints = [];
-    for (let idx = 0; idx < rawRecord.grammarPoints.length; idx++) {
+    for (let idx = 0; idx < payload.grammarPoints.length; idx++) {
       const r = allGrammarResultsForStats[idx];
       if (r.status === 'dropped') continue;
-      const base = rawRecord.grammarPoints[idx];
+      const base = payload.grammarPoints[idx];
       alignedGrammarPoints.push({
         ...base,
         startIndex: r.start,
@@ -373,11 +369,8 @@ function validateAndAlignPassagePayloadInternal(
   const result: PassageJsonPayload = {
     ...payload,
     tokens: alignedTokens,
+    ...(alignedGrammarPoints ? { grammarPoints: alignedGrammarPoints } : {}),
   };
-  if (alignedGrammarPoints) {
-    (result as unknown as { grammarPoints: GrammarPointLike[] }).grammarPoints =
-      alignedGrammarPoints;
-  }
   return {
     payload: result,
     tokenResults: survivingTokenResults,

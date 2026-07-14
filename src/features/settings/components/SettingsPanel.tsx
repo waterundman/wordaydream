@@ -383,34 +383,16 @@ export function CsvWordlistManagementSection() {
       </div>
 
       {showClearConfirm && (
-        <div
-          style={{
-            marginBottom: 'var(--space-3)',
-            padding: 'var(--space-3)',
-            border: '1px solid #fca5a5',
-            borderRadius: 'var(--radius-sm, 0.25rem)',
-            background: '#fef2f2',
-            fontSize: 'var(--text-sm, 0.875rem)',
-            color: '#b91c1c',
-          }}
-        >
-          <p style={{ margin: '0 0 var(--space-2) 0' }}>
+        <div className={styles.confirmDialog}>
+          <p className={styles.confirmDialogText}>
             确认清空所有 CSV 词库? 此操作不可撤销.
           </p>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <div className={styles.confirmDialogActions}>
             <button
               type="button"
               onClick={handleClearAll}
               disabled={isClearing}
-              style={{
-                padding: 'var(--space-1) var(--space-3)',
-                fontSize: 'var(--text-sm, 0.875rem)',
-                color: '#ffffff',
-                background: '#b91c1c',
-                border: 'none',
-                borderRadius: 'var(--radius-sm, 0.25rem)',
-                cursor: isClearing ? 'not-allowed' : 'pointer',
-              }}
+              className={`${styles.confirmBtn} ${styles.confirmBtnDanger}`}
             >
               {isClearing ? '清空中...' : '确认清空'}
             </button>
@@ -418,15 +400,7 @@ export function CsvWordlistManagementSection() {
               type="button"
               onClick={() => setShowClearConfirm(false)}
               disabled={isClearing}
-              style={{
-                padding: 'var(--space-1) var(--space-3)',
-                fontSize: 'var(--text-sm, 0.875rem)',
-                color: 'var(--color-text-secondary, #4a4540)',
-                background: 'none',
-                border: '1px solid var(--color-border, #e8e4dc)',
-                borderRadius: 'var(--radius-sm, 0.25rem)',
-                cursor: 'pointer',
-              }}
+              className={`${styles.confirmBtn} ${styles.confirmBtnCancel}`}
             >
               取消
             </button>
@@ -520,34 +494,16 @@ export function GlossCacheSection() {
       </div>
 
       {showClearConfirm && (
-        <div
-          style={{
-            marginBottom: 'var(--space-3)',
-            padding: 'var(--space-3)',
-            border: '1px solid #fca5a5',
-            borderRadius: 'var(--radius-sm, 0.25rem)',
-            background: '#fef2f2',
-            fontSize: 'var(--text-sm, 0.875rem)',
-            color: '#b91c1c',
-          }}
-        >
-          <p style={{ margin: '0 0 var(--space-2) 0' }}>
+        <div className={styles.confirmDialog}>
+          <p className={styles.confirmDialogText}>
             确认清空所有 AI 释义缓存? 下次查询将重新调用 LLM. 此操作不可撤销.
           </p>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <div className={styles.confirmDialogActions}>
             <button
               type="button"
               onClick={handleClearAll}
               disabled={isClearing}
-              style={{
-                padding: 'var(--space-1) var(--space-3)',
-                fontSize: 'var(--text-sm, 0.875rem)',
-                color: '#ffffff',
-                background: '#b91c1c',
-                border: 'none',
-                borderRadius: 'var(--radius-sm, 0.25rem)',
-                cursor: isClearing ? 'not-allowed' : 'pointer',
-              }}
+              className={`${styles.confirmBtn} ${styles.confirmBtnDanger}`}
             >
               {isClearing ? '清空中...' : '确认清空'}
             </button>
@@ -555,15 +511,7 @@ export function GlossCacheSection() {
               type="button"
               onClick={() => setShowClearConfirm(false)}
               disabled={isClearing}
-              style={{
-                padding: 'var(--space-1) var(--space-3)',
-                fontSize: 'var(--text-sm, 0.875rem)',
-                color: 'var(--color-text-secondary, #4a4540)',
-                background: 'none',
-                border: '1px solid var(--color-border, #e8e4dc)',
-                borderRadius: 'var(--radius-sm, 0.25rem)',
-                cursor: 'pointer',
-              }}
+              className={`${styles.confirmBtn} ${styles.confirmBtnCancel}`}
             >
               取消
             </button>
@@ -614,6 +562,18 @@ export function SettingsPanel() {
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // v2.2.4 Stage 3 (D5): ESC 键关闭设置弹窗
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        useSettingsStore.getState().closeSettings();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleProviderChange = (provider: LLMProvider) => {
     setProvider(provider);
     const preset = PROVIDER_PRESETS[provider];
@@ -662,7 +622,7 @@ export function SettingsPanel() {
 
   return (
     <div className={styles.backdrop} onClick={(e) => e.target === e.currentTarget && useSettingsStore.getState().closeSettings()}>
-      <div className={styles.panel} role="dialog" aria-label="设置">
+      <div className={styles.panel} role="dialog" aria-modal="true" aria-label="设置">
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>设置</h2>
@@ -682,17 +642,7 @@ export function SettingsPanel() {
           {/* v2.2.0 Stage 1 (D4): LLM 状态指示器 */}
           <div
             data-testid="llm-status-indicator"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              padding: 'var(--space-2) var(--space-3)',
-              marginBottom: 'var(--space-3)',
-              borderRadius: 'var(--radius-sm)',
-              background: llm.enabled && llm.provider !== 'mock' ? '#f0fdf4' : '#f5f5f4',
-              color: llm.enabled && llm.provider !== 'mock' ? '#15803d' : '#78716c',
-              fontSize: 'var(--text-sm)',
-            }}
+            className={`${styles.llmStatusIndicator} ${llm.enabled && llm.provider !== 'mock' ? styles.llmStatusActive : styles.llmStatusInactive}`}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               {llm.enabled && llm.provider !== 'mock' ? (

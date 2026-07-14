@@ -85,8 +85,3 @@ export const ALL_FIXTURES: FixtureEntry[] = Object.values(FIXTURE_CATALOG);
  *   });
  */
 export const NEW_FIXTURES_V150: FixtureEntry[] = ALL_FIXTURES.filter((f) => f.isNewInV150 === true);
-
-/**
- * 5 基础 v1.2.0 fixture 列表 (向后兼容旧测试, 0 breaking change)
- */
-export const LEGACY_FIXTURES_V120: FixtureEntry[] = ALL_FIXTURES.filter((f) => f.isNewInV150 !== true);

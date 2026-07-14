@@ -60,7 +60,7 @@ src/
 
 ```typescript
 // 阅读状态
-useReadingStore: {
+useReadingSessionStore: {
   session: ReadingSession | null;
   isLoading: boolean;
   generatePassage: () => void;
@@ -81,7 +81,6 @@ useAnalyticsStore: {
   dailyRecords: DailyLearningRecord[];
   addLearningRecord: (count: number) => void;
   getLearningCurve: (days: number) => DailyLearningRecord[];
-  getDifficultyDistribution: () => DifficultyDistribution[];
   getStreak: () => number;
 }
 

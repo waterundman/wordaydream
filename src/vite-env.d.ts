@@ -25,3 +25,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// v2.2.4 Stage 1 (D1-4): Window 全局类型声明, 替代 useToastStore /
+// useReadingSessionStore 中 as unknown as 断言访问.
+interface Window {
+  __TOAST_STORE__?: typeof import('./store/useToastStore').useToastStore;
+  __READING_STORE__?: typeof import('./features/reading/store/useReadingSessionStore').useReadingSessionStore;
+}

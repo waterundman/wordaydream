@@ -61,7 +61,7 @@ import { MockLLMProvider, DEFAULT_SUCCESS_PAYLOAD, resetFixture, setFixture } fr
 import { useSettingsStore } from '../features/settings/store/useSettingsStore';
 // v1.5.0 Stage 2 P1_1: 10 fixture 集中注册表 (5 基础 + 5 NEW 多语种)
 import { FIXTURE_CATALOG, NEW_FIXTURES_V150 } from '../__fixtures__';
-import type { Passage, ReadingSession, TokenOccurrence } from '../types';
+import type { Passage, ReadingSession, TokenOccurrence, Language } from '../types';
 import type { PassageJsonPayload } from '../features/llm/services/jsonParser';
 
 // jsdom 默认不实现 matchMedia, usePageEntranceAnimation 在 useEffect 启动时会调用它
@@ -89,7 +89,7 @@ beforeAll(() => {
  * - compound word detection (调 LLM)
  */
 function buildPassageFromPayload(
-  language: 'en' | 'de',
+  language: Language,
   difficulty: 1 | 2 | 3 | 4 | 5,
   text: string,
   title: string | undefined,
@@ -142,7 +142,7 @@ function buildPassageFromPayload(
   };
 }
 
-function makeSession(passage: Passage, language: 'en' | 'de' = 'en'): ReadingSession {
+function makeSession(passage: Passage, language: Language = 'en'): ReadingSession {
   return {
     id: `test-session-${Date.now()}`,
     language,

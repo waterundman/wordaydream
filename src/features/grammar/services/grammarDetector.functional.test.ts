@@ -22,6 +22,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import type { Language } from '../../../types';
 
 describe('grammarDetector.functional (v1.5.0 Stage 3 — T01..T03)', () => {
   beforeEach(() => {
@@ -168,7 +169,7 @@ describe('grammarDetector.functional (v1.5.2 Stage 4 — T-LLM-1..3, Contract 30
     let mockCalled = false;
     const providers = {
       heuristic: async () => [],
-      mock: async (text: string, language: 'en' | 'de') => {
+      mock: async (text: string, language: Language) => {
         mockCalled = true;
         return mockDetectGrammarPoints(text, language);
       },

@@ -289,8 +289,6 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         lastLearnedAt: state.lastLearnedAt,
         llmRepairCount: state.llmRepairCount,
       }),
-      // v1.5.2 fix L3: 占位 migrate, 未来 schema bump 需补真实迁移逻辑.
-      migrate: (persistedState) => persistedState,
     }
   )
 );

@@ -144,10 +144,11 @@ export function ReadingSessionPage() {
     // 避免 markOccurrenceResolved 产生新 tokens 数组引用时重跑 effect 触发 addCardFromToken 事件风暴.
   }, [session?.resolvedTokens.size, addCardFromToken, session?.isReplay]);
 
-  // v2.1.0 Stage 2 (Contract 64): 阅读完成时激活 completeEntry (publish 'reading:completed').
+  // v2.1.0 Stage 2 (Contract 64): 阅读完成时激活 completeEntry (标记 completedAt).
   // 触发条件: 非重读会话 + 有 token + 全部 resolved + 有 currentHistoryId.
-  // completeEntry 自身幂等 (检查 completedAt), effect 重复触发不会重复 publish.
-  // 历史重读 (isReplay) 不触发: 只读模式不应标记完成或重新发事件.
+  // completeEntry 自身幂等 (检查 completedAt), effect 重复触发不会重复标记.
+  // 历史重读 (isReplay) 不触发: 只读模式不应标记完成.
+  // v2.2.4 Stage 2 (D2-1): completeEntry 不再发布 'reading:completed' 事件 (死事件已移除).
   useEffect(() => {
     if (!session) return;
     if (session.isReplay) return;
@@ -170,24 +171,21 @@ export function ReadingSessionPage() {
     if (passageSource === 'llm') {
       return {
         label: 'AI 生成',
-        color: '#1c1917',
-        background: '#faf8f5',
+        className: styles.sourceBadgeLlm,
         icon: <path d="M12 2L9.5 8.5 2 9l5.5 5.5L6 22l6-3 6 3-1.5-7.5L22 9l-7.5-0.5L12 2z" fill="currentColor" />,
       };
     }
     if (passageSource === 'mixed') {
       return {
         label: 'AI 生成 (部分)',
-        color: '#1c1917',
-        background: '#fef3c7',
+        className: styles.sourceBadgeMixed,
         icon: <path d="M12 2L9.5 8.5 2 9l5.5 5.5L6 22l6-3 6 3-1.5-7.5L22 9l-7.5-0.5L12 2z" fill="none" stroke="currentColor" strokeWidth="1.5" />,
       };
     }
     // source === 'mock' 或 undefined (旧数据保守显示)
     return {
       label: '演示数据',
-      color: '#78716c',
-      background: '#f5f5f4',
+      className: styles.sourceBadgeMock,
       icon: <path d="M4 4h16v4H4zM4 10h16v10H4z" fill="none" stroke="currentColor" strokeWidth="1.5" />,
     };
   })();
@@ -318,18 +316,7 @@ export function ReadingSessionPage() {
               {session && (
                 <div
                   data-testid="passage-source-badge"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)',
-                    padding: '2px var(--space-3)',
-                    borderRadius: '999px',
-                    background: sourceBadgeConfig.background,
-                    color: sourceBadgeConfig.color,
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 500,
-                    marginBottom: 'var(--space-3)',
-                  }}
+                  className={`${styles.sourceBadge} ${sourceBadgeConfig.className}`}
                 >
                   <svg
                     viewBox="0 0 24 24"

@@ -136,9 +136,29 @@ const ratingMap: Record<Rating, Rating> = {
 项目中定义掌握的标准：
 
 ```typescript
-// 状态为 review，且复习次数 ≥ 3，且无遗忘记录
-const isMastered = card.status === 'review' && card.reps >= 3 && card.lapses === 0;
+// 状态为 review，且复习次数 ≥ 2，且遭遇次数 ≥ 2，且当前回忆概率 ≥ 0.9
+const isMastered =
+  status === 'review' &&
+  reps >= 2 &&
+  encounterCount >= 2 &&
+  getRetrievability(card) >= 0.9;
 ```
+
+### getRetrievability 衰减公式
+
+`getRetrievability` 替代早期 30 天硬编码阈值，基于 FSRS 遗忘曲线实时计算回忆概率：
+
+```
+R = exp(-t/S) * (1 - D) + D
+```
+
+其中：
+- `R`：回忆概率（0-1），即 getRetrievability 返回值
+- `t`：距离上次复习的时间（天）
+- `S`：稳定性（stability）
+- `D`：难度（difficulty）
+
+当 `R >= 0.9` 时视为当前可回忆，配合 `status`/`reps`/`encounterCount` 共同判定掌握状态。
 
 ## 数据分析
 

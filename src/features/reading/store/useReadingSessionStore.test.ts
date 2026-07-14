@@ -20,7 +20,7 @@ import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import * as passageGenModule from '../services/passageGenerator';
-import type { MemoryCard, Passage, TokenOccurrence } from '../../../types';
+import type { MemoryCard, Passage, TokenOccurrence, Language } from '../../../types';
 
 function makeCard(
   partial: Partial<MemoryCard> & Pick<MemoryCard, 'lexemeGroupId' | 'lemma' | 'objectiveDifficulty'>,
@@ -50,7 +50,7 @@ function seedCards(cards: MemoryCard[]): void {
   useMemoryStore.setState({ cards: map });
 }
 
-function makeMockPassage(language: 'en' | 'de', difficulty: number): Passage {
+function makeMockPassage(language: Language, difficulty: number): Passage {
   return {
     id: `passage-${language}-${difficulty}`,
     language,

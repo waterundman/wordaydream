@@ -79,11 +79,12 @@ npm run preview
 
 在设置面板配置：
 
-| Provider | 说明 | 默认模型 |
-|----------|------|----------|
-| **Mock** | 无需API Key，使用内置示例数据 | - |
-| **OpenAI** | 需配置 API Key | gpt-4o-mini |
-| **Anthropic** | 需配置 API Key | claude-3-5-sonnet-20241022 |
+| Provider | 说明 | API Key | Base URL | 默认模型 |
+|----------|------|---------|----------|----------|
+| **Mock** | 无需API Key，使用内置示例数据 | - | - | - |
+| **OpenAI** | 需配置 API Key | `OPENAI_API_KEY` | `https://api.openai.com/v1` | gpt-4o-mini |
+| **Anthropic** | 需配置 API Key | `ANTHROPIC_API_KEY` | `https://api.anthropic.com` | claude-3-5-sonnet-20241022 |
+| **DeepSeek** | 需配置 API Key | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/v1` | deepseek-chat |
 
 API Key 存储在浏览器 localStorage，不上传服务器。
 
@@ -98,6 +99,13 @@ API Key 存储在浏览器 localStorage，不上传服务器。
 
 ```
 src/
+├── domain/                # 领域层 (v2.0.0+ 事件总线 + 领域逻辑)
+│   ├── events.ts          # 事件总线 (消除 store 循环依赖)
+│   ├── memoryDomain.ts    # 记忆领域逻辑
+│   ├── wordlistDomain.ts  # 词表领域逻辑
+│   └── storeAccessors.ts  # store 访问器
+├── data/                  # 数据层 (v2.0.0+ CSV 词库)
+│   └── wordlists/         # CSV/JSON 词库 (en/de, A1-B2)
 ├── features/              # 功能模块
 │   ├── reading/           # 阅读功能模块
 │   │   ├── components/    # 阅读相关组件
@@ -114,15 +122,31 @@ src/
 │   │   ├── components/    # 分析图表组件
 │   │   └── store/         # 分析数据存储
 │   ├── dictionary/        # 字典查询模块
-│   │   └── services/      # 字典适配器（Wiktionary集成）
+│   │   └── services/      # 字典适配器（Wiktionary集成 + Gloss 缓存）
 │   ├── evaluation/        # 答题评估模块
 │   │   └── services/      # 答案评估服务
 │   ├── llm/               # LLM服务路由模块
 │   │   ├── services/      # LLM路由、连接测试
 │   │   └── config/        # LLM提示词配置
-│   └── settings/          # 设置管理模块
-│       ├── components/    # 设置面板组件
-│       └── store/         # 设置状态管理
+│   ├── settings/          # 设置管理模块
+│   │   ├── components/    # 设置面板组件
+│   │   └── store/         # 设置状态管理
+│   ├── achievements/      # 成就系统模块
+│   │   ├── components/    # 成就 Toast、列表 Modal
+│   │   ├── services/      # 成就引擎
+│   │   └── store/         # 成就状态管理
+│   ├── home/              # 主页模块
+│   │   └── components/    # Hero/TodayCard/ProgressRing/AchievementWall
+│   ├── streak/            # 连续学习天数模块
+│   │   └── store/         # streak 状态管理
+│   ├── wordlist/          # 词表浏览模块 (v1.6.0+)
+│   │   ├── components/    # 词表行组件
+│   │   └── store/         # 词表状态管理
+│   ├── graduation/        # 毕业机制模块 (v1.6.0+)
+│   │   └── components/    # 毕业弹窗
+│   └── difficulty-coupling/ # 难度耦合模块
+│       ├── components/    # 难度建议组件
+│       └── services/      # 难度评估服务
 ├── components/            # 通用UI组件
 │   ├── ErrorBoundary.tsx  # 全局错误边界
 │   ├── EmptyState.tsx     # 通用空状态组件
@@ -132,8 +156,6 @@ src/
 │   └── useKeyboardShortcuts.ts # 快捷键管理
 ├── types/                 # TypeScript类型定义
 │   └── index.ts           # 核心类型定义
-├── lib/                   # 工具库
-│   └── persistenceMiddleware.ts # Zustand持久化中间件
 └── utils/                 # 工具函数
 ```
 

@@ -33,7 +33,7 @@ import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { InteractivePassage } from './InteractivePassage';
 import { useReadingSessionStore } from '../store/useReadingSessionStore';
 import { normalizeText } from '../../llm/utils/textNormalize';
-import type { Passage, ReadingSession, TokenOccurrence } from '../../../types';
+import type { Passage, ReadingSession, TokenOccurrence, Language } from '../../../types';
 
 // v2.2.3 Stage 2 (D2): mock CSS module 以便检查段落 visible class (css:false 下 styles 为空对象)
 vi.mock('./InteractivePassage.module.css', () => ({
@@ -69,7 +69,7 @@ beforeAll(() => {
   }
 });
 
-function makeSession(text: string, language: 'en' | 'de' = 'en', tokens: TokenOccurrence[] = []): ReadingSession {
+function makeSession(text: string, language: Language = 'en', tokens: TokenOccurrence[] = []): ReadingSession {
   const passage: Passage = {
     id: `test-passage-${Date.now()}`,
     language,

@@ -150,6 +150,20 @@
   --home-paragraph-leading: 1.8;    /* 段落行高 */
   --home-progress-label-size: 0.875rem;  /* 14px 进度副标签 */
   --home-progress-label-color: var(--color-text-tertiary, #78716c);
+
+  /* === v2.2.4 Stage 3: 状态色变量 (danger/warning/success/error) === */
+  --color-danger: #c45c4a;
+  --color-danger-hover: #a84d3d;
+  --color-danger-text: #ffffff;
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #f59e0b;
+  --color-warning-text: #92400e;
+  --color-warning-accent: #f59e0b;
+  --color-success-bg: #f0fdf4;
+  --color-success-text: #15803d;
+  --color-error-strong: #b91c1c;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fca5a5;
 }
 
 * {
@@ -241,6 +255,20 @@ input {
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
+
+  /* === v2.2.4 Stage 3: 状态色变量 (danger/warning/success/error) === */
+  --color-danger: #e0705f;
+  --color-danger-hover: #c45c4a;
+  --color-danger-text: #ffffff;
+  --color-warning-bg: #422006;
+  --color-warning-border: #f59e0b;
+  --color-warning-text: #fcd34d;
+  --color-warning-accent: #f59e0b;
+  --color-success-bg: #052e16;
+  --color-success-text: #4ade80;
+  --color-error-strong: #ef4444;
+  --color-error-bg: #450a0a;
+  --color-error-border: #dc2626;
 }
 
 /* Theme: sepia mode (warm cream, easy on eyes) */
@@ -270,6 +298,20 @@ input {
   --shadow-sm: 0 1px 2px rgba(91, 70, 54, 0.08);
   --shadow-md: 0 4px 12px rgba(91, 70, 54, 0.12);
   --shadow-lg: 0 12px 24px rgba(91, 70, 54, 0.16);
+
+  /* === v2.2.4 Stage 3: 状态色变量 (danger/warning/success/error) === */
+  --color-danger: #c45c4a;
+  --color-danger-hover: #a84d3d;
+  --color-danger-text: #faf8f5;
+  --color-warning-bg: #f4ecd8;
+  --color-warning-border: #c9a227;
+  --color-warning-text: #7c5e10;
+  --color-warning-accent: #c9a227;
+  --color-success-bg: #e8f5e9;
+  --color-success-text: #2e7d32;
+  --color-error-strong: #b91c1c;
+  --color-error-bg: #f5e6e6;
+  --color-error-border: #fca5a5;
 }
 
 /* Theme transition (smooth, respects reduced-motion) */

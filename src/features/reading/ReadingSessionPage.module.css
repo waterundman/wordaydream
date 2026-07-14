@@ -286,6 +286,33 @@
   padding: var(--space-8) 0;
 }
 
+/* v2.2.4 Stage 3 (D6): passage 来源标签 — inline style 提取 */
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  margin-bottom: var(--space-3);
+}
+
+.sourceBadgeLlm {
+  color: var(--color-ink);
+  background: var(--color-paper);
+}
+
+.sourceBadgeMixed {
+  color: var(--color-ink);
+  background: var(--color-warning-bg);
+}
+
+.sourceBadgeMock {
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-subtle, #f5f5f4);
+}
+
 .loading {
   display: flex;
   flex-direction: column;

@@ -5,6 +5,99 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3] — 2026-07-XX
+
+### 组件优化
+
+- Stage 1: alignment validator Step 4.5 宽松匹配 + wordlist 补偿
+- Stage 2: InteractivePassage data-testid + prefers-reduced-motion + 焦点可见性
+- Stage 3: WordlistPage inline style 清理 + ReviewSessionPage useMemo + 实时计时器
+
+#### 测试
+- 527/527 PASS
+
+## [2.2.2] — 2026-07-XX
+
+### Hotfix
+
+- Bug 4: 已学词汇列表不显示 (deriveStatus 'new' → 'unseen' 语义错配)
+- Bug 5: 文章生成返回相同标题 (prompt 主题 hint + 低 temperature)
+- Bug 6: 词汇标注错误匹配 (indexOf 子串匹配 "go" → "good")
+- Bug 7: 练习量少 + 复习时机不符合记忆曲线 (getDueCards 不过滤 + 新卡 due=now)
+
+#### 测试
+- 512/512 PASS
+
+## [2.2.1] — 2026-07-XX
+
+### Hotfix
+
+- Bug 1: passageGenerator LRU 缓存导致连续生成返回同一文章
+- Bug 2: loadFromHistory/loadSession 竞态导致复习组件冲撞
+- Bug 3: 评估 fallback 链路断裂导致词汇永不记录
+
+#### 测试
+- 492/492 PASS
+
+## [2.2.0] — 2026-07-XX
+
+### 架构迭代
+
+- 领域层完善
+- FSRS 参数优化
+- Gloss 持久化缓存
+- LLM proxy 架构迁移
+
+## [2.1.1] — 2026-07-XX
+
+### FSRS 参数优化修复
+
+- fsrsOptimizer 降级路径修复
+- Vite 配置 exclude + alias 修复
+
+## [2.1.0] — 2026-07-XX
+
+### FSRS 参数优化 + Gloss 缓存
+
+- @open-spaced-repetition/binding 动态 import + 降级
+- Gloss 持久化缓存 (sourceHash 校验)
+- Settings 面板重构
+
+## [2.0.0] — 2026-07-XX
+
+### 领域事件 + CSV 词库
+
+- events.ts 事件总线 (消除 useMemoryStore → useWordlistStore 循环依赖)
+- CSV 词库管理 (IndexedDB 两层存储)
+- 领域层抽取 (wordlistDomain, memoryDomain)
+
+## [1.9.0] — 2026-07-XX
+
+### LLM 集成
+
+- 4 provider 支持 (mock/openai/anthropic/deepseek)
+- LLM proxy 架构 (server/llm-proxy.js, 端口 3001)
+- alignment validator 5 步协议
+- 截断 JSON 修复层
+
+## [1.8.0] — 2026-07-XX
+
+### InteractivePassage v2 重构
+
+- 段落级渲染 + stagger 动画
+- token 交互重构 (LinkedOccurrenceHighlight)
+- Replay 模式
+
+## [1.6.1] — 2026-07-XX
+
+### getRetrievability 衰减 + 困难词排序
+
+- getRetrievability 替代 30 天硬编码 (R = exp(-t/S) * (1-D) + D)
+- 困难词按 lapses 降序排序
+
+#### 测试
+- 68/68 PASS
+
 ## [1.6.0] — 2026-07-12
 
 ### Stage 3.6: 学习闭环 (毕业机制 + 词表浏览页 + 复习编排 C)

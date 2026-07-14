@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type ToastType = 'success' | 'error' | 'warning';
 
@@ -33,51 +32,41 @@ interface ToastStore {
 // removeToast 时 clearTimeout 避免累积, 测试环境避免跨测试泄漏.
 const toastTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-export const useToastStore = create<ToastStore>()(
-  persist(
-    (set) => ({
-      toasts: [],
-      notifications: {},
-      addToast: (type, message) => {
-        const id = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-        set((state) => ({ toasts: [...state.toasts, { id, type, message }] }));
-        const timer = setTimeout(() => {
-          set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-          toastTimers.delete(id);
-        }, 3000);
-        toastTimers.set(id, timer);
-      },
-      removeToast: (id) => {
-        // v1.5.3 fix V2-P3-003: 清除 pending timer 避免泄漏.
-        const timer = toastTimers.get(id);
-        if (timer) {
-          clearTimeout(timer);
-          toastTimers.delete(id);
-        }
-        set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-      },
-      showNotification: (key, message) =>
-        set((state) => ({
-          notifications: { ...state.notifications, [key]: message },
-        })),
-      dismissNotification: (key) =>
-        set((state) => {
-          if (!(key in state.notifications)) return state;
-          const next = { ...state.notifications };
-          delete next[key];
-          return { notifications: next };
-        }),
+// v2.2.4 Stage 2 (D2-4): 移除 persist 中间件. toast 是瞬时状态, 不应持久化;
+// 之前 persist 配置 partialize: () => ({}) 实际未持久化任何字段, 属无用包装.
+export const useToastStore = create<ToastStore>()((set) => ({
+  toasts: [],
+  notifications: {},
+  addToast: (type, message) => {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    set((state) => ({ toasts: [...state.toasts, { id, type, message }] }));
+    const timer = setTimeout(() => {
+      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+      toastTimers.delete(id);
+    }, 3000);
+    toastTimers.set(id, timer);
+  },
+  removeToast: (id) => {
+    // v1.5.3 fix V2-P3-003: 清除 pending timer 避免泄漏.
+    const timer = toastTimers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.delete(id);
+    }
+    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+  },
+  showNotification: (key, message) =>
+    set((state) => ({
+      notifications: { ...state.notifications, [key]: message },
+    })),
+  dismissNotification: (key) =>
+    set((state) => {
+      if (!(key in state.notifications)) return state;
+      const next = { ...state.notifications };
+      delete next[key];
+      return { notifications: next };
     }),
-    {
-      name: 'wordaydream:toast',
-      version: 2,
-      storage: createJSONStorage(() => localStorage),
-      partialize: () => ({}),
-      // v1.5.2 fix L3: 占位 migrate, 未来 schema bump 需补真实迁移逻辑.
-      migrate: (persistedState) => persistedState,
-    },
-  ),
-);
+}));
 
 // 暴露到 window 方便 E2E 测试 (dev/test only, 不影响生产 bundle 行为)
 if (typeof window !== 'undefined' && import.meta.env?.DEV) {

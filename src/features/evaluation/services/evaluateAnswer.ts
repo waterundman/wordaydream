@@ -1,4 +1,4 @@
-import type { AnswerEvaluation, DifficultyLevel } from '../../../types';
+import type { AnswerEvaluation, DifficultyLevel, Language } from '../../../types';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { evaluateAnswerViaLLM } from '../../llm/services/llmAdapter';
 import { lookupEvaluation } from '../../llm/services/mockProvider';
@@ -7,7 +7,7 @@ export async function evaluateAnswer(
   userAnswer: string,
   lemma: string,
   _difficulty: DifficultyLevel,
-  language: 'en' | 'de' = 'en'
+  language: Language = 'en'
 ): Promise<AnswerEvaluation> {
   const { llm } = useSettingsStore.getState();
   if (llm.provider === 'mock' || !llm.enabled) {

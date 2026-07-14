@@ -129,15 +129,6 @@ export function setActiveShortcutScope(scope: ShortcutScope) {
 }
 
 /**
- * 获取当前活动的快捷键作用域
- *
- * @returns 当前作用域
- */
-export function getActiveShortcutScope(): ShortcutScope {
-  return currentScope;
-}
-
-/**
  * 注册键盘快捷键
  *
  * @param componentId 组件 ID
@@ -162,21 +153,6 @@ export function registerKeyboardShortcuts(
 export function unregisterKeyboardShortcuts(componentId: string) {
   activeShortcuts.delete(componentId);
   detachGlobalListener();
-}
-
-/**
- * 获取所有已注册的快捷键
- *
- * @returns 快捷键数组
- */
-export function getAllRegisteredShortcuts(): KeyboardShortcut[] {
-  const all: KeyboardShortcut[] = [];
-  for (const [, entries] of activeShortcuts) {
-    for (const entry of entries) {
-      all.push(entry.shortcut);
-    }
-  }
-  return all;
 }
 
 /**

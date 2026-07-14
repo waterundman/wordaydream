@@ -1,5 +1,5 @@
 import type { LLMProviderClient, GenerateOptions } from './provider';
-import type { LLMResponse } from '../../../types';
+import type { LLMResponse, Language } from '../../../types';
 import type { PassageJsonPayload } from './jsonParser';
 import { withErrorHandler } from '../../../hooks/useErrorHandler';
 
@@ -154,7 +154,7 @@ export const SIMPLE_REMEDY_TEMPLATES_DE: Record<string, string> = {
   'überdauern': 'Alte Mauern überdauern die Zeit.',
 };
 
-export function lookupRemedySnippet(lemma: string, _language: 'en' | 'de'): {
+export function lookupRemedySnippet(lemma: string, _language: Language): {
   simpleSentence: string;
   sentenceTranslation: string;
 } {
@@ -165,7 +165,7 @@ export function lookupRemedySnippet(lemma: string, _language: 'en' | 'de'): {
   return { simpleSentence: sentence, sentenceTranslation: translation };
 }
 
-export function lookupGloss(lemma: string, _language: 'en' | 'de'): {
+export function lookupGloss(lemma: string, _language: Language): {
   partOfSpeech: string;
   definitions: string[];
 } {
@@ -241,7 +241,7 @@ export const DEFAULT_SUCCESS_PAYLOAD: PassageJsonPayload = {
     { lemma: 'bird', surfaceForm: 'Birds', startIndex: 102, endIndex: 107, partOfSpeech: 'noun' },
     { lemma: 'garden', surfaceForm: 'garden', startIndex: 120, endIndex: 126, partOfSpeech: 'noun' },
   ],
-} as PassageJsonPayload;
+};
 
 /**
  * v1.3.0 Stage 3: 给现有 tokens 数组中的每个 token 打 alignmentStatus='perfect' 标签

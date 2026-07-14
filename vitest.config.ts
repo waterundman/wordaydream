@@ -27,5 +27,6 @@ export default defineConfig({
       'netlify/edge-functions/**/*.{test,spec}.{ts,tsx}',
     ],
     css: false,
+    pool: 'threads',
   },
 });

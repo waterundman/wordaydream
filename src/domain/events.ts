@@ -5,10 +5,7 @@
  * 同步分发 (不 fire-and-forget), 确保订阅方在同一 tick 处理.
  * 0 新依赖 (纯 Set<Listener> 实现).
  *
- * v2.1.0 Stage 2 (Contract 63): 扩展 'reading:completed' 事件.
- * useReadingHistoryStore.completeEntry 在阅读完成时发布,
- * payload 包含 entryId / passageId / language / difficulty,
- * 供订阅方 (如 ReviewPromptBanner, TodayCard) 响应阅读完成.
+ * v2.2.4 Stage 2 (D2-1): 移除 'reading:completed' 事件 (死事件, 无生产订阅者).
  */
 
 export interface MemoryCardsUpdatedPayload {
@@ -16,21 +13,7 @@ export interface MemoryCardsUpdatedPayload {
   isReview: boolean;
 }
 
-/**
- * v2.1.0 Stage 2 (Contract 63): 'reading:completed' 事件 payload.
- * 由 useReadingHistoryStore.completeEntry 发布.
- * - entryId: 历史 entry 的唯一 ID
- * - passageId: 完成阅读的 Passage ID (来自 HistoryEntry.passage.id)
- * - language / difficulty: 会话配置 (供订阅方按语言/难度过滤)
- */
-export interface ReadingCompletedPayload {
-  entryId: string;
-  passageId: string;
-  language: import('../types').Language;
-  difficulty: import('../types').DifficultyLevel;
-}
-
-type EventName = 'memory:cards-updated' | 'reading:completed';
+type EventName = 'memory:cards-updated';
 type Listener<T> = (payload: T) => void;
 
 const listeners: Map<EventName, Set<Listener<unknown>>> = new Map();

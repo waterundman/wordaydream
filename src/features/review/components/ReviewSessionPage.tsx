@@ -9,7 +9,7 @@ import { useGlobalShortcuts } from '../../reading/hooks/useGlobalShortcuts';
 import { useAppModeStore } from '../../../hooks/useAppModeStore';
 import styles from './ReviewSessionPage.module.css';
 import cardStyles from './ReviewCard.module.css';
-import type { Rating } from '../../../types';
+import type { Rating, Language } from '../../../types';
 
 export function ReviewSessionPage() {
   const {
@@ -243,7 +243,7 @@ export function ReviewSessionPage() {
 interface ReviewCardProps {
   cardId: string;
   lemma: string;
-  language: 'en' | 'de';
+  language: Language;
   objectiveDifficulty: number;
   contextSentence: string;
   userAnswer: string;

@@ -42,7 +42,7 @@ function StatusIcon({ status }: { status: WordStatus }) {
         <path
           d="M7.5 12.5l3 3 6-7"
           fill="none"
-          stroke="#ffffff"
+          stroke="var(--color-text-inverse, #ffffff)"
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"

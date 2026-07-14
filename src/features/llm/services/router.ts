@@ -57,6 +57,19 @@ import { getLLMConfig } from '../config/llmConfig';
 // v1.4.1 Stage 2: 离线模式 store (auto-fallback on navigator.onLine === false)
 import { useOfflineModeStore } from '../store/offlineMode';
 
+/**
+ * v2.2.4 Stage 2 (D2-2): 安全派发持久通知.
+ * 通知失败 (e.g. store 未初始化 / 抛错) 只 warn 不阻塞主流程,
+ * 替代之前 6 处 `try { useToastStore...showNotification } catch { // 空 }` 重复块.
+ */
+function safeNotify(key: string, message: string): void {
+  try {
+    useToastStore.getState().showNotification(key, message);
+  } catch (e) {
+    console.warn(`[router] notification '${key}' failed:`, e);
+  }
+}
+
 /** v1.3.0: JSON 解析尝试次数的合法范围与默认值 */
 const MIN_JSON_ATTEMPTS = 1;
 const MAX_JSON_ATTEMPTS = 5;
@@ -101,6 +114,7 @@ function log(level: 'info' | 'warn' | 'error', message: string) {
  */
 function getSchemaForExpectJson(
   expectJson: ExpectJson | undefined
+// eslint-disable-next-line typescript/no-explicit-any -- ZodType<Input> 逆变
 ): z.ZodType<any> | undefined {
   switch (expectJson) {
     case true:
@@ -351,13 +365,7 @@ async function generateWithJsonRetry(
 
       if (result.fallbackToMock) {
         log('warn', 'Provider returned fallbackToMock, switching to mock');
-        try {
-          useToastStore
-            .getState()
-            .showNotification(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
-        } catch {
-          // 通知失败不应阻塞主流程
-        }
+        safeNotify(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
         // v2.2.1 Stage 2 (Bug 3 主因 B): fallback 时标记 fallbackToMock: true,
         // 让 evaluateAnswerViaLLM 能检测到并走 mockEvaluate, 而非解析 passage 文本.
         return { ...(await new MockLLMProvider().generate(options)), fallbackToMock: true };
@@ -400,13 +408,7 @@ async function generateWithJsonRetry(
     `All ${maxAttempts} attempts failed (last error: ${lastError}; last text length: ${lastRawText.length}), falling back to mock`
   );
   // v1.2.0: 派发持久通知 (banner) + 保留 console.warn 双提示
-  try {
-    useToastStore
-      .getState()
-      .showNotification(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
-  } catch {
-    // 通知失败不应阻塞主流程
-  }
+  safeNotify(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
   // v2.2.1 Stage 2 (Bug 3 主因 B): fallback 时标记 fallbackToMock: true,
   // 让 evaluateAnswerViaLLM 能检测到并走 mockEvaluate, 而非解析 passage 文本.
   return { ...(await new MockLLMProvider().generate(options)), fallbackToMock: true };
@@ -444,12 +446,10 @@ export async function generateWithFallback(
     log('warn', 'Browser reports offline, short-circuiting to mock provider');
     try {
       useOfflineModeStore.getState().recordProviderWhenOffline(settings.provider);
-      useToastStore
-        .getState()
-        .showNotification(LLM_OFFLINE_NOTIFICATION_KEY, LLM_OFFLINE_NOTIFICATION_MESSAGE);
-    } catch {
-      // 通知派发失败不应阻塞主流程
+    } catch (e) {
+      console.warn('[router] recordProviderWhenOffline failed:', e);
     }
+    safeNotify(LLM_OFFLINE_NOTIFICATION_KEY, LLM_OFFLINE_NOTIFICATION_MESSAGE);
     return new MockLLMProvider().generate(options);
   }
 
@@ -504,13 +504,7 @@ export async function generateWithFallback(
 
     if (result.fallbackToMock) {
       log('warn', 'Provider returned fallbackToMock, switching to mock');
-      try {
-        useToastStore
-          .getState()
-          .showNotification(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
-      } catch {
-        // 通知失败不应阻塞主流程
-      }
+      safeNotify(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
       const mock = new MockLLMProvider();
       return mock.generate(options);
     }
@@ -520,24 +514,12 @@ export async function generateWithFallback(
   } catch (error) {
     if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
       log('warn', `Request timed out after ${effectiveTimeout}s, falling back to mock`);
-      try {
-        useToastStore
-          .getState()
-          .showNotification(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
-      } catch {
-        // 通知失败不应阻塞主流程
-      }
+      safeNotify(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
       return new MockLLMProvider().generate(options);
     }
 
     log('error', `Generation failed: ${(error as Error).message}`);
-    try {
-      useToastStore
-      .getState()
-      .showNotification(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
-    } catch {
-      // 通知失败不应阻塞主流程
-    }
+    safeNotify(LLM_FALLBACK_NOTIFICATION_KEY, LLM_FALLBACK_NOTIFICATION_MESSAGE);
     return new MockLLMProvider().generate(options);
   }
 }

@@ -22,7 +22,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
-import type { TokenOccurrence } from '../../../types';
+import type { TokenOccurrence, Language } from '../../../types';
 
 const makeToken = (overrides: Partial<TokenOccurrence> = {}): TokenOccurrence => ({
   id: 'tok-1',
@@ -160,7 +160,7 @@ describe('glossAdapter.functional (v1.5.2 Stage 4 — T-LLM-1..3, Contract 30 NE
     const token = makeToken({ surfaceForm: 'revolutionary' });
     const providers = {
       heuristic: async (t: TokenOccurrence) => ({ token: t, gloss: '[heuristic]', source: 'heuristic' as const }),
-      mock: async (t: TokenOccurrence, language: 'en' | 'de') => {
+      mock: async (t: TokenOccurrence, language: Language) => {
         mockCalled = true;
         return mockGloss(t, language);
       },
