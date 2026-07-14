@@ -158,3 +158,49 @@ describe('useMemoryStore persist round-trip (T01+T02)', () => {
     }
   });
 });
+
+/**
+ * v2.2.2 Stage 2 (Bug 7): getDueCards states 参数过滤
+ *
+ * 覆盖 test_spec:
+ * - T11 [critical]: getDueCards states 参数过滤 — 传 states 只返回指定状态的 due 卡,
+ *   不传 states 返回全部 due 卡 (向后兼容).
+ */
+describe('v2.2.2 Stage 2 (Bug 7): getDueCards states 参数过滤 (T11)', () => {
+  it('T11: getDueCards states 参数过滤 — 只返回指定状态的 due 卡', async () => {
+    const { useMemoryStore } = await import('./useMemoryStore');
+    const map = new Map<string, MemoryCard>();
+    // 4 张卡, 全部 due=0 (过期), 不同状态
+    map.set('g-new', makeCard({
+      lexemeGroupId: 'g-new', lemma: 'a', objectiveDifficulty: 1, status: 'new', due: 0,
+    }));
+    map.set('g-learn', makeCard({
+      lexemeGroupId: 'g-learn', lemma: 'b', objectiveDifficulty: 1, status: 'learning', due: 0,
+    }));
+    map.set('g-rev', makeCard({
+      lexemeGroupId: 'g-rev', lemma: 'c', objectiveDifficulty: 1, status: 'review', due: 0,
+    }));
+    map.set('g-relearn', makeCard({
+      lexemeGroupId: 'g-relearn', lemma: 'd', objectiveDifficulty: 1, status: 'relearning', due: 0,
+    }));
+    useMemoryStore.setState({ cards: map });
+
+    // 不传 states: 返回全部 4 张 due 卡 (向后兼容)
+    const all = useMemoryStore.getState().getDueCards();
+    expect(all).toHaveLength(4);
+
+    // 传 states=['review','relearning']: 只返回 2 张
+    const filtered = useMemoryStore
+      .getState()
+      .getDueCards(undefined, undefined, ['review', 'relearning']);
+    expect(filtered).toHaveLength(2);
+    expect(filtered.every((c) => c.status === 'review' || c.status === 'relearning')).toBe(true);
+    expect(filtered.some((c) => c.status === 'new')).toBe(false);
+    expect(filtered.some((c) => c.status === 'learning')).toBe(false);
+
+    // 传 states=['new']: 只返回 1 张 new 卡
+    const newOnly = useMemoryStore.getState().getDueCards(undefined, undefined, ['new']);
+    expect(newOnly).toHaveLength(1);
+    expect(newOnly[0].status).toBe('new');
+  });
+});

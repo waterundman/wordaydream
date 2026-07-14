@@ -110,10 +110,16 @@ export function createInitialMemoryCard(
   const initialDifficulty = difficultyToInitialDifficulty[objectiveDifficulty];
   const now = Date.now();
 
+  // v2.2.2 Stage 2 (Bug 7): 新卡 due 后延 4 小时, 避免刚标注的词立即进入复习队列.
+  // new 卡 due=now 会让 getDueCards 立即返回它, 导致 loadSession 把刚学的词当 reviewWords
+  // 注入下一篇 passage, 违反记忆曲线. 真正的首次复习由用户评级后由 FSRS 安排
+  // (rateCard → scheduleNextReview 会重新计算 due), 此处后延仅影响"未评级新卡"的 due.
+  const LEARNING_DELAY_MS = 4 * 60 * 60 * 1000; // 4 小时
   const card: Card = {
     ...emptyCard,
     difficulty: initialDifficulty,
     state: State.New,
+    due: new Date(now + LEARNING_DELAY_MS),
   };
 
   return fsrsCardToMemoryCard(

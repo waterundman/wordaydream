@@ -10,7 +10,7 @@
  *   1. exact match      text.slice(start, end) === surfaceForm      -> 'perfect'
  *   2. case-insensitive 切片的 lower === surfaceForm 的 lower        -> 'corrected'
  *   3. fuzzy match      Levenshtein(sliced, surfaceForm) <= 2        -> 'corrected'
- *   4. first index      text.indexOf(surfaceForm) >= 0              -> 'fallback'
+ *   4. word-boundary    regex word-boundary match of surfaceForm    -> 'fallback'
  *   5. not found                                                       -> 'dropped'
  *
  * 调用方过滤 status === 'dropped' 的 token, 不进入渲染.
@@ -133,12 +133,15 @@ export function validateToken(token: TokenLike, text: string): AlignmentResult {
     };
   }
 
-  // Step 4: first index search — 用 text.indexOf(surfaceForm) 找第一次出现
-  const idx = text.indexOf(surfaceForm);
-  if (idx >= 0) {
+  // Step 4: first index search — 用词边界正则找第一次出现
+  // v2.2.2 Stage 1 (Bug 6): 词边界匹配, 避免子串误匹配 (如 "go" 匹配 "good")
+  const escapedSurface = surfaceForm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const boundaryRe = new RegExp(`(?<![\\p{L}\\p{N}])${escapedSurface}(?![\\p{L}\\p{N}])`, 'iu');
+  const match = boundaryRe.exec(text);
+  if (match) {
     return {
-      start: idx,
-      end: idx + surfaceForm.length,
+      start: match.index,
+      end: match.index + match[0].length,
       status: 'fallback',
       originalOffset,
       surfaceForm,

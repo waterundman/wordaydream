@@ -103,9 +103,9 @@ describe('validateToken (Stage 2)', () => {
     expect(r3.status).toBe('corrected');
     expect(r3.surfaceForm).toBe('公园');
 
-    // 改测 first index fallback: 给空 range (end <= start), inRange false,
-    // 跳过 exact/case/fuzzy, 走 indexOf
-    const cn2 = '今天阳光明媚, 我们去公园散步';
+    // 改测 first index fallback: 给空 range (end <= start), inRange true 但 sliced 为空,
+    // 跳过 exact/case/fuzzy, 走词边界正则 (v2.2.2 Bug 6: 需词边界匹配, CJK 词需被非字母字符环绕)
+    const cn2 = '今天 阳光 公园 散步';
     const r5 = validateToken({ startIndex: 5, endIndex: 5, surfaceForm: '公园' }, cn2);
     expect(r5.status).toBe('fallback');
     expect(r5.start).toBe(cn2.indexOf('公园'));

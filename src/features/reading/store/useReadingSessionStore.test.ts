@@ -19,6 +19,7 @@ import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
+import * as passageGenModule from '../services/passageGenerator';
 import type { MemoryCard, Passage, TokenOccurrence } from '../../../types';
 
 function makeCard(
@@ -262,5 +263,78 @@ describe('useReadingSessionStore loadFromHistory resetResolved (v2.1.0 Stage 4 C
     // 原 passage 对象的 tokens 不受影响
     expect(passage.tokens.map((t) => t.isResolved)).toEqual(originalResolvedFlags);
     expect(passage.tokens[0].isResolved).toBe(true);
+  });
+});
+
+/**
+ * v2.2.2 Stage 2 (Bug 7): loadSession 注入前按状态过滤
+ *
+ * 覆盖 test_spec:
+ * - T10 [critical]: loadSession 过滤 new/learning 卡片, 只注入 review/relearning
+ */
+describe('v2.2.2 Stage 2 (Bug 7): loadSession 过滤 new/learning 卡片', () => {
+  beforeEach(() => {
+    useMemoryStore.setState({ cards: new Map() });
+    useReadingHistoryStore.setState({ history: [], maxHistory: 50 });
+    useStreakStore.setState({ currentStreak: 0, lastStudyDate: null });
+    useReadingSessionStore.setState({
+      session: null,
+      activeOccurrenceId: null,
+      hoveredGroupId: null,
+      activeGrammarPointId: null,
+      hoveredGrammarTypeId: null,
+      isLoading: false,
+      lastConfig: null,
+      currentHistoryId: null,
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('T10: loadSession 过滤 new/learning 卡片, 只注入 review/relearning 给 generatePassage', async () => {
+    // seed: 1 new + 1 learning + 1 review + 1 relearning, 全部 due=0 (过期)
+    // makeCard 不设 language → getDueCards 用 lemma 推断, 小写英文词通过 'en' 过滤
+    const map = new Map<string, MemoryCard>();
+    map.set('g-new', makeCard({
+      lexemeGroupId: 'g-new', lemma: 'newword', objectiveDifficulty: 1, status: 'new',
+    }));
+    map.set('g-learn', makeCard({
+      lexemeGroupId: 'g-learn', lemma: 'learnword', objectiveDifficulty: 1, status: 'learning',
+    }));
+    map.set('g-rev', makeCard({
+      lexemeGroupId: 'g-rev', lemma: 'revword', objectiveDifficulty: 1, status: 'review',
+    }));
+    map.set('g-relearn', makeCard({
+      lexemeGroupId: 'g-relearn', lemma: 'relearnword', objectiveDifficulty: 1, status: 'relearning',
+    }));
+    useMemoryStore.setState({ cards: map });
+
+    // spy generatePassage: 捕获传给它的 dueCards 参数 (第 3 个参数, index 2)
+    const mockPassage: Passage = {
+      id: 'test-passage-filter',
+      language: 'en',
+      difficulty: 2,
+      text: 'mock text',
+      tokens: [],
+      lexemeGroups: [],
+      grammarPoints: [],
+    };
+    const genSpy = vi
+      .spyOn(passageGenModule, 'generatePassage')
+      .mockResolvedValue(mockPassage);
+    // mock checkAndUnlock 避免成就引擎副作用
+    vi.spyOn(useAchievementStore, 'getState').mockReturnValue({
+      ...useAchievementStore.getState(),
+      checkAndUnlock: vi.fn(),
+    });
+
+    await useReadingSessionStore.getState().loadSession('en', 2);
+
+    // 断言: generatePassage 被调用, 传入的 dueCards 只含 review/relearning
+    expect(genSpy).toHaveBeenCalled();
+    const dueCardsArg = genSpy.mock.calls[0][2] as MemoryCard[];
+    expect(dueCardsArg).toHaveLength(2);
+    expect(dueCardsArg.every((c) => c.status === 'review' || c.status === 'relearning')).toBe(true);
+    expect(dueCardsArg.some((c) => c.status === 'new')).toBe(false);
+    expect(dueCardsArg.some((c) => c.status === 'learning')).toBe(false);
   });
 });

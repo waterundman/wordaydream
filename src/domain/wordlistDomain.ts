@@ -32,14 +32,17 @@ export interface WordProgress {
 
 /**
  * v2: 从 MemoryCard + 现有 progress 派生 WordStatus
- * - new → unseen (词表中存在但用户从未学过)
+ * - new → learning (v2.2.2 Stage 1 Bug 4: 'new' 卡片代表用户已答对但尚未 FSRS 评分,
+ *   addCardFromToken 只在 grade==='correct' 时调用, 应算 'learning' 而非 'unseen')
  * - review && reps>=2 && encounterCount>=2 → mastered 候选, 再判衰减:
  *   - 若 getRetrievability(card) < 0.9 → 降级 learning
  * - learning / relearning / review&&reps<2 / encounterCount<2 → learning
  */
 export function deriveStatus(progress: WordProgress | undefined, card: MemoryCard): WordStatus {
   const enc = progress?.encounterCount ?? 0;
-  if (card.status === 'new') return 'unseen';
+  // v2.2.2 Stage 1 (Bug 4): 'new' 卡片代表用户已答对但尚未 FSRS 评分,
+  // 应算 'learning' 而非 'unseen' (addCardFromToken 只在 grade==='correct' 时调用)
+  if (card.status === 'new') return 'learning';
   if (card.status === 'review' && card.reps >= 2 && enc >= 2) {
     // v1.6.1 Stage 1: retrievability 衰减判定 — 替代原 30 天窗口硬编码
     if (getRetrievability(card) < 0.9) {
@@ -79,6 +82,15 @@ export function syncFromMemoryCards(
     const key = `${language}:${card.lemma.toLowerCase()}`;
     const existing = newProgress[key];
     const status = deriveStatus(existing, card);
+    // v2.2.2 Stage 1 (Bug 4): 不回退守卫 — 已 learning/mastered 的词不被 'new' 卡片打回 unseen
+    // D1-1 后 'new' 卡片产生 'learning' 而非 'unseen', 需同时阻止 'new' 卡片改写已有 learning/mastered 状态
+    if (
+      existing &&
+      (existing.status === 'learning' || existing.status === 'mastered') &&
+      (status === 'unseen' || card.status === 'new')
+    ) {
+      continue;
+    }
     // 保留 encounter 追踪字段, 仅更新 status
     newProgress[key] = makeProgress(status, existing);
   }

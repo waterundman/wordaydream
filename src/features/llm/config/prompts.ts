@@ -97,54 +97,118 @@ REMINDER: Use ONLY English words (no German umlauts ä, ö, ü, ß). Set "langua
 
 /**
  * 难度 → 文本长度 / 标注词数约束
+ *
+ * v2.2.2 Stage 2 (Bug 5): example 字段改为 exampleTopics 数组, 每个难度至少 8-10 个候选主题,
+ * describeDifficulty 随机选一个, 避免低 temperature LLM 逐字复用固定主题导致标题雷同.
+ *
+ * v2.2.2 Stage 2 (Bug 7): tokenRange 提高最低标注词数, 增加单次练习量.
  */
 interface DifficultyConstraints {
   sentenceRange: string;
   tokenRange: string;
   style: string;
-  example: string;
+  // v2.2.2 Stage 2 (Bug 5): 主题池, describeDifficulty 随机选一个 (仅作 style reference, 不要求 LLM 照抄)
+  exampleTopics: string[];
 }
 
 const DIFFICULTY_CONSTRAINTS: Record<DifficultyLevel, DifficultyConstraints> = {
   1: {
     sentenceRange: '3-5 sentences',
-    tokenRange: '5-6 annotated words',
+    tokenRange: '8-10 annotated words',
     style: 'short, concrete, daily-life vocabulary; present tense preferred; simple subject-verb-object clauses',
-    example: 'e.g. a child playing in a park, a family having dinner',
+    exampleTopics: [
+      'a child playing in a park',
+      'a family having dinner together',
+      'a day with a pet at home',
+      'a morning at school',
+      'friends meeting on the weekend',
+      'a slow Sunday morning',
+      'staying inside on a rainy day',
+      'a walk through the neighborhood park',
+      'helping in the kitchen',
+      'waiting at the bus stop',
+    ],
   },
   2: {
     sentenceRange: '3-5 sentences',
-    tokenRange: '5-7 annotated words',
+    tokenRange: '8-12 annotated words',
     style: 'familiar everyday vocabulary, light narrative, simple past / present mix',
-    example: 'e.g. a trip to the market, an ordinary workday',
+    exampleTopics: [
+      'a trip to the market',
+      'an ordinary workday',
+      'a chat with a neighbor',
+      'the morning commute',
+      'an afternoon coffee break',
+      'preparing dinner after work',
+      'a small community event',
+      'a visit to the library',
+      'sorting through old photos',
+      'fixing a bicycle',
+    ],
   },
   3: {
     sentenceRange: '5-8 sentences',
-    tokenRange: '6-8 annotated words',
+    tokenRange: '10-14 annotated words',
     style: 'moderately rich vocabulary, some descriptive language, multiple tenses',
-    example: 'e.g. a short news-style vignette, a personal reflection',
+    exampleTopics: [
+      'a short news-style vignette',
+      'a personal reflection on a change',
+      'a travel observation',
+      'a workplace anecdote',
+      'a cultural experience abroad',
+      'a commentary on a new gadget',
+      'a quiet social observation',
+      'a turning point in life',
+      'an evening at a local café',
+      'revisiting a childhood place',
+    ],
   },
   4: {
     sentenceRange: '8-12 sentences',
-    tokenRange: '7-9 annotated words',
+    tokenRange: '10-14 annotated words',
     style: 'abstract or academic-leaning vocabulary allowed; complex sentence structures',
-    example: 'e.g. an editorial, a thoughtful essay excerpt',
+    exampleTopics: [
+      'an editorial on a civic issue',
+      'a thoughtful essay excerpt on memory',
+      'a discussion of a scientific finding',
+      'a philosophical reflection on time',
+      'a literary analysis passage',
+      'a retrospective on a historical event',
+      'a critique of a public artwork',
+      'an analysis of a social trend',
+      'a meditation on urban solitude',
+      'a commentary on technological change',
+    ],
   },
   5: {
     sentenceRange: '8-12 sentences',
-    tokenRange: '8-10 annotated words',
+    tokenRange: '12-16 annotated words',
     style: 'academic, philosophical, or literary register; dense syntax, abstract nouns',
-    example: 'e.g. a literature review paragraph, a philosophical reflection',
+    exampleTopics: [
+      'a literature review paragraph',
+      'a philosophical reflection on identity',
+      'a passage of literary criticism',
+      'a summary of a scientific study',
+      'an analysis of a historical turning point',
+      'a passage of cultural studies',
+      'a theoretical discussion of language',
+      'an academic argument on ethics',
+      'a reflection on the nature of knowledge',
+      'a critique of a prevailing paradigm',
+    ],
   },
 };
 
 function describeDifficulty(level: DifficultyLevel): string {
   const c = DIFFICULTY_CONSTRAINTS[level];
+  // v2.2.2 Stage 2 (Bug 5): 随机选择主题, 避免每次生成相同标题.
+  // 主题仅作为 style reference, prompt 显式要求 LLM 不要照抄主题.
+  const topic = c.exampleTopics[Math.floor(Math.random() * c.exampleTopics.length)];
   return [
     `Length: ${c.sentenceRange}.`,
     `Annotations: ${c.tokenRange}.`,
     `Style: ${c.style}.`,
-    `Topic hint: ${c.example}.`,
+    `Style reference (do NOT copy the topic, use only as style reference): ${topic}.`,
   ].join(' ');
 }
 
@@ -284,10 +348,13 @@ function buildCotPrefix(language: Language, difficulty: DifficultyLevel): string
 
 /**
  * v1.3.0 Stage 3 测试导出 (T08-T10 CoT 段测试用)
+ *
+ * v2.2.2 Stage 2 (Bug 5): 增加 describeDifficulty 导出, 供 T07 随机主题测试用.
  */
 export const __testing__ = {
   buildCotPrefix,
   COT_PREFIX,
+  describeDifficulty,
 };
 
 /**
@@ -314,7 +381,14 @@ export const PASSAGE_GENERATION_PROMPT_USER = (params: {
   const fewShot = languageSpecificFewShot(language);
   // v1.3.0 Stage 3: CoT prefix 在 user 模板顶部 (system prompt 之后)
   const cotPrefix = buildCotPrefix(language, difficulty);
+  // v2.2.2 Stage 2 (Bug 5): Diversity 指令, 强制 LLM 选 fresh 主题, 不照抄 style reference.
+  const diversityDirective = `Diversity requirement (CRITICAL):
+- The passage topic MUST be fresh and concrete. Do NOT default to the style reference topic shown below.
+- Pick a specific, everyday scenario that differs from generic templates like "a trip to the market".
+- The title should reflect the actual passage content, not a generic "A trip to ..." template.`;
   return `${cotPrefix}
+${diversityDirective}
+
 Generate a reading passage.
 
 Target language: ${language} (MUST be in ${languageName} — code: ${language.toUpperCase()})
@@ -385,7 +459,9 @@ export function buildPassagePrompt(
   wordlistConstraint?: {
     targetWords: string[];
     optionalWords: string[];
-  }
+  },
+  // v2.2.2 Stage 2 (Bug 5): 最近生成的标题黑名单, 注入 prompt 避免重复
+  avoidTitles?: string[]
 ): { system: string; prompt: string; expectJson: true } {
   const reviewWords = dueCards
     .map((c) => c.lemma)
@@ -405,16 +481,38 @@ export function buildPassagePrompt(
     reviewWords,
   });
 
+  // v2.2.2 Stage 2 (Bug 5): 构造 avoidTitles 段落 (有非空黑名单时)
+  const avoidTitlesSection = buildAvoidTitlesSection(avoidTitles);
+
   // v1.6.0: 把词表约束插入到 self-check 之前
-  const prompt = wordlistSection
+  let prompt = wordlistSection
     ? injectWordlistConstraint(basePrompt, wordlistSection)
     : basePrompt;
+
+  // v2.2.2 Stage 2 (Bug 5): 把 avoidTitles 段落也插入到 self-check 之前
+  if (avoidTitlesSection) {
+    prompt = injectWordlistConstraint(prompt, avoidTitlesSection);
+  }
 
   return {
     system,
     prompt,
     expectJson: true,
   };
+}
+
+/**
+ * v2.2.2 Stage 2 (Bug 5): 构造 avoidTitles 黑名单段落.
+ * avoidTitles 为空或全空字符串时返回 null (不注入).
+ */
+function buildAvoidTitlesSection(avoidTitles?: string[]): string | null {
+  if (!avoidTitles || avoidTitles.length === 0) return null;
+  const cleaned = avoidTitles
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  if (cleaned.length === 0) return null;
+  const list = cleaned.map((t) => `  - ${t}`).join('\n');
+  return `Avoid these previously-used titles (pick something completely different):\n${list}`;
 }
 
 /**
@@ -426,7 +524,8 @@ function buildWordlistConstraintSection(constraint?: {
 }): string | null {
   if (!constraint || constraint.targetWords.length === 0) return null;
 
-  const minCover = Math.max(4, Math.ceil(constraint.targetWords.length / 2));
+  // v2.2.2 Stage 2 (Bug 7): 提高 minCover, 推动更多目标词覆盖, 增加单次练习量.
+  const minCover = Math.max(6, Math.ceil(constraint.targetWords.length * 0.75));
   const targetList = constraint.targetWords.map(w => `"${w}"`).join(', ');
   const optionalList = constraint.optionalWords.length > 0
     ? constraint.optionalWords.map(w => `"${w}"`).join(', ')

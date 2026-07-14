@@ -20,7 +20,8 @@ interface MemoryStore {
   // v1.5.3 fix V4-P3-008: 返回类型改为 nullable, 调用方需处理 null.
   getRatingPreviews: (cardId: string) => Record<Rating, { card: MemoryCard; nextReviewAt: number }> | null;
   clearNewlyAdded: () => void;
-  getDueCards: (language?: 'en' | 'de', now?: number) => MemoryCard[];
+  // v2.2.2 Stage 2 (Bug 7): states 可选参数, 让调用方按语义取卡 (向后兼容, 不传时返回全部 due 卡)
+  getDueCards: (language?: 'en' | 'de', now?: number, states?: MemoryCard['status'][]) => MemoryCard[];
   getReviewingCards: () => MemoryCard[];
   resetAll: () => void;
 }
@@ -121,10 +122,13 @@ export const useMemoryStore = create<MemoryStore>()(
 
       clearNewlyAdded: () => set({ newlyAdded: [] }),
 
-      getDueCards: (language, now = Date.now()) => {
+      // v2.2.2 Stage 2 (Bug 7): 增加 states 可选参数, 让调用方按语义取卡
+      // (不传 states 时行为不变, 向后兼容)
+      getDueCards: (language, now = Date.now(), states?: MemoryCard['status'][]) => {
         const result: MemoryCard[] = [];
         for (const card of get().cards.values()) {
           if (card.due > now) continue;
+          if (states && !states.includes(card.status)) continue;
           if (language && card.lemma) {
             // 优先使用 card.language 精确匹配（v1.5.2 修复 H1）
             if (card.language) {

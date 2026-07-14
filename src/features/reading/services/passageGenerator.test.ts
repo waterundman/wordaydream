@@ -608,3 +608,95 @@ describe('generatePassage (v1.6.0 Stage 3.6-C: 复习编排 pacing — dueCards 
     expect(constraint!.targetWords).not.toContain('revword20');
   });
 });
+
+// === v2.2.2 Stage 2 (Bug 5): recentTitles LRU 黑名单 ===
+import { getRecentTitles, clearRecentTitles } from './passageGenerator';
+
+describe('v2.2.2 Stage 2 (Bug 5): recentTitles LRU 黑名单', () => {
+  const enPassageJson = (title: string) => JSON.stringify({
+    language: 'en',
+    difficulty: 1,
+    title,
+    text: 'The cat sat on the mat.',
+    tokens: [
+      { lemma: 'cat', surfaceForm: 'cat', startIndex: 4, endIndex: 7, partOfSpeech: 'noun' },
+      { lemma: 'sit', surfaceForm: 'sat', startIndex: 8, endIndex: 11, partOfSpeech: 'verb' },
+    ],
+  });
+
+  beforeEach(() => {
+    if (typeof window !== 'undefined') window.localStorage.clear();
+    clearPassageCache();
+    clearRecentTitles();
+    clearWordlistCache();
+    useSettingsStore.setState((s) => ({
+      llm: {
+        ...s.llm,
+        enabled: true,
+        provider: 'openai',
+        apiKey: 'test-key',
+        baseUrl: '',
+        model: 'gpt-4o-mini',
+        temperature: 0.5,
+        timeout: 30,
+        maxRetries: 2,
+        streaming: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    clearPassageCache();
+    clearRecentTitles();
+    clearWordlistCache();
+    vi.restoreAllMocks();
+    useWordlistStore.getState().resetAll();
+    useMemoryStore.getState().resetAll();
+    if (typeof window !== 'undefined') window.localStorage.clear();
+  });
+
+  it('T09: getRecentTitles 返回最近 5 个标题 (LRU), 超容量丢弃最旧', async () => {
+    // 用计数器 mock: 每次 generateWithFallback 调用返回不同 title 的 passage JSON.
+    // generatePassage 内部会调用多次 (passage + difficulty eval + grammar),
+    // 但 pushRecentTitle 仅在 passage 成功后调用一次 (用 passage 的 title).
+    let callCounter = 0;
+    vi.spyOn(routerModule, 'generateWithFallback').mockImplementation(() => {
+      callCounter++;
+      return Promise.resolve({ text: enPassageJson(`Title ${callCounter}`) });
+    });
+
+    // 调用 generatePassage 6 次 (forceRefresh=true 跳过缓存读取)
+    // 每次返回的 passage.title 即为 pushRecentTitle 推入的标题
+    const pushedTitles: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const passage = await generatePassage('en', 1, [], undefined, true);
+      pushedTitles.push(passage.title ?? '');
+    }
+
+    // recentTitles 容量 5, 第 1 个标题应被淘汰, 保留最后 5 个
+    const recent = getRecentTitles();
+    expect(recent).toHaveLength(5);
+    // recentTitles 应等于 pushedTitles 的最后 5 个 (顺序一致)
+    expect(recent).toEqual(pushedTitles.slice(1));
+  });
+
+  it('T09b: getRecentTitles 初始为空数组', () => {
+    clearRecentTitles();
+    expect(getRecentTitles()).toEqual([]);
+  });
+
+  it('T09c: 重复标题触发 LRU 去重 (不重复占位)', async () => {
+    // 所有调用返回相同 title, 多次 generatePassage 后 recentTitles 只含 1 个标题
+    vi.spyOn(routerModule, 'generateWithFallback').mockImplementation(() => {
+      return Promise.resolve({ text: enPassageJson('Same Title') });
+    });
+
+    await generatePassage('en', 1, [], undefined, true);
+    await generatePassage('en', 1, [], undefined, true);
+    await generatePassage('en', 1, [], undefined, true);
+
+    const recent = getRecentTitles();
+    // LRU 去重: 3 次推入相同标题, 只保留 1 个 (移到末尾, 不重复占位)
+    expect(recent).toEqual(['Same Title']);
+  });
+});

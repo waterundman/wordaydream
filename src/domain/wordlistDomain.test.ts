@@ -50,10 +50,10 @@ describe('wordlistDomain', () => {
   });
 
   describe('deriveStatus', () => {
-    it('D1: card.status === "new" → returns "unseen" regardless of progress', () => {
+    it('D1: card.status === "new" → returns "learning" (v2.2.2 Bug 4: new 卡已答对, 非 unseen)', () => {
       const card = makeCard({ status: 'new', reps: 5 });
       const progress = makeProgressFixture({ encounterCount: 10 });
-      expect(deriveStatus(progress, card)).toBe('unseen');
+      expect(deriveStatus(progress, card)).toBe('learning');
     });
 
     it('D2: card.status === "review", reps < 2 → returns "learning"', () => {
@@ -129,7 +129,7 @@ describe('wordlistDomain', () => {
       const result = syncFromMemoryCards(cards, existing);
 
       expect(result['en:apple']).toEqual(
-        expect.objectContaining({ status: 'unseen', encounterCount: 0 })
+        expect.objectContaining({ status: 'learning', encounterCount: 0 })
       );
       expect(result['en:banana']).toEqual(
         expect.objectContaining({ status: 'learning' })
@@ -155,7 +155,7 @@ describe('wordlistDomain', () => {
       const result = syncFromMemoryCards(cards, existing);
 
       expect(result['en:apple']).toEqual({
-        status: 'unseen',
+        status: 'learning',
         encounterCount: 7,
         lastEncounterPassageId: 'p-42',
         firstEncounteredAt: 111,
@@ -175,7 +175,38 @@ describe('wordlistDomain', () => {
 
       expect(result['en:apple']).toBeUndefined();
       expect(result['en:banana']).toBeDefined();
-      expect(result['en:banana'].status).toBe('unseen');
+      expect(result['en:banana'].status).toBe('learning');
+    });
+  });
+
+  // v2.2.2 Stage 1 (Bug 4): deriveStatus 语义 + syncFromMemoryCards 不回退守卫
+  describe('v2.2.2 Bug 4: new 卡片语义 + 不回退守卫', () => {
+    it('T01: deriveStatus(card.status="new") 返回 "learning" (非 "unseen")', () => {
+      const card = makeCard({ status: 'new', reps: 0 });
+      expect(deriveStatus(undefined, card)).toBe('learning');
+      expect(deriveStatus(makeProgressFixture({ encounterCount: 3 }), card)).toBe('learning');
+    });
+
+    it('T02: syncFromMemoryCards 不回退 — existing="learning" + card="new" → 保持 "learning"', () => {
+      const card = makeCard({ id: 'c1', lemma: 'apple', status: 'new' });
+      const cards = new Map<string, MemoryCard>([['c1', card]]);
+      const existing: Record<string, WordProgress> = {
+        'en:apple': makeProgressFixture({ status: 'learning', encounterCount: 5 }),
+      };
+      const result = syncFromMemoryCards(cards, existing);
+      expect(result['en:apple'].status).toBe('learning');
+      expect(result['en:apple'].encounterCount).toBe(5);
+    });
+
+    it('T03: syncFromMemoryCards 不回退 — existing="mastered" + card="new" → 保持 "mastered"', () => {
+      const card = makeCard({ id: 'c1', lemma: 'apple', status: 'new' });
+      const cards = new Map<string, MemoryCard>([['c1', card]]);
+      const existing: Record<string, WordProgress> = {
+        'en:apple': makeProgressFixture({ status: 'mastered', encounterCount: 4 }),
+      };
+      const result = syncFromMemoryCards(cards, existing);
+      expect(result['en:apple'].status).toBe('mastered');
+      expect(result['en:apple'].encounterCount).toBe(4);
     });
   });
 

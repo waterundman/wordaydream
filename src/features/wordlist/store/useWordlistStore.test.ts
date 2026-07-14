@@ -75,7 +75,7 @@ describe('useWordlistStore — 词表加载', () => {
 });
 
 describe('useWordlistStore — 进度派生 (syncFromMemoryCards)', () => {
-  it('new 卡片 → unseen', async () => {
+  it('new 卡片 → learning (v2.2.2 Bug 4: new 卡已答对, 非 unseen)', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const cards = new Map([
       ['g1', makeCard({
@@ -88,7 +88,7 @@ describe('useWordlistStore — 进度派生 (syncFromMemoryCards)', () => {
       })],
     ]);
     useWordlistStore.getState().syncFromMemoryCards(cards);
-    expect(useWordlistStore.getState().getWordStatus('en', 'be')).toBe('unseen');
+    expect(useWordlistStore.getState().getWordStatus('en', 'be')).toBe('learning');
   });
 
   it('review && reps>=2 && encounterCount>=2 → mastered (v2 语境闭环)', async () => {

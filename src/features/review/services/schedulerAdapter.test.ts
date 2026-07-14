@@ -186,3 +186,44 @@ describe('v1.8.0 Stage 1: useSettingsStore v5 + schedulerAdapter 可变单例', 
     expect(result.card.status).not.toBe('new');
   });
 });
+
+/**
+ * v2.2.2 Stage 2 (Bug 7): 新卡初始 due 后延 4 小时
+ *
+ * 覆盖 test_spec:
+ * - T12 [critical]: createInitialMemoryCard 的 due 比 now 后延约 4 小时,
+ *   避免刚标注的词立即进入复习队列 (符合记忆曲线).
+ */
+describe('v2.2.2 Stage 2 (Bug 7): createInitialMemoryCard due 后延 4 小时 (T12)', () => {
+  beforeEach(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear();
+    }
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear();
+    }
+    vi.resetModules();
+  });
+
+  it('T12: createInitialMemoryCard 的 due 比 now 后延约 4 小时', async () => {
+    const { createInitialMemoryCard } = await import('./schedulerAdapter');
+
+    const before = Date.now();
+    const card = createInitialMemoryCard('g1', 'test', 2, 'en');
+    const after = Date.now();
+
+    const LEARNING_DELAY_MS = 4 * 60 * 60 * 1000; // 4 小时
+    // due 应在 before + 4h 和 after + 4h 之间 (允许 before/after 的时间漂移)
+    expect(card.due).toBeGreaterThanOrEqual(before + LEARNING_DELAY_MS);
+    expect(card.due).toBeLessThanOrEqual(after + LEARNING_DELAY_MS);
+    // 状态应为 new (未评级)
+    expect(card.status).toBe('new');
+    // firstLearnedAt 应为 now (非 now + 4h)
+    expect(card.firstLearnedAt).toBeGreaterThanOrEqual(before);
+    expect(card.firstLearnedAt).toBeLessThanOrEqual(after);
+  });
+});

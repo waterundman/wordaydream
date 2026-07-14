@@ -141,3 +141,69 @@ describe('buildPassagePrompt (v1.3.0 Stage 3 P1 CoT — chain-of-thought prefix)
   });
 });
 
+/**
+ * v2.2.2 Stage 2 (Bug 5): 主题池随机选择 + Diversity 指令 + avoidTitles 黑名单
+ *
+ * 覆盖 test_spec:
+ * - T07 [critical]: describeDifficulty 返回随机主题 (调用 10 次至少有 2 个不同主题)
+ * - T08 [critical]: buildPassagePrompt 包含 "Diversity requirement" 指令
+ * - T08b [non-critical]: buildPassagePrompt avoidTitles 参数注入黑名单到 prompt
+ */
+describe('v2.2.2 Stage 2 (Bug 5): 主题池随机 + Diversity 指令 + avoidTitles', () => {
+  it('T07: describeDifficulty 返回随机主题 (调用 10 次至少有 2 个不同主题)', () => {
+    const topics = new Set<string>();
+    for (let i = 0; i < 10; i++) {
+      const desc = __testing__.describeDifficulty(2);
+      // 提取 "Style reference (do NOT copy the topic, use only as style reference): ${topic}." 中的 topic
+      const match = desc.match(
+        /Style reference \(do NOT copy the topic, use only as style reference\): (.+?)\.$/
+      );
+      expect(match, `describeDifficulty 输出应含 Style reference: ${desc}`).toBeTruthy();
+      if (match) topics.add(match[1]);
+    }
+    // 难度 2 有 10 个候选主题, 10 次随机调用至少应出现 2 个不同主题
+    expect(topics.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it('T07b: describeDifficulty 每个难度都有 exampleTopics 且不少于 8 个', () => {
+    for (const level of [1, 2, 3, 4, 5] as const) {
+      const desc = __testing__.describeDifficulty(level);
+      expect(desc).toContain('Style reference (do NOT copy the topic');
+      expect(desc).not.toContain('Topic hint:');
+    }
+  });
+
+  it('T08: buildPassagePrompt 包含 "Diversity requirement" 指令', () => {
+    const { prompt } = buildPassagePrompt('en', 2, []);
+    expect(prompt).toContain('Diversity requirement (CRITICAL)');
+    expect(prompt).toContain('The passage topic MUST be fresh and concrete');
+    // Diversity 指令应在 CoT 之后, "Generate a reading passage." 之前
+    const cotIndex = prompt.indexOf('[Chain-of-thought');
+    const diversityIndex = prompt.indexOf('Diversity requirement');
+    const generateIndex = prompt.indexOf('Generate a reading passage.');
+    expect(cotIndex).toBeGreaterThanOrEqual(0);
+    expect(diversityIndex).toBeGreaterThan(cotIndex);
+    expect(diversityIndex).toBeLessThan(generateIndex);
+  });
+
+  it('T08b: buildPassagePrompt avoidTitles 参数注入黑名单到 prompt', () => {
+    // 不传 avoidTitles: prompt 不含黑名单段落
+    const { prompt: withoutAvoid } = buildPassagePrompt('en', 2, []);
+    expect(withoutAvoid).not.toContain('Avoid these previously-used titles');
+
+    // 传 avoidTitles: prompt 含黑名单段落
+    const { prompt: withAvoid } = buildPassagePrompt('en', 2, [], undefined, [
+      'A Trip to the Market',
+      'Morning Coffee',
+    ]);
+    expect(withAvoid).toContain('Avoid these previously-used titles');
+    expect(withAvoid).toContain('A Trip to the Market');
+    expect(withAvoid).toContain('Morning Coffee');
+  });
+
+  it('T08c: buildPassagePrompt avoidTitles 为空数组时不注入黑名单', () => {
+    const { prompt } = buildPassagePrompt('en', 2, [], undefined, []);
+    expect(prompt).not.toContain('Avoid these previously-used titles');
+  });
+});
+

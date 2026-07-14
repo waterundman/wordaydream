@@ -1,0 +1,24 @@
+v2.2.2: 修复已学词汇不显示 + 文章同标题 + 标注误匹配 + 练习量/复习时机
+
+Bug 4: 已学词汇列表不显示标注过的词汇
+- wordlistDomain.ts: deriveStatus('new') 从 'unseen' 改为 'learning'
+- syncFromMemoryCards 加不回退守卫 (existing learning/mastered 不被 new 卡覆盖)
+
+Bug 5: 文章生成返回相同标题
+- prompts.ts: DIFFICULTY_CONSTRAINTS example 改为 exampleTopics 主题池 (每难度 8-10 个)
+- describeDifficulty 随机选择主题 + 标注 "style reference, do NOT copy"
+- user prompt 添加 diversity requirement 指令
+- passageGenerator.ts: passage temperature 提高到 0.85 + recentTitles LRU 黑名单
+
+Bug 6: 词汇标注错误匹配 (good 标为 go)
+- useReadingSessionStore.ts: buildReviewTokens 用词边界正则替代 indexOf
+- alignmentValidator.ts: Step 4 fallback 同步修复
+
+Bug 7: 练习量少 + 复习时机不符合记忆曲线
+- prompts.ts: tokenRange 提高 (5-7 → 8-12/8-16) + minCover 提高 (4 → 6)
+- useReadingSessionStore.ts: loadSession 过滤 new/learning 卡片, 只注入 review/relearning
+- useMemoryStore.ts: getDueCards 增加 states 可选参数
+- schedulerAdapter.ts: 新卡 due 后延 4 小时
+
+测试: 512/512 PASS (72 files), tsc 0 errors
+端到端: 3 篇文章标题不同, 已学词汇列表有内容, 无 console error

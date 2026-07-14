@@ -99,6 +99,35 @@ export function clearPassageCache(): void {
 }
 
 /**
+ * v2.2.2 Stage 2 (Bug 5): 最近生成的标题黑名单 (LRU), 避免连续生成相同标题.
+ *
+ * 设计:
+ * - 模块级单例, 进程内有效 (不持久化, 重启后清空, 与 passage 缓存生命周期一致).
+ * - 容量 5: 取最近 5 个标题作为 avoidTitles 注入 prompt.
+ * - LRU 语义: 重复 push 会先删除旧位置再追加到末尾; 超容量丢弃最旧.
+ */
+const recentTitles: string[] = [];
+const RECENT_TITLES_MAX = 5;
+
+function pushRecentTitle(title: string): void {
+  const t = title.trim();
+  if (!t) return;
+  const idx = recentTitles.indexOf(t);
+  if (idx >= 0) recentTitles.splice(idx, 1);
+  recentTitles.push(t);
+  while (recentTitles.length > RECENT_TITLES_MAX) recentTitles.shift();
+}
+
+export function getRecentTitles(): string[] {
+  return [...recentTitles];
+}
+
+/** 测试/调试用: 清空 recentTitles 黑名单 */
+export function clearRecentTitles(): void {
+  recentTitles.length = 0;
+}
+
+/**
  * v1.5.3 fix V3-P3-005: 返回新数组而非原地修改, 避免副作用隐患.
  * 把 LLM 输出的 passage + 真实 difficulty 评估合并为最终 Passage.
  */
@@ -362,12 +391,17 @@ export async function generatePassage(
         language,
         difficulty,
         dueCards,
-        wordlistConstraint
+        wordlistConstraint,
+        // v2.2.2 Stage 2 (Bug 5): 注入最近标题黑名单, 避免连续生成相同标题
+        getRecentTitles()
       );
+      // v2.2.2 Stage 2 (Bug 5): passage 生成使用更高 temperature 增加多样性,
+      // 不影响评估 (evaluateAnswer 用单独的调用, temperature 由其自身控制).
+      const passageTemperature = Math.max(llm.temperature, 0.85);
       const result = await generateWithFallback(llm, {
         system,
         prompt,
-        temperature: llm.temperature,
+        temperature: passageTemperature,
         maxTokens: 1500,
         expectJson: true,
         // v1.2.0 hotfix-3 (Stage 4 P1 最后加固): 透传 expectedLanguage
@@ -468,6 +502,10 @@ export async function generatePassage(
         // buildPassageFromLLM 默认不设 source, 由调用方 (本函数) 统一赋值,
         // 让 UI 能明确区分 "AI 生成" vs "演示数据".
         enriched.source = 'llm';
+
+        // v2.2.2 Stage 2 (Bug 5): LLM 成功生成后, 把标题加入 recentTitles 黑名单,
+        // 下次生成时通过 avoidTitles 注入 prompt, 避免连续重复.
+        pushRecentTitle(enriched.title ?? '');
 
         if (!hasDueCards) putIntoCache(cacheKey, enriched);
         return enriched;

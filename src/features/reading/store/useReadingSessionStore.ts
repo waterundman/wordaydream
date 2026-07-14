@@ -47,7 +47,7 @@ interface ReadingSessionState {
   clearSession: () => void;
 }
 
-function buildReviewTokens(
+export function buildReviewTokens(
   passage: Passage,
   dueCards: { lexemeGroupId: string; lemma: string; id: string; objectiveDifficulty: DifficultyLevel }[]
 ): TokenOccurrence[] {
@@ -57,10 +57,15 @@ function buildReviewTokens(
   for (const card of dueCards) {
     const lemmaLower = card.lemma.toLowerCase();
     const textLower = passage.text.toLowerCase();
-    let idx = -1;
+    // v2.2.2 Stage 1 (Bug 6): 词边界正则匹配, 避免 "go" 匹配 "good" 的子串
+    // 前后负向断言确保只匹配完整单词 (非字母/数字字符作为边界), 支持德语变音符
+    const escapedLemma = lemmaLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const wordBoundaryRe = new RegExp(`(?<![\\p{L}\\p{N}])${escapedLemma}(?![\\p{L}\\p{N}])`, 'giu');
     let occurrenceCount = 0;
-    while ((idx = textLower.indexOf(lemmaLower, idx + 1)) !== -1) {
-      const endIdx = idx + card.lemma.length;
+    let match: RegExpExecArray | null;
+    while ((match = wordBoundaryRe.exec(textLower)) !== null) {
+      const idx = match.index;
+      const endIdx = idx + match[0].length;
       const isOverlapping = passage.tokens.some(
         (t) => !(endIdx <= t.startIndex || idx >= t.endIndex)
       );
@@ -138,7 +143,13 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         // abort 检查: 300ms 等待期间可能被新请求取消
         if (controller.signal.aborted) return;
 
-        const dueCards = useMemoryStore.getState().getDueCards(language);
+        // v2.2.2 Stage 2 (Bug 7): 只注入 review/relearning 态卡片, new/learning 不注入新文章
+        // (new 卡 due=now 但属于初始学习阶段, 不应跨文章复现; 与 passageGenerator.ts 内部
+        // dueReviewCards 过滤口径对齐). 这个过滤同时影响传给 generatePassage 的 reviewWords
+        // 和传给 buildReviewTokens 的 dueCards, 避免刚学完的词立即在新文章中复现.
+        const dueCards = useMemoryStore.getState().getDueCards(language).filter(
+          (c) => c.status === 'review' || c.status === 'relearning'
+        );
 
         let passage: Passage;
         try {
