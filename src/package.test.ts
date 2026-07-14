@@ -20,6 +20,6 @@ const pkg = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-
 
 describe('package.json version (v2.1.0 Stage 4 Contract 68)', () => {
   it('T22: version === "2.2.0"', () => {
-    expect(pkg.version).toBe('2.2.2');
+    expect(pkg.version).toBe('2.2.3');
   });
 });

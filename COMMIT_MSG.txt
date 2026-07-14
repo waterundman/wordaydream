@@ -1,24 +1,19 @@
-v2.2.2: 修复已学词汇不显示 + 文章同标题 + 标注误匹配 + 练习量/复习时机
+v2.2.3: 组件优化迭代 — Token 存活率 + InteractivePassage + 代码质量
 
-Bug 4: 已学词汇列表不显示标注过的词汇
-- wordlistDomain.ts: deriveStatus('new') 从 'unseen' 改为 'learning'
-- syncFromMemoryCards 加不回退守卫 (existing learning/mastered 不被 new 卡覆盖)
+Stage 1: Token 存活率提升
+- alignmentValidator 增加 Step 4.5 宽松匹配层 (trim/toLowerCase/词干化/indexOf 兜底)
+- passageGenerator wordlist 补偿 (token < 8 时从 wordlist 取未学词补齐)
+- 新增测试: T01-T06
 
-Bug 5: 文章生成返回相同标题
-- prompts.ts: DIFFICULTY_CONSTRAINTS example 改为 exampleTopics 主题池 (每难度 8-10 个)
-- describeDifficulty 随机选择主题 + 标注 "style reference, do NOT copy"
-- user prompt 添加 diversity requirement 指令
-- passageGenerator.ts: passage temperature 提高到 0.85 + recentTitles LRU 黑名单
+Stage 2: InteractivePassage 优化
+- 添加 data-testid 属性 (passage-token / passage-grammar / token-trigger)
+- prefers-reduced-motion 支持 (段落 stagger 动画尊重用户偏好)
+- token 焦点可见性提升 (focused 状态增加背景色)
+- 新增测试: T07-T10
 
-Bug 6: 词汇标注错误匹配 (good 标为 go)
-- useReadingSessionStore.ts: buildReviewTokens 用词边界正则替代 indexOf
-- alignmentValidator.ts: Step 4 fallback 同步修复
+Stage 3: 代码质量优化
+- WordlistPage inline style 清理 (CSV 预览 + 词库列表提取到 CSS module)
+- ReviewSessionPage statsLine useMemo + 实时计时器 (useState + setInterval)
+- 新增测试: T11-T14
 
-Bug 7: 练习量少 + 复习时机不符合记忆曲线
-- prompts.ts: tokenRange 提高 (5-7 → 8-12/8-16) + minCover 提高 (4 → 6)
-- useReadingSessionStore.ts: loadSession 过滤 new/learning 卡片, 只注入 review/relearning
-- useMemoryStore.ts: getDueCards 增加 states 可选参数
-- schedulerAdapter.ts: 新卡 due 后延 4 小时
-
-测试: 512/512 PASS (72 files), tsc 0 errors
-端到端: 3 篇文章标题不同, 已学词汇列表有内容, 无 console error
+测试: 527/527 PASS (72 files), tsc 0 errors

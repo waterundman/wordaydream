@@ -78,6 +78,7 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 2px;
+  background: var(--color-bg-subtle, #f0ede5);
 }
 
 /* v2.1.0 Stage 4 (Contract 68): 重读模式 — 禁用 token 作答交互. */

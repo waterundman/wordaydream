@@ -147,3 +147,77 @@ describe('validateToken (Stage 2)', () => {
     expect(r.end).toBe(0);
   });
 });
+
+// === v2.2.3 Stage 1 (D1-1): Step 4.5 宽松匹配层 ===
+describe('validateToken (v2.2.3 Stage 1 D1-1: Step 4.5 宽松匹配层)', () => {
+  it('T01: Step 4.5 策略 1 trim 匹配 — surfaceForm=" go " 匹配 text 中的 "go"', () => {
+    // text = "I go home", surfaceForm = " go " (含前后空格)
+    // 给错位 offset [0, 1] = "I", 与 " go " 完全无关
+    // Step 4: regex `(?<![\p{L}\p{N}]) go (?![\p{L}\p{N}])` — " go " 在 index 1,
+    //   但 char before (index 0) = 'I' (letter) → 边界失败
+    // Step 4.5 策略 1: trim " go " → "go", regex 匹配 "go" at index 2
+    const text = 'I go home';
+    const r = validateToken({ startIndex: 0, endIndex: 1, surfaceForm: ' go ' }, text);
+    expect(r.status).toBe('fallback');
+    expect(r.start).toBe(2);
+    expect(r.end).toBe(4);
+    expect(r.surfaceForm).toBe('go');
+  });
+
+  it('T02: Step 4.5 策略 2 toLowerCase 匹配 — surfaceForm="Go" 匹配 text 中的 "go"', () => {
+    // text = "I go home", surfaceForm = "Go" (首字母大写)
+    // 给空 range [0, 0] (endIndex === startIndex), sliced = "" → Steps 1-3 全部跳过
+    // Step 4: regex 用 'i' flag, "Go" 匹配 "go" at index 2 → fallback
+    // (Step 4.5 策略 2 同样覆盖此 case, 但 Step 4 已先行处理)
+    const text = 'I go home';
+    const r = validateToken({ startIndex: 0, endIndex: 0, surfaceForm: 'Go' }, text);
+    expect(r.status).toBe('fallback');
+    expect(r.start).toBe(2);
+    expect(r.end).toBe(4);
+    // surfaceForm 应为 text 中实际匹配的子串
+    expect(r.surfaceForm.toLowerCase()).toBe('go');
+  });
+
+  it('T03: Step 4.5 策略 3 词干化匹配 — surfaceForm="walked" 匹配 text 中的 "walk"', () => {
+    // text = "I walk home" (含 "walk" 但不含 "walked")
+    // 给错位 offset [0, 1] = "I", Steps 1-3 失败
+    // Step 4: regex 找 "walked" → 不在 text 中 → 失败
+    // Step 4.5 策略 1 (trim): "walked" 无空格 → 无变化 → 失败
+    // Step 4.5 策略 2 (lowercase): "walked" → "walked" → 失败
+    // Step 4.5 策略 3 (stem): "walked" 去 "ed" → "walk", regex 匹配 "walk" at index 2
+    const text = 'I walk home';
+    const r = validateToken({ startIndex: 0, endIndex: 1, surfaceForm: 'walked' }, text);
+    expect(r.status).toBe('fallback');
+    expect(r.start).toBe(2);
+    expect(r.end).toBe(6);
+    expect(r.surfaceForm).toBe('walk');
+    // 词干化匹配无法保留原 offset
+    expect(r.originalOffset).toBeUndefined();
+  });
+
+  it('T04: Step 4.5 策略 4 兜底 indexOf — surfaceForm="xyz" 匹配 "xyzabc" 子串', () => {
+    // text = "I love xyzabc", surfaceForm = "xyz"
+    // 给错位 offset [0, 1] = "I", Steps 1-3 失败
+    // Step 4: regex `(?<![\p{L}\p{N}])xyz(?![\p{L}\p{N}])` — "xyz" at index 7,
+    //   char after (index 10) = 'a' (letter) → 边界失败
+    // Step 4.5 策略 1 (trim): 无变化 → 失败
+    // Step 4.5 策略 2 (lowercase): "xyz" → "xyz" → 同样边界失败
+    // Step 4.5 策略 3 (stem): length 3 <= 4 → null
+    // Step 4.5 策略 4 (indexOf): text.indexOf("xyz") = 7 → fallback
+    const text = 'I love xyzabc';
+    const r = validateToken({ startIndex: 0, endIndex: 1, surfaceForm: 'xyz' }, text);
+    expect(r.status).toBe('fallback');
+    expect(r.start).toBe(7);
+    expect(r.end).toBe(10);
+    expect(r.surfaceForm).toBe('xyz');
+  });
+
+  it('T04b: Step 4.5 全部策略失败时仍走 Step 5 dropped', () => {
+    // surfaceForm 完全不在 text 中, Step 4.5 所有策略都失败 → Step 5 dropped
+    const text = 'I walk home';
+    const r = validateToken({ startIndex: 0, endIndex: 1, surfaceForm: 'xyzqwerty' }, text);
+    expect(r.status).toBe('dropped');
+    expect(r.start).toBe(0);
+    expect(r.end).toBe(0);
+  });
+});

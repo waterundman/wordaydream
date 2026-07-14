@@ -410,6 +410,188 @@
   color: var(--color-text-secondary, #4a4540);
 }
 
+/* === v2.2.3 Stage 3 (D3-1): CSV 导入预览 (提取自 inline style) === */
+
+.csvFileInput {
+  display: none;
+}
+
+.csvPreview {
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  padding: var(--space-4);
+  background: var(--color-bg-elevated, #ffffff);
+}
+
+.csvPreviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.csvPreviewTitle {
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  margin: 0;
+}
+
+.csvPreviewActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.csvPreviewBtnConfirm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-accent, #2d5a4d);
+  border: none;
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+}
+
+.csvPreviewBtnCancel {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-secondary, #4a4540);
+  background: none;
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+}
+
+.csvPreviewError {
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-error-strong, #b91c1c);
+  background: var(--color-error-bg, #fef2f2);
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+.csvPreviewRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.csvPreviewRow {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-ink, #1c1917);
+  background: var(--color-bg-subtle, #f5f2ed);
+  border-radius: var(--radius-sm, 0.25rem);
+  border: 1px solid transparent;
+}
+
+.csvPreviewRowError {
+  background: var(--color-error-bg, #fef2f2);
+  border: 1px solid var(--color-error-border, #fca5a5);
+}
+
+.csvPreviewRowIndex {
+  min-width: 2rem;
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.csvPreviewRowLemma {
+  flex: 1;
+  font-weight: 500;
+}
+
+.csvPreviewRowPos {
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.csvPreviewRowTranslation {
+  color: var(--color-text-secondary, #4a4540);
+}
+
+.csvPreviewRowCefr {
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.csvPreviewMore {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+/* === v2.2.3 Stage 3 (D3-1): CSV 错误提示 === */
+
+.csvError {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-error-strong, #b91c1c);
+  background: var(--color-error-bg, #fef2f2);
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+/* === v2.2.3 Stage 3 (D3-1): 我的词库列表 === */
+
+.myWordlistsTitle {
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.myWordlistsEmpty {
+  padding: var(--space-3);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-tertiary, #6b655b);
+  text-align: center;
+}
+
+.myWordlistsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.wordlistItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-bg-elevated, #ffffff);
+}
+
+.wordlistItemIcon {
+  color: var(--color-text-tertiary, #6b655b);
+  flex-shrink: 0;
+}
+
+.wordlistItemName {
+  flex: 1;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-ink, #1c1917);
+  font-weight: 500;
+}
+
+.wordlistItemMeta {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-tertiary, #6b655b);
+  font-variant-numeric: tabular-nums;
+}
+
+.wordlistDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1);
+  color: var(--color-error-strong, #b91c1c);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
 /* === Mobile (max-width: 767px) === */
 
 @media (max-width: 767px) {

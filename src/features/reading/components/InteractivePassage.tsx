@@ -108,6 +108,8 @@ const TokenSpan = memo(function TokenSpan({
     <span
       ref={wrapperRef}
       className={wrapperClassName}
+      data-testid="passage-token"
+      data-token-id={token.id}
       data-replay={isReplay ? 'true' : undefined}
       onClickCapture={handleReplayClickCapture}
       onKeyDownCapture={handleReplayKeyDownCapture}
@@ -177,7 +179,7 @@ const GrammarSpan = memo(function GrammarSpan({
   const wrapperRef = useRef<HTMLSpanElement>(null);
 
   return (
-    <span ref={wrapperRef} className={styles.tokenWrapper}>
+    <span ref={wrapperRef} className={styles.tokenWrapper} data-testid="passage-grammar">
       <GrammarHighlight
         grammarPoint={grammarPoint}
         isActive={isActive}
@@ -506,6 +508,14 @@ export function InteractivePassage({ language, isReplay = false }: Props = {}) {
       setVisibleParagraphs(new Set());
       return;
     }
+    // v2.2.3 Stage 2 (D2-2): 尊重 prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      // 减少动画: 一次性显示所有段落, 跳过 stagger
+      setVisibleParagraphs(new Set(paragraphRanges.map((_, idx) => idx)));
+      return;
+    }
+    // 默认: 保持 stagger 动画
     setVisibleParagraphs(new Set());
     const innerTimers: ReturnType<typeof setTimeout>[] = [];
     const outerTimer = setTimeout(() => {

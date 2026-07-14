@@ -700,3 +700,111 @@ describe('v2.2.2 Stage 2 (Bug 5): recentTitles LRU 黑名单', () => {
     expect(recent).toEqual(['Same Title']);
   });
 });
+
+// === v2.2.3 Stage 1 (D1-2): wordlist 补偿 — passage tokens < 8 时从 wordlist 补齐 ===
+describe('generatePassage (v2.2.3 Stage 1 D1-2: wordlist 补偿)', () => {
+  // 构造 passage: 只 1 个 token ("cat"), text 含 7 个 A1 wordlist 词 (be/have/do/go/get/make/know).
+  // A1 词表前 7 个词按序为 be, have, do, go, get, make, know, 均出现在 text 中,
+  // 故补偿能找到 7 个匹配 → 总 token 数 = 1 + 7 = 8.
+  // 偏移参考 (0-based): be[2,4) have[13,17) cat[20,23) do[27,29) go[36,38) get[46,49) make[56,60) know[69,73)
+  const passageText = 'I be here. I have a cat. I do it. I go now. I get it. I make food. I know.';
+  const passageJson = JSON.stringify({
+    language: 'en',
+    difficulty: 1,
+    text: passageText,
+    tokens: [
+      { lemma: 'cat', surfaceForm: 'cat', startIndex: 20, endIndex: 23, partOfSpeech: 'noun' },
+    ],
+  });
+
+  beforeEach(() => {
+    if (typeof window !== 'undefined') window.localStorage.clear();
+    clearPassageCache();
+    clearRecentTitles();
+    clearWordlistCache();
+    useSettingsStore.setState((s) => ({
+      llm: {
+        ...s.llm,
+        enabled: true,
+        provider: 'openai',
+        apiKey: 'test-key',
+        baseUrl: '',
+        model: 'gpt-4o-mini',
+        temperature: 0.5,
+        timeout: 30,
+        maxRetries: 2,
+        streaming: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    clearPassageCache();
+    clearRecentTitles();
+    clearWordlistCache();
+    vi.restoreAllMocks();
+    useWordlistStore.getState().resetAll();
+    useMemoryStore.getState().resetAll();
+    if (typeof window !== 'undefined') window.localStorage.clear();
+  });
+
+  it('T05: alignedTokens < 8 时从 wordlist 补齐到 >= 8', async () => {
+    // 加载 A1 词表 (80 词), 确保 getCachedWordlist + getUnlearnedWordsSync 可用
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    // mock LLM 返回只含 1 个 token 的 passage
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: passageJson });
+
+    const passage = await generatePassage('en', 1, [], undefined, true);
+
+    // 补偿后应 >= 8 个 token
+    expect(passage.tokens.length).toBeGreaterThanOrEqual(8);
+    // source 仍为 'llm' (补偿不改变 source)
+    expect(passage.source).toBe('llm');
+    // 原始 "cat" token 仍在
+    expect(passage.tokens.some((t) => t.lemma === 'cat')).toBe(true);
+    // 补偿的 token 用 kind='normal' (非 'review')
+    const supplementTokens = passage.tokens.filter((t) => t.id.startsWith('supplement-'));
+    expect(supplementTokens.length).toBeGreaterThan(0);
+    for (const t of supplementTokens) {
+      expect(t.kind).toBe('normal');
+    }
+  });
+
+  it('T06: 补偿的 token 在 text 中找到匹配位置 (startIndex/endIndex 正确)', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: passageJson });
+
+    const passage = await generatePassage('en', 1, [], undefined, true);
+
+    // 找到补偿的 "have" token (A1 词表第 2 个词)
+    const haveToken = passage.tokens.find((t) => t.lemma === 'have');
+    expect(haveToken).toBeDefined();
+    if (haveToken) {
+      expect(passage.text.substring(haveToken.startIndex, haveToken.endIndex)).toBe('have');
+    }
+
+    // 验证所有 token (原始 + 补偿) 的 startIndex/endIndex 与 surfaceForm 一致
+    for (const token of passage.tokens) {
+      const slice = passage.text.substring(token.startIndex, token.endIndex);
+      expect(slice).toBe(token.surfaceForm);
+    }
+
+    // 验证补偿 token 的 id 格式
+    const supplementTokens = passage.tokens.filter((t) => t.id.startsWith('supplement-'));
+    for (const t of supplementTokens) {
+      expect(t.id).toMatch(/^supplement-[a-z]+-\d+$/);
+      expect(t.lexemeGroupId).toMatch(/^lex-/);
+      expect(t.isCompound).toBe(false);
+      expect(t.isResolved).toBe(false);
+      expect(t.isActive).toBe(false);
+    }
+  });
+});

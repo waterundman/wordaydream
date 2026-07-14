@@ -3,6 +3,8 @@
  *
  * 覆盖 test_spec:
  * - T18: WordlistPage 渲染 "导入 CSV" 按钮
+ * - T11: WordlistPage CSV 预览使用 CSS module class (无 inline color style)
+ * - T12: WordlistPage 词库列表使用 CSS module class
  *
  * 设计:
  * - mock `data/wordlists` 模块返回受控词表数据
@@ -10,11 +12,13 @@
  * - @testing-library/react + vitest
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { WordlistPage } from './WordlistPage';
 import { useSettingsStore } from '../settings/store/useSettingsStore';
 import { useReadingSessionStore } from '../reading/store/useReadingSessionStore';
 import { useWordlistStore } from './store/useWordlistStore';
+import { listCsvWordlists } from '../../data/wordlists/csvStorage';
+import type { StoredCsvWordlist } from '../../data/wordlists/csvStorage';
 
 vi.mock('../../data/wordlists', () => {
   const mockWordlist = {
@@ -85,5 +89,75 @@ describe('WordlistPage CSV 导入 (v2.2.0 Stage 2)', () => {
     ) as HTMLInputElement | null;
     expect(fileInput).not.toBeNull();
     expect(fileInput).toBeInTheDocument();
+  });
+});
+
+/**
+ * v2.2.3 Stage 3 (D3-1): WordlistPage inline style 清理测试
+ *
+ * 覆盖 test_spec:
+ * - T11: CSV 预览区使用 CSS module class, 无 inline style (颜色硬编码已移除)
+ * - T12: 词库列表项使用 CSS module class, 无 inline style
+ *
+ * 设计:
+ * - T11: mock FileReader 触发文件上传 → 等待预览渲染 → 检查无 [style] 属性元素
+ * - T12: mock listCsvWordlists 返回测试数据 → 检查词库列表项无 [style] 属性
+ */
+describe('WordlistPage inline style 清理 (v2.2.3 Stage 3 D3-1)', () => {
+  it('T11: CSV 预览区使用 CSS module class, 无 inline style', async () => {
+    // mock FileReader: 上传后同步触发 onload 返回测试 CSV
+    vi.stubGlobal('FileReader', class {
+      onload: ((e: { target: { result: string } }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      readAsText(_file: File) {
+        setTimeout(() => {
+          this.onload?.({ target: { result: 'lemma,pos,translation,cefr\nhave,verb,有,A2\nbe,verb,是,A2' } });
+        }, 0);
+      }
+    });
+
+    const { container } = render(<WordlistPage onGoHome={() => {}} />);
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['test'], 'test.csv')] },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('csv-import-preview')).toBeInTheDocument();
+    });
+
+    // 验证预览区内所有元素无 inline style 属性
+    const preview = screen.getByTestId('csv-import-preview');
+    const elementsWithStyle = preview.querySelectorAll('[style]');
+    expect(elementsWithStyle).toHaveLength(0);
+
+    vi.unstubAllGlobals();
+  });
+
+  it('T12: 词库列表项使用 CSS module class, 无 inline style', async () => {
+    const mockWordlists: StoredCsvWordlist[] = [
+      {
+        id: 'test-1',
+        fileName: 'test-words.csv',
+        importedAt: Date.now(),
+        entries: [
+          { lemma: 'test', pos: 'noun', translation: '测试', cefr: 'A2', priority: 2 },
+        ],
+        entryCount: 1,
+      },
+    ];
+    vi.mocked(listCsvWordlists).mockResolvedValueOnce(mockWordlists);
+
+    render(<WordlistPage onGoHome={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('test-words.csv')).toBeInTheDocument();
+    });
+
+    // 验证词库列表区域无 inline style 属性元素
+    const myWordlists = screen.getByTestId('my-csv-wordlists');
+    const elementsWithStyle = myWordlists.querySelectorAll('[style]');
+    expect(elementsWithStyle).toHaveLength(0);
   });
 });

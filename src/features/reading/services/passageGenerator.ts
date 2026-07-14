@@ -503,6 +503,55 @@ export async function generatePassage(
         // 让 UI 能明确区分 "AI 生成" vs "演示数据".
         enriched.source = 'llm';
 
+        // v2.2.3 Stage 1 (D1-2): wordlist 补偿 — 确保每篇 passage 至少 8 个可标注词汇.
+        // LLM 生成时偶有 token 数 < 8 (LLM 没遵循 targetWords 数量约束),
+        // 此时从 wordlist 未学词中取词, 在 passage.text 中查找首次出现位置,
+        // 补齐到 8 个 token, 保证 InteractivePassage 有足够标注.
+        // 注: getUnlearnedWordsSync 返回 lemma 字符串数组; 补偿 token 用 kind='normal'.
+        const MIN_TOKENS = 8;
+        if (enriched.tokens.length < MIN_TOKENS) {
+          const deficit = MIN_TOKENS - enriched.tokens.length;
+          try {
+            const supplementLemmas = wordlistState.getUnlearnedWordsSync(
+              enriched.language,
+              enriched.difficulty,
+              deficit
+            );
+            for (const lemma of supplementLemmas) {
+              if (enriched.tokens.length >= MIN_TOKENS) break;
+              // 在 passage.text 中用词边界正则查找首次出现位置
+              const escaped = lemma.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const re = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
+              const match = re.exec(enriched.text);
+              if (match) {
+                // 检查是否与已有 token 重叠
+                const start = match.index;
+                const end = match.index + match[0].length;
+                const overlaps = enriched.tokens.some(
+                  (t) => !(end <= t.startIndex || start >= t.endIndex)
+                );
+                if (!overlaps) {
+                  enriched.tokens.push({
+                    id: `supplement-${lemma}-${start}`,
+                    lexemeGroupId: `lex-${lemma.toLowerCase().replace(/[^a-z0-9äöüß]/gi, '-')}`,
+                    surfaceForm: enriched.text.substring(start, end),
+                    lemma,
+                    objectiveDifficulty: enriched.difficulty,
+                    startIndex: start,
+                    endIndex: end,
+                    isResolved: false,
+                    isActive: false,
+                    kind: 'normal' as const,
+                    isCompound: false,
+                  });
+                }
+              }
+            }
+          } catch {
+            // wordlist 不可用时静默失败
+          }
+        }
+
         // v2.2.2 Stage 2 (Bug 5): LLM 成功生成后, 把标题加入 recentTitles 黑名单,
         // 下次生成时通过 avoidTitles 注入 prompt, 避免连续重复.
         pushRecentTitle(enriched.title ?? '');

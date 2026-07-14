@@ -87,6 +87,7 @@ function LinkedOccurrenceHighlightImpl({
         tabIndex={token.isResolved ? -1 : 0}
         aria-disabled={token.isResolved}
         aria-label={isReview ? `复现词 ${token.lemma}` : isCompound ? `复合词 ${token.lemma}` : token.lemma}
+        data-testid="token-trigger"
       >
         {isReview && <span className={styles.reviewDot} aria-hidden="true" />}
         <WordUnveilAnimation isResolved={token.isResolved}>

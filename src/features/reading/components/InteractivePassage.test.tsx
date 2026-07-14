@@ -27,13 +27,30 @@
  *   是 jsdom 下验证 tooltip 显示的标准方式
  * - Tooltip content 会被 portal 到 document.body, 用 screen 查询更稳
  */
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { InteractivePassage } from './InteractivePassage';
 import { useReadingSessionStore } from '../store/useReadingSessionStore';
 import { normalizeText } from '../../llm/utils/textNormalize';
 import type { Passage, ReadingSession, TokenOccurrence } from '../../../types';
+
+// v2.2.3 Stage 2 (D2): mock CSS module 以便检查段落 visible class (css:false 下 styles 为空对象)
+vi.mock('./InteractivePassage.module.css', () => ({
+  default: {
+    passage: 'passage',
+    title: 'title',
+    text: 'text',
+    paragraph: 'paragraph',
+    visible: 'visible',
+    paragraphActive: 'paragraphActive',
+    empty: 'empty',
+    tokenWrapper: 'tokenWrapper',
+    focused: 'focused',
+    tokenReplay: 'tokenReplay',
+    alignmentTooltip: 'alignmentTooltip',
+  },
+}));
 
 // jsdom 默认不实现 matchMedia, usePageEntranceAnimation 在 useEffect 启动时会调用它.
 // 提前 stub 掉, 避免 React 渲染阶段抛 TypeError.
@@ -560,5 +577,165 @@ describe('InteractivePassage isReplay (v2.1.0 Stage 4 Contract 68)', () => {
 
     const replayWrapper = document.querySelector('[data-replay="true"]');
     expect(replayWrapper).toBeNull();
+  });
+});
+
+/**
+ * v2.2.3 Stage 2 (D2): InteractivePassage data-testid + prefers-reduced-motion
+ *
+ * 覆盖 test_spec:
+ * - T07: TokenSpan 渲染 data-testid="passage-token"
+ * - T08: TokenSpan 渲染 data-token-id
+ * - T09: prefers-reduced-motion 启用时段落一次性可见 (无 stagger)
+ * - T10: prefers-reduced-motion 禁用时保持 stagger 行为 (段落逐步可见)
+ *
+ * 设计:
+ * - vi.mock CSS module 以便检查段落 visible class (css:false 下 styles 为空对象)
+ * - T09: mock matchMedia 返回 matches:true, 渲染后立即检查所有段落 visible
+ * - T10: mock matchMedia 返回 matches:false, 使用 fake timers 验证 stagger
+ */
+describe('InteractivePassage v2.2.3 Stage 2 (D2)', () => {
+  let originalMatchMedia: typeof window.matchMedia;
+
+  beforeEach(() => {
+    originalMatchMedia = window.matchMedia;
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+    vi.useRealTimers();
+  });
+
+  describe('D2-1: data-testid 属性', () => {
+    it('T07: TokenSpan 渲染 data-testid="passage-token"', () => {
+      const text = 'The cat sat.';
+      const token: TokenOccurrence = {
+        id: 'tok-cat',
+        lexemeGroupId: 'grp-cat',
+        surfaceForm: 'cat',
+        lemma: 'cat',
+        objectiveDifficulty: 2,
+        startIndex: 4,
+        endIndex: 7,
+        isResolved: false,
+        isActive: false,
+        kind: 'normal',
+        isCompound: false,
+      };
+      useReadingSessionStore.setState({ session: makeSession(text, 'en', [token]) });
+
+      const { container } = render(<InteractivePassage />);
+
+      const tokenEl = container.querySelector('[data-testid="passage-token"]');
+      expect(tokenEl).not.toBeNull();
+      expect(tokenEl).toBeInTheDocument();
+    });
+
+    it('T08: TokenSpan 渲染 data-token-id', () => {
+      const text = 'The cat sat.';
+      const token: TokenOccurrence = {
+        id: 'tok-cat-42',
+        lexemeGroupId: 'grp-cat',
+        surfaceForm: 'cat',
+        lemma: 'cat',
+        objectiveDifficulty: 2,
+        startIndex: 4,
+        endIndex: 7,
+        isResolved: false,
+        isActive: false,
+        kind: 'normal',
+        isCompound: false,
+      };
+      useReadingSessionStore.setState({ session: makeSession(text, 'en', [token]) });
+
+      const { container } = render(<InteractivePassage />);
+
+      const tokenEl = container.querySelector('[data-testid="passage-token"]');
+      expect(tokenEl).not.toBeNull();
+      expect(tokenEl?.getAttribute('data-token-id')).toBe('tok-cat-42');
+    });
+  });
+
+  describe('D2-2: prefers-reduced-motion', () => {
+    /**
+     * mock matchMedia: 当 query 为 prefers-reduced-motion: reduce 时返回指定 matches.
+     */
+    function setReducedMotion(matches: boolean) {
+      window.matchMedia = (query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)' ? matches : false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      });
+    }
+
+    it('T09: prefers-reduced-motion 启用时段落一次性可见 (无 stagger)', () => {
+      setReducedMotion(true);
+
+      const text = 'First paragraph here.\n\nSecond paragraph follows.\n\nThird one too.';
+      useReadingSessionStore.setState({ session: makeSession(text) });
+
+      const { container } = render(<InteractivePassage />);
+
+      const paragraphs = container.querySelectorAll('[data-paragraph]');
+      expect(paragraphs.length).toBe(3);
+
+      // 所有段落应立即有 visible class (无 setTimeout delay)
+      paragraphs.forEach((p) => {
+        expect(p.className).toContain('visible');
+      });
+    });
+
+    it('T10: prefers-reduced-motion 禁用时保持 stagger (段落逐步可见)', async () => {
+      setReducedMotion(false);
+      // 使用真实 timer + waitFor 验证 stagger, 避免 fake timer 与 React 18 调度冲突
+      // (React 18 使用 MessageChannel/queueMicrotask 调度, fake timer 会阻断 setState 刷新)
+
+      const text = 'First paragraph here.\n\nSecond paragraph follows.\n\nThird one too.';
+      useReadingSessionStore.setState({ session: makeSession(text) });
+
+      const { container } = render(<InteractivePassage />);
+
+      const getParagraphs = () => container.querySelectorAll('[data-paragraph]');
+
+      // 初始: 无段落 visible (stagger 尚未开始, outer timer 100ms 未到)
+      expect(getParagraphs().length).toBe(3);
+      getParagraphs().forEach((p) => {
+        expect(p.className).not.toContain('visible');
+      });
+
+      // 等待第一段 visible (outer 100ms + inner 0ms)
+      // waitFor 间隔 10ms, 确保 100ms 间隔内能捕获中间状态
+      await waitFor(
+        () => {
+          expect(getParagraphs()[0].className).toContain('visible');
+        },
+        { timeout: 500, interval: 10 }
+      );
+      // 第一段 visible 时, 第二/三段尚未 visible (stagger 100ms 间隔)
+      expect(getParagraphs()[1].className).not.toContain('visible');
+      expect(getParagraphs()[2].className).not.toContain('visible');
+
+      // 等待第二段 visible (outer 100ms + inner 100ms = 200ms)
+      await waitFor(
+        () => {
+          expect(getParagraphs()[1].className).toContain('visible');
+        },
+        { timeout: 500, interval: 10 }
+      );
+      expect(getParagraphs()[2].className).not.toContain('visible');
+
+      // 等待第三段 visible (outer 100ms + inner 200ms = 300ms)
+      await waitFor(
+        () => {
+          expect(getParagraphs()[2].className).toContain('visible');
+        },
+        { timeout: 500, interval: 10 }
+      );
+    });
   });
 });

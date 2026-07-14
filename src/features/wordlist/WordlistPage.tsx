@@ -383,7 +383,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
           type="file"
           accept=".csv"
           onChange={handleCsvFileSelect}
-          style={{ display: 'none' }}
+          className={styles.csvFileInput}
           aria-hidden="true"
         />
       </header>
@@ -392,79 +392,35 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
       {importPreview && (
         <div
           data-testid="csv-import-preview"
-          style={{
-            border: '1px solid var(--color-border, #e8e4dc)',
-            borderRadius: 'var(--radius-md, 0.5rem)',
-            padding: 'var(--space-4)',
-            background: 'var(--color-bg-elevated, #ffffff)',
-          }}
+          className={styles.csvPreview}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 'var(--space-3)',
-            }}
-          >
-            <h2
-              style={{
-                fontSize: 'var(--text-base, 1rem)',
-                fontWeight: 600,
-                color: 'var(--color-ink, #1c1917)',
-                margin: 0,
-              }}
-            >
+          <div className={styles.csvPreviewHeader}>
+            <h2 className={styles.csvPreviewTitle}>
               导入预览 · {importPreview.fileName} · {importPreview.entries.length} 条
             </h2>
-            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <div className={styles.csvPreviewActions}>
               <button
                 type="button"
                 onClick={handleConfirmImport}
-                style={{
-                  padding: 'var(--space-2) var(--space-3)',
-                  fontSize: 'var(--text-sm, 0.875rem)',
-                  color: 'var(--color-text-inverse, #ffffff)',
-                  background: 'var(--color-accent, #2d5a4d)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md, 0.5rem)',
-                  cursor: 'pointer',
-                }}
+                className={styles.csvPreviewBtnConfirm}
               >
                 确认导入
               </button>
               <button
                 type="button"
                 onClick={handleCancelImport}
-                style={{
-                  padding: 'var(--space-2) var(--space-3)',
-                  fontSize: 'var(--text-sm, 0.875rem)',
-                  color: 'var(--color-text-secondary, #4a4540)',
-                  background: 'none',
-                  border: '1px solid var(--color-border, #e8e4dc)',
-                  borderRadius: 'var(--radius-md, 0.5rem)',
-                  cursor: 'pointer',
-                }}
+                className={styles.csvPreviewBtnCancel}
               >
                 取消
               </button>
             </div>
           </div>
           {importPreview.errors.length > 0 && (
-            <div
-              style={{
-                marginBottom: 'var(--space-3)',
-                padding: 'var(--space-2) var(--space-3)',
-                fontSize: 'var(--text-sm, 0.875rem)',
-                color: '#b91c1c',
-                background: '#fef2f2',
-                borderRadius: 'var(--radius-sm, 0.25rem)',
-              }}
-            >
+            <div className={styles.csvPreviewError}>
               发现 {importPreview.errors.length} 个错误 (错误行已标红)
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+          <div className={styles.csvPreviewRows}>
             {importPreview.entries.slice(0, 10).map((entry, idx) => {
               const rowErrors = importPreview.errors.filter((e) => e.row === idx + 1);
               const hasError = rowErrors.length > 0;
@@ -472,36 +428,21 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
                 <div
                   key={idx}
                   title={hasError ? rowErrors.map((e) => e.message).join('; ') : undefined}
-                  style={{
-                    display: 'flex',
-                    gap: 'var(--space-3)',
-                    padding: 'var(--space-2) var(--space-3)',
-                    fontSize: 'var(--text-sm, 0.875rem)',
-                    color: 'var(--color-ink, #1c1917)',
-                    background: hasError ? '#fef2f2' : 'var(--color-bg-subtle, #f5f2ed)',
-                    borderRadius: 'var(--radius-sm, 0.25rem)',
-                    border: hasError ? '1px solid #fca5a5' : '1px solid transparent',
-                  }}
+                  className={`${styles.csvPreviewRow} ${hasError ? styles.csvPreviewRowError : ''}`}
                 >
-                  <span style={{ minWidth: '2rem', color: 'var(--color-text-tertiary, #6b655b)' }}>
+                  <span className={styles.csvPreviewRowIndex}>
                     {idx + 1}
                   </span>
-                  <span style={{ flex: 1, fontWeight: 500 }}>{entry.lemma || '(空)'}</span>
-                  <span style={{ color: 'var(--color-text-tertiary, #6b655b)' }}>{entry.pos || '-'}</span>
-                  <span style={{ color: 'var(--color-text-secondary, #4a4540)' }}>{entry.translation || '-'}</span>
-                  <span style={{ color: 'var(--color-text-tertiary, #6b655b)' }}>{entry.cefr || '-'}</span>
+                  <span className={styles.csvPreviewRowLemma}>{entry.lemma || '(空)'}</span>
+                  <span className={styles.csvPreviewRowPos}>{entry.pos || '-'}</span>
+                  <span className={styles.csvPreviewRowTranslation}>{entry.translation || '-'}</span>
+                  <span className={styles.csvPreviewRowCefr}>{entry.cefr || '-'}</span>
                 </div>
               );
             })}
           </div>
           {importPreview.entries.length > 10 && (
-            <div
-              style={{
-                marginTop: 'var(--space-2)',
-                fontSize: 'var(--text-sm, 0.875rem)',
-                color: 'var(--color-text-tertiary, #6b655b)',
-              }}
-            >
+            <div className={styles.csvPreviewMore}>
               还有 {importPreview.entries.length - 10} 行未显示...
             </div>
           )}
@@ -510,57 +451,24 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
 
       {/* v2.2.0 Stage 2 (D2): CSV 错误提示 */}
       {csvError && (
-        <div
-          style={{
-            padding: 'var(--space-2) var(--space-3)',
-            fontSize: 'var(--text-sm, 0.875rem)',
-            color: '#b91c1c',
-            background: '#fef2f2',
-            borderRadius: 'var(--radius-sm, 0.25rem)',
-          }}
-        >
+        <div className={styles.csvError}>
           {csvError}
         </div>
       )}
 
       {/* v2.2.0 Stage 2 (D2): 我的词库 (已导入 CSV 列表) */}
       <div data-testid="my-csv-wordlists">
-        <h2
-          style={{
-            fontSize: 'var(--text-base, 1rem)',
-            fontWeight: 600,
-            color: 'var(--color-ink, #1c1917)',
-            margin: '0 0 var(--space-2) 0',
-          }}
-        >
+        <h2 className={styles.myWordlistsTitle}>
           我的词库
         </h2>
         {myWordlists.length === 0 ? (
-          <div
-            style={{
-              padding: 'var(--space-3)',
-              fontSize: 'var(--text-sm, 0.875rem)',
-              color: 'var(--color-text-tertiary, #6b655b)',
-              textAlign: 'center',
-            }}
-          >
+          <div className={styles.myWordlistsEmpty}>
             暂无自定义词库, 点击"导入 CSV"上传
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <div className={styles.myWordlistsList}>
             {myWordlists.map((wl) => (
-              <div
-                key={wl.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-2) var(--space-3)',
-                  border: '1px solid var(--color-border, #e8e4dc)',
-                  borderRadius: 'var(--radius-md, 0.5rem)',
-                  background: 'var(--color-bg-elevated, #ffffff)',
-                }}
-              >
+              <div key={wl.id} className={styles.wordlistItem}>
                 <svg
                   viewBox="0 0 24 24"
                   width="16"
@@ -569,53 +477,25 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
                   stroke="currentColor"
                   strokeWidth="1.5"
                   aria-hidden="true"
-                  style={{ color: 'var(--color-text-tertiary, #6b655b)', flexShrink: 0 }}
+                  className={styles.wordlistItemIcon}
                 >
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <span
-                  style={{
-                    flex: 1,
-                    fontSize: 'var(--text-sm, 0.875rem)',
-                    color: 'var(--color-ink, #1c1917)',
-                    fontWeight: 500,
-                  }}
-                >
+                <span className={styles.wordlistItemName}>
                   {wl.fileName}
                 </span>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs, 0.75rem)',
-                    color: 'var(--color-text-tertiary, #6b655b)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
+                <span className={styles.wordlistItemMeta}>
                   {wl.entryCount} 词
                 </span>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs, 0.75rem)',
-                    color: 'var(--color-text-tertiary, #6b655b)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
+                <span className={styles.wordlistItemMeta}>
                   {new Date(wl.importedAt).toLocaleDateString()}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleDeleteWordlist(wl.id)}
                   aria-label={`删除 ${wl.fileName}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: 'var(--space-1)',
-                    color: '#b91c1c',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: 'var(--radius-sm, 0.25rem)',
-                  }}
+                  className={styles.wordlistDeleteBtn}
                 >
                   <svg
                     viewBox="0 0 24 24"

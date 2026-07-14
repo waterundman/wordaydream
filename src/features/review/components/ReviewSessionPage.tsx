@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import {
   useReviewSessionStore,
   resolveContextSentence,
@@ -60,6 +60,35 @@ export function ReviewSessionPage() {
       exitReview();
     }
   }, [mode, queue.length, exitReview]);
+
+  // v2.2.3 Stage 3 (D3-2): statsLine 提取到 useMemo, 避免每次渲染重复 filter
+  const stats = useMemo(() => {
+    let correct = 0;
+    let partial = 0;
+    let wrong = 0;
+    for (const r of results) {
+      if (r.evaluation?.grade === 'correct') correct++;
+      else if (r.evaluation?.grade === 'partial') partial++;
+      else if (r.evaluation?.grade === 'wrong') wrong++;
+    }
+    return { correct, partial, wrong };
+  }, [results]);
+
+  // v2.2.3 Stage 3 (D3-2): 实时计时器 (替代每次渲染时 Date.now() - startedAt)
+  // - startedAt > 0 时启动 1s interval, 卸载/startedAt 变化时 cleanup
+  // - 立即设置一次初值, 避免 1s 内显示 0 秒
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!startedAt) {
+      setElapsed(0);
+      return;
+    }
+    setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [startedAt]);
 
   if (mode === 'idle') {
     return (
@@ -192,17 +221,17 @@ export function ReviewSessionPage() {
       <footer className={styles.footer}>
         <div className={styles.statsLine}>
           <span className={styles.statItem}>
-            答对 <strong>{results.filter((r) => r.evaluation?.grade === 'correct').length}</strong>
+            答对 <strong>{stats.correct}</strong>
           </span>
           <span className={styles.statItem}>
-            部分 <strong>{results.filter((r) => r.evaluation?.grade === 'partial').length}</strong>
+            部分 <strong>{stats.partial}</strong>
           </span>
           <span className={styles.statItem}>
-            错误 <strong>{results.filter((r) => r.evaluation?.grade === 'wrong').length}</strong>
+            错误 <strong>{stats.wrong}</strong>
           </span>
           {startedAt > 0 && (
             <span className={styles.statItem}>
-              用时 <strong>{formatElapsed(Date.now() - startedAt)}</strong>
+              用时 <strong>{formatElapsed(elapsed)}</strong>
             </span>
           )}
         </div>
@@ -495,10 +524,9 @@ function ReviewCompletedView({
   );
 }
 
-function formatElapsed(ms: number): string {
-  const sec = Math.floor(ms / 1000);
-  if (sec < 60) return `${sec} 秒`;
-  const min = Math.floor(sec / 60);
-  const remSec = sec % 60;
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `${seconds} 秒`;
+  const min = Math.floor(seconds / 60);
+  const remSec = seconds % 60;
   return `${min} 分 ${remSec} 秒`;
 }
