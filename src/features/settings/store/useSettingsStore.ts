@@ -27,10 +27,12 @@ interface SettingsState {
   totalSecondsToday: number;
   /** v1.5.2 Stage 2: 最近一次阅读会话的 ISO 日期 yyyy-mm-dd (跨日重置锚点) */
   lastSessionDate: string | null;
+  /** v1.8.0 Stage 1: 优化后的 FSRS weights (undefined = 用默认, Contract 39) */
+  fsrsWeights?: number[];
+  /** v1.8.0 Stage 1: 优化前备份 (用于回滚, Contract 39) */
+  fsrsWeightsBackup?: number[];
 
   setProvider: (provider: LLMProvider) => void;
-  setApiKey: (key: string) => void;
-  setBaseUrl: (url: string) => void;
   setModel: (model: string) => void;
   setTemperature: (temp: number) => void;
   setEnabled: (enabled: boolean) => void;
@@ -62,8 +64,6 @@ const DEFAULT_JSON_ATTEMPTS = 3;
 
 const defaultLLM: LLMSettings = {
   provider: 'mock',
-  apiKey: '',
-  baseUrl: '',
   model: '',
   temperature: 0.5,
   enabled: true,
@@ -84,13 +84,13 @@ export const useSettingsStore = create<SettingsState>()(
       testResult: null,
       totalSecondsToday: 0,
       lastSessionDate: null,
+      fsrsWeights: undefined,
+      fsrsWeightsBackup: undefined,
 
       setProvider: (provider) => {
         set((s) => ({ llm: { ...s.llm, provider } }));
         resetProviderCache();
       },
-      setApiKey: (apiKey) => set((s) => ({ llm: { ...s.llm, apiKey } })),
-      setBaseUrl: (baseUrl) => set((s) => ({ llm: { ...s.llm, baseUrl } })),
       setModel: (model) => set((s) => ({ llm: { ...s.llm, model } })),
       setTemperature: (temperature) => set((s) => ({ llm: { ...s.llm, temperature } })),
       setEnabled: (enabled) => set((s) => ({ llm: { ...s.llm, enabled } })),
@@ -140,6 +140,8 @@ export const useSettingsStore = create<SettingsState>()(
           testResult: null,
           totalSecondsToday: 0,
           lastSessionDate: null,
+          fsrsWeights: undefined,
+          fsrsWeightsBackup: undefined,
         });
         resetProviderCache();
       },
@@ -170,11 +172,8 @@ export const useSettingsStore = create<SettingsState>()(
           }
 
           const { llm } = data;
-          if (
-            !['mock', 'openai', 'anthropic', 'deepseek', 'kimi', 'qwen', 'minimax'].includes(
-              llm.provider
-            )
-          ) {
+          // v2.1.1 Stage 3 (D3): 校验列表收窄为 4 个值, 拒绝 kimi/qwen/minimax
+          if (!['mock', 'openai', 'anthropic', 'deepseek'].includes(llm.provider)) {
             return false;
           }
 
@@ -185,8 +184,6 @@ export const useSettingsStore = create<SettingsState>()(
               model: llm.model || '',
               temperature: typeof llm.temperature === 'number' ? llm.temperature : 0.5,
               enabled: llm.enabled !== undefined ? llm.enabled : true,
-              apiKey: get().llm.apiKey,
-              baseUrl: get().llm.baseUrl,
             },
             testResult: null,
           });
@@ -200,7 +197,8 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'wordaydream:settings',
-      version: 4,
+      // v2.1.1 Stage 4 (D2): bump version 6 → 7, 配合 LLMSettings.apiKey/baseUrl 移除迁移
+      version: 7,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         llm: state.llm,
@@ -208,6 +206,8 @@ export const useSettingsStore = create<SettingsState>()(
         theme: state.theme,
         totalSecondsToday: state.totalSecondsToday,
         lastSessionDate: state.lastSessionDate,
+        fsrsWeights: state.fsrsWeights,
+        fsrsWeightsBackup: state.fsrsWeightsBackup,
       }),
       migrate: (persistedState, fromVersion) => {
         const base = (persistedState ?? {}) as Record<string, unknown>;
@@ -235,6 +235,94 @@ export const useSettingsStore = create<SettingsState>()(
               typeof base.lastSessionDate === 'string'
                 ? base.lastSessionDate
                 : null,
+          };
+        }
+        // v4 -> v5 (Contract 39): 注入 FSRS weights 字段, undefined = 用默认
+        if (fromVersion < 5) {
+          return {
+            ...base,
+            llm: base.llm,
+            difficulty: base.difficulty ?? 2,
+            theme: normalizeTheme(base.theme),
+            totalSecondsToday:
+              typeof base.totalSecondsToday === 'number'
+                ? base.totalSecondsToday
+                : 0,
+            lastSessionDate:
+              typeof base.lastSessionDate === 'string'
+                ? base.lastSessionDate
+                : null,
+            fsrsWeights: Array.isArray(base.fsrsWeights)
+              ? (base.fsrsWeights as number[])
+              : undefined,
+            fsrsWeightsBackup: Array.isArray(base.fsrsWeightsBackup)
+              ? (base.fsrsWeightsBackup as number[])
+              : undefined,
+          };
+        }
+        // v5 -> v6 (v2.1.1 Stage 3 / D3): 收窄 LLMProvider 类型,
+        // 旧 provider kimi/qwen/minimax → mock + enabled=false (避免 LLM 路由误判).
+        if (fromVersion < 6) {
+          const llm = (base.llm ?? {}) as Record<string, unknown>;
+          const oldProvider = llm.provider;
+          const deprecatedProviders = ['kimi', 'qwen', 'minimax'];
+          if (typeof oldProvider === 'string' && deprecatedProviders.includes(oldProvider)) {
+            return {
+              ...base,
+              llm: { ...llm, provider: 'mock', enabled: false },
+              difficulty: base.difficulty ?? 2,
+              theme: normalizeTheme(base.theme),
+              totalSecondsToday:
+                typeof base.totalSecondsToday === 'number' ? base.totalSecondsToday : 0,
+              lastSessionDate:
+                typeof base.lastSessionDate === 'string' ? base.lastSessionDate : null,
+              fsrsWeights: Array.isArray(base.fsrsWeights)
+                ? (base.fsrsWeights as number[])
+                : undefined,
+              fsrsWeightsBackup: Array.isArray(base.fsrsWeightsBackup)
+                ? (base.fsrsWeightsBackup as number[])
+                : undefined,
+            };
+          }
+          return {
+            ...base,
+            llm,
+            difficulty: base.difficulty ?? 2,
+            theme: normalizeTheme(base.theme),
+            totalSecondsToday:
+              typeof base.totalSecondsToday === 'number' ? base.totalSecondsToday : 0,
+            lastSessionDate:
+              typeof base.lastSessionDate === 'string' ? base.lastSessionDate : null,
+            fsrsWeights: Array.isArray(base.fsrsWeights)
+              ? (base.fsrsWeights as number[])
+              : undefined,
+            fsrsWeightsBackup: Array.isArray(base.fsrsWeightsBackup)
+              ? (base.fsrsWeightsBackup as number[])
+              : undefined,
+          };
+        }
+        // v6 -> v7 (v2.1.1 Stage 4 / D2): 移除 LLMSettings.apiKey/baseUrl 字段.
+        // v1.3.0 proxy 架构迁移后这两个字段已无意义, 清理旧持久化数据.
+        if (fromVersion < 7) {
+          const llm = (base.llm ?? {}) as Record<string, unknown>;
+          // 删除旧的 apiKey/baseUrl 字段 (如果存在)
+          delete llm.apiKey;
+          delete llm.baseUrl;
+          return {
+            ...base,
+            llm,
+            difficulty: base.difficulty ?? 2,
+            theme: normalizeTheme(base.theme),
+            totalSecondsToday:
+              typeof base.totalSecondsToday === 'number' ? base.totalSecondsToday : 0,
+            lastSessionDate:
+              typeof base.lastSessionDate === 'string' ? base.lastSessionDate : null,
+            fsrsWeights: Array.isArray(base.fsrsWeights)
+              ? (base.fsrsWeights as number[])
+              : undefined,
+            fsrsWeightsBackup: Array.isArray(base.fsrsWeightsBackup)
+              ? (base.fsrsWeightsBackup as number[])
+              : undefined,
           };
         }
         return base as Partial<SettingsState>;

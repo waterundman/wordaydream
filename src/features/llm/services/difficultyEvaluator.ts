@@ -319,14 +319,21 @@ Context (optional): ${context?.trim() || '(none)'}
 
 Score this lemma. Return JSON only.`;
 
+  // v2.1.1 Stage 2 (D1): 使用 expectJson: 'difficulty' 走 schema-aware JSON 解析.
+  // router.generateWithJsonRetry 会用 DifficultyPayloadSchema 校验
+  // { morphological, abstractness, frequencyPercentile, reasoning } 格式,
+  // 不再用 PassagePayloadSchema 拒绝非 passage 响应.
+  // v2.1.0 hotfix 的本地 extractJson workaround 已移除, 改回 result.parsed 路径.
   const result = await generateWithFallback(llm, {
     system,
     prompt,
     temperature: 0.2,
     maxTokens: 300,
-    expectJson: true,
+    expectJson: 'difficulty',
   });
 
+  // v2.1.1 Stage 2: 优先用 router 已解析的 result.parsed (DifficultyPayloadSchema 校验通过).
+  // fallback: 如果 result.parsed 不存在 (e.g. 旧路径残留), 用 extractJson 本地解析.
   const parsed = (result.parsed ?? extractJson(result.text)) as LLMRawEvaluation | undefined;
   if (parsed && typeof parsed === 'object') {
     const evaluation = buildEvaluationFromLLM(normalized, language, parsed);

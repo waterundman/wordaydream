@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MemoryCard, TokenOccurrence, Rating, Language } from '../../../types';
 import { createInitialMemoryCard, scheduleNextReview } from '../services/schedulerAdapter';
+import { publish } from '../../../domain/events';
+import type { MemoryCardsUpdatedPayload } from '../../../domain/events';
 
 interface MemoryStore {
   cards: Map<string, MemoryCard>;
@@ -54,6 +56,9 @@ export const useMemoryStore = create<MemoryStore>()(
           newlyAdded: [...get().newlyAdded, token.lexemeGroupId],
         });
 
+        // v2.0.0 Stage 2: 同步 wordlist 进度 (addCardFromToken 不是复习, isReview=false)
+        publish<MemoryCardsUpdatedPayload>('memory:cards-updated', { cards: newCards, isReview: false });
+
         return card;
       },
 
@@ -61,10 +66,14 @@ export const useMemoryStore = create<MemoryStore>()(
         return get().cards.get(groupId);
       },
 
-      getCardByLemma: (lemma: string) => {
+      getCardByLemma: (lemma: string, language?: 'en' | 'de') => {
         const target = lemma.toLowerCase();
         for (const card of get().cards.values()) {
-          if (card.lemma.toLowerCase() === target) return card;
+          if (card.lemma.toLowerCase() !== target) continue;
+          // v1.6.0 Stage 3.5-B: 按 language 精确匹配 (同 lemma 不同语言视为不同词)
+          // card.language 为 undefined 时 (旧卡片) 不过滤, 保持向后兼容
+          if (language && card.language && card.language !== language) continue;
+          return card;
         }
         return undefined;
       },
@@ -93,6 +102,9 @@ export const useMemoryStore = create<MemoryStore>()(
             { cardId, rating, at: Date.now() },
           ].slice(-200),
         });
+
+        // v2.0.0 Stage 2: 同步 wordlist 进度 + 记录复习 (v1.6.0 Stage 3.5-6 dailyGoal)
+        publish<MemoryCardsUpdatedPayload>('memory:cards-updated', { cards: newCards, isReview: true });
       },
 
       getRatingPreviews: (cardId: string) => {

@@ -17,12 +17,64 @@
  * - 原 mockGlosses 字典作为"全部路径都失败"的最后兜底, 保留
  */
 
-import type { GlossPayload, TokenOccurrence, Language } from '../../../types';
+import type { GlossPayload, TokenOccurrence, Language, DictionaryEntry } from '../../../types';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { generateWithFallback } from '../../llm/services/router';
 import { getDictionaryAdapter } from '../../dictionary/services/wiktextractAdapter';
+import {
+  getCachedGloss,
+  setCachedGloss,
+  type CachedGloss,
+} from '../../dictionary/services/glossPersistentCache';
 
 /* eslint-disable @typescript-eslint/no-magic-numbers */
+
+/**
+ * v2.2.0 Stage 4 (D3): 计算字典原文的 sourceHash.
+ *
+ * 用于 gloss 持久化缓存: 字典数据 (definitions / etymology) 变化时,
+ * 缓存命中后比对 sourceHash 失败, 触发重新调 LLM 改写.
+ *
+ * 算法: djb2 (无需 crypto API, 跨平台稳定).
+ * 序列化: 稳定 JSON (key 排序保证 definitions/etymology 顺序无关).
+ */
+export function computeSourceHash(entry: {
+  definitions: string[];
+  etymology?: string;
+}): string {
+  const stable = JSON.stringify({
+    definitions: entry.definitions,
+    etymology: entry.etymology ?? '',
+  });
+  let hash = 5381;
+  for (let i = 0; i < stable.length; i++) {
+    hash = ((hash << 5) + hash + stable.charCodeAt(i)) | 0;
+  }
+  return (hash >>> 0).toString(16);
+}
+
+/**
+ * v2.2.0 Stage 4 (D3): 把缓存命中结果转为 GlossPayload.
+ *
+ * 与 LLM 改写成功路径的输出格式保持一致 (sourceLabel: 'AI 改写 (基于 Wiktionary)'),
+ * 以保证 UI 对"缓存命中"和"LLM 新生成"无感.
+ *
+ * explanation 还原: 缓存里只存 explanation 原文, 这里不重新拼接词源/语法信息
+ * (词源等结构性事实由 UI 在别处从 entry 读取, 不混入 llmExplanation).
+ */
+function cachedGlossToPayload(
+  cached: CachedGloss,
+  entry: DictionaryEntry,
+): GlossPayload {
+  return {
+    word: entry.lemma,
+    partOfSpeech: entry.partOfSpeech,
+    definitions: cached.definitions,
+    examples: entry.examples ?? [],
+    sourceLabel: 'AI 改写 (基于 Wiktionary)',
+    llmExplanation: cached.explanation,
+  };
+}
 
 /**
  * v0.2.0 兼容: 保留旧的 mock 字典, 作为全路径 fallback 兜底.
@@ -216,17 +268,22 @@ ${JSON.stringify(userObj, null, 2)}
 Rewrite into natural Chinese. Return JSON only matching:
 { "definitions": ["中文释义1", "中文释义2"], "explanation": "可选的简短补充" }`;
 
+  // v2.1.1 Stage 2 (D1): 使用 expectJson: 'gloss' 走 schema-aware JSON 解析.
+  // router.generateWithJsonRetry 会用 GlossPayloadSchema 校验
+  // { definitions, explanation } 格式, 不再用 PassagePayloadSchema 拒绝非 passage 响应.
+  // v2.1.0 hotfix 的本地 safeJson workaround 已移除, 改回 result.parsed 路径.
   const result = await generateWithFallback(llm, {
     system,
     prompt,
     temperature: 0.3,
     maxTokens: 300,
-    expectJson: true,
+    expectJson: 'gloss',
   });
 
   if (result.fallbackToMock || !result.text) return null;
 
-  // result.parsed 在 provider 解析成功时是对象, 否则需要手动 extract
+  // v2.1.1 Stage 2: 优先用 router 已解析的 result.parsed (GlossPayloadSchema 校验通过).
+  // fallback: 如果 result.parsed 不存在 (e.g. 旧路径残留), 用 safeJson 本地解析.
   const parsed = (result.parsed ?? safeJson(result.text)) as
     | { definitions?: unknown; explanation?: unknown }
     | undefined;
@@ -263,13 +320,26 @@ function safeJson(text: string): unknown {
  * - 标注 sourceLabel (诚实呈现信息来源)
  */
 async function entryToGlossPayload(
-  entry: import('../../../types').DictionaryEntry
+  entry: DictionaryEntry
 ): Promise<GlossPayload> {
   // 1) 拿到原始英文/德文释义
   const rawDefs = entry.definitions;
   const rawExamples = entry.examples ?? [];
 
-  // 2) 尝试让 LLM 改写为中文
+  // 2) v2.2.0 Stage 4 (D3): 先查 gloss 持久化缓存
+  //    缓存命中 + sourceHash 匹配 → 跳过 LLM, 直接返回缓存的改写结果
+  //    缓存未命中或 sourceHash 不匹配 → 走 LLM 改写
+  const sourceHash = computeSourceHash(entry);
+  try {
+    const cached = await getCachedGloss(entry.language, entry.lemma);
+    if (cached && cached.sourceHash === sourceHash) {
+      return cachedGlossToPayload(cached, entry);
+    }
+  } catch {
+    // 缓存查询失败 (e.g. IndexedDB 异常) → 静默降级到 LLM 路径, 不影响主流程
+  }
+
+  // 3) 尝试让 LLM 改写为中文
   const rewrite = await rewriteToChinese(entry);
 
   if (rewrite && rewrite.definitions.length > 0) {
@@ -290,17 +360,36 @@ async function entryToGlossPayload(
       explanationParts.push('（德语复合词，保留原词形）');
     }
 
+    const llmExplanation =
+      explanationParts.length > 0 ? explanationParts.join('\n') : undefined;
+
+    // v2.2.0 Stage 4 (D3): 写入持久化缓存 (异步, 失败静默)
+    // 缓存内容: LLM 改写后的 definitions + 拼接后的 llmExplanation (含词源/语法/复合词提示)
+    // 这样二次命中时 llmExplanation 与首次一致, 不需要重新拼接.
+    const { llm } = useSettingsStore.getState();
+    try {
+      await setCachedGloss(entry.language, entry.lemma, {
+        definitions: rewrite.definitions,
+        explanation: llmExplanation,
+        llmProvider: llm.provider,
+        llmModel: llm.model,
+        sourceHash,
+      });
+    } catch {
+      // 写入失败 (e.g. IndexedDB 异常) → 静默降级, 不影响本次返回
+    }
+
     return {
       word: entry.lemma,
       partOfSpeech: entry.partOfSpeech,
       definitions: rewrite.definitions,
       examples: rawExamples,
       sourceLabel: 'AI 改写 (基于 Wiktionary)',
-      llmExplanation: explanationParts.length > 0 ? explanationParts.join('\n') : undefined,
+      llmExplanation,
     };
   }
 
-  // 3) LLM 不可用 / 改写失败, 直接用字典原文
+  // 4) LLM 不可用 / 改写失败, 直接用字典原文
   // 不调用 LLM "翻译" 而是让 UI 自行展示原文 (UI 已知这种情况)
   // 但 GlossPayload.definitions 期望是用户能理解的释义, 这里做最简兜底:
   // 保留原义, sourceLabel 诚实标注为"字典原文, 需自行翻译或查中文词典"
@@ -333,7 +422,7 @@ export async function getGloss(
   const adapter = getDictionaryAdapter();
 
   // 1) 字典查询
-  let entry: import('../../../types').DictionaryEntry | null = null;
+  let entry: DictionaryEntry | null = null;
   try {
     entry = await adapter.fetchEntry(token.lemma, lang);
   } catch (err) {

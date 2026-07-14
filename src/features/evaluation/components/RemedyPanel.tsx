@@ -141,7 +141,7 @@ export function RemedyPanel({ token, userAnswer, language = 'en' }: Props) {
             <p className={styles.translation}>{remedy.zh}</p>
           </>
         ) : (
-          <p className={styles.loadingText}>正在生成补救例句...</p>
+          <p className={styles.loadingText}>这个词暂无预设例句，请参考下方释义理解其用法。</p>
         )}
       </div>
 

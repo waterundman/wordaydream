@@ -3,8 +3,8 @@ import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { evaluateAnswer as mockEvaluate } from '../../evaluation/services/evaluateAnswer';
 import { generateWithFallback } from './router';
 import { evaluateDifficulty, mockEvaluateDifficulty } from './difficultyEvaluator';
-import { buildPassagePrompt } from '../config/prompts';
-import { extractPassageJson, type PassageJsonPayload } from './jsonParser';
+import { buildPassagePrompt, buildEvaluateAnswerPrompt } from '../config/prompts';
+import { extractPassageJson, safeJsonParse, type PassageJsonPayload } from './jsonParser';
 import { normalizeTextPreservingOffsets, remapOffset } from '../utils/textNormalize';
 import {
   summarizeAlignment,
@@ -27,46 +27,65 @@ export async function evaluateAnswerViaLLM(input: EvaluateInput): Promise<Answer
     return mockEvaluate(input.userAnswer, input.lemma, input.objectiveDifficulty);
   }
 
-  const system = `You are a language learning assistant. You judge if a user's Chinese definition of a target-language word is correct.
-Output JSON: { "grade": "correct" | "partial" | "wrong", "feedback": "<one sentence>", "hint": "<optional short hint>" }`;
+  // v1.5.3: prompt 从 prompts.ts 集中管理, temperature 改为 0 提高判别稳定性.
+  const { system, prompt, temperature, maxTokens } = buildEvaluateAnswerPrompt({
+    lemma: input.lemma,
+    language: input.language,
+    userAnswer: input.userAnswer,
+  });
 
-  const prompt = `Target word (lemma): ${input.lemma} (language: ${input.language})
-User's Chinese definition: ${input.userAnswer}
-
-Decide if the user's definition captures the meaning.
-- "correct" if it matches the main sense
-- "partial" if it is close but missing a key aspect
-- "wrong" if it is unrelated
-
-Return JSON only, no extra text.`;
-
+  // v2.1.1 Stage 2 (D1): 使用 expectJson: 'evaluation' 走 schema-aware JSON 解析.
+  // router.generateWithJsonRetry 会用 EvaluationPayloadSchema 校验 { grade, feedback, hint }
+  // 格式, 不再用 PassagePayloadSchema (要求 text/tokens 字段) 拒绝非 passage 响应.
+  // v2.1.0 hotfix 的本地 safeJsonParse workaround 已移除, 改回 result.parsed 路径.
   const result = await generateWithFallback(llm, {
     system,
     prompt,
-    temperature: 0.2,
-    maxTokens: 200,
-    expectJson: true,
+    temperature,
+    maxTokens,
+    expectJson: 'evaluation',
   });
 
-  if (result.parsed && typeof result.parsed === 'object') {
-    const parsed = result.parsed as { grade?: string; feedback?: string; hint?: string };
-    const grade = (parsed.grade === 'correct' || parsed.grade === 'partial' || parsed.grade === 'wrong')
-      ? parsed.grade
-      : 'partial';
-    return {
-      grade,
-      feedback: parsed.feedback ?? '',
-      hint: parsed.hint,
-    };
-  }
-
+  // v1.5.3 fix: fallbackToMock 时走 mock 评估, 标注来源为 heuristic
   if (result.fallbackToMock) {
     return mockEvaluate(input.userAnswer, input.lemma, input.objectiveDifficulty);
   }
 
+  // v2.2.1 Stage 2 (Bug 3 主因 B 协同): 优先用 router 已解析的 result.parsed.
+  // result.parsed 为 undefined 时 (schema 校验未通过, 走了 mock fallback),
+  // 走 mockEvaluate 而非解析 passage 文本 (passage JSON 会被误当评估结果).
+  const parsed = result.parsed as { grade?: string; feedback?: string; hint?: string } | undefined;
+  if (!parsed) {
+    return mockEvaluate(input.userAnswer, input.lemma, input.objectiveDifficulty);
+  }
+
+  // v1.5.3 fix: 解析成功 → 标注来源为 llm
+  if (parsed && typeof parsed === 'object') {
+    const grade = (parsed.grade === 'correct' || parsed.grade === 'partial' || parsed.grade === 'wrong')
+      ? parsed.grade
+      : 'partial';
+    // v1.5.3 fix: feedback 为空时提供兜底文案, 不再返回空字符串
+    const feedback = typeof parsed.feedback === 'string' && parsed.feedback.trim()
+      ? parsed.feedback.trim()
+      : grade === 'correct'
+        ? '回答正确。'
+        : grade === 'partial'
+          ? '部分正确，继续努力。'
+          : '回答不正确，请查看提示。';
+    return {
+      grade,
+      feedback,
+      hint: typeof parsed.hint === 'string' ? parsed.hint.trim() : undefined,
+      source: 'llm',
+    };
+  }
+
+  // v1.5.3 fix: 解析失败不再返回 'partial' + 原始 LLM 文本 (会泄漏 JSON).
+  // 改为明确标注为 error 来源, 让 UI 能区分"评估失败"与"学习反馈".
   return {
     grade: 'partial',
-    feedback: result.text || '判定服务异常，请稍后再试。',
+    feedback: '评估服务暂时不可用，请稍后重试。',
+    source: 'error',
   };
 }
 
@@ -119,20 +138,33 @@ export async function generatePassageViaLLM(
   dueCards: Pick<MemoryCard, 'lemma'>[] = []
 ): Promise<PassageJsonPayload | null> {
   const { llm } = useSettingsStore.getState();
-  if (!llm.enabled || llm.provider === 'mock' || llm.apiKey.trim().length === 0) {
+  // v2.1.1 Stage 4: LLMSettings.apiKey 字段已移除, 此处不再有任何 apiKey 检查.
+  // v1.3.0 proxy 架构: API key 在后端 server/llm-proxy.js 的 .env 中.
+  if (!llm.enabled || llm.provider === 'mock') {
     return null;
   }
 
   const { system, prompt } = buildPassagePrompt(language, difficulty, dueCards);
+  // v2.1.1 Stage 2 (D1): expectJson: true -> 'passage' (显式使用 PassagePayloadSchema).
+  // 行为等价 (true 在 router 内部映射为 'passage'), 但语义更清晰.
   const result = await generateWithFallback(llm, {
     system,
     prompt,
     temperature: llm.temperature,
     maxTokens: 1500,
-    expectJson: true,
+    expectJson: 'passage',
   });
 
-  const payload = extractPassageJson(result.text);
+  // v2.1.0 hotfix: extractPassageJson 严格 slice 校验会丢弃所有 offset 不准确的 tokens.
+  // 用 safeJsonParse 作为 fallback, 让 validateAndAlignPassagePayload 修复 offsets.
+  let payload = extractPassageJson(result.text);
+  if (!payload) {
+    const raw = safeJsonParse<PassageJsonPayload>(result.text);
+    if (raw && typeof raw.text === 'string' && raw.text.length > 0 &&
+        Array.isArray(raw.tokens) && raw.tokens.length > 0) {
+      payload = raw;
+    }
+  }
   if (!payload) return null;
 
   // Stage 1: text 清洗 + offsets 重算
@@ -365,7 +397,7 @@ export function useLLMGenerator<TInput, TOutput>(
   useEffect(() => {
     setLastResult(null);
     setIsLoading(false);
-  }, [llm.provider, llm.model, llm.apiKey, llm.baseUrl]);
+  }, [llm.provider, llm.model]);
 
   const run = async (input: TInput): Promise<TOutput> => {
     if (llm.provider === 'mock' || !llm.enabled) {

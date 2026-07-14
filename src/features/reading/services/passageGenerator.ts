@@ -25,9 +25,11 @@ import type {
 } from '../../../types';
 import { getMockPassage } from '../../../mocks/passages';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { getWordlistState, getMemoryState } from '../../../domain/storeAccessors';
+import { getCachedWordlist } from '../../../data/wordlists';
 import { buildPassagePrompt } from '../../llm/config/prompts';
 import { generateWithFallback } from '../../llm/services/router';
-import { extractPassageJson } from '../../llm/services/jsonParser';
+import { extractPassageJson, safeJsonParse, type PassageJsonPayload } from '../../llm/services/jsonParser';
 import {
   normalizePassagePayload,
   validateAndAlignPassagePayloadWithResults,
@@ -39,10 +41,18 @@ import {
 } from '../../llm/services/difficultyEvaluator';
 import { detectGrammarPoints } from '../../grammar/services/grammarDetector';
 import { splitCompound } from '../../grammar/services/compoundSplitter';
+import { getRecentRecallRate, getAdaptiveLearningThreshold } from '../../review/services/recallRateCalculator';
 
 const CACHE_CAPACITY = 8;
 /** 缓存时间窗: 1 分钟, 避免长时间缓存陈旧文本 */
 const CACHE_WINDOW_MS = 60_000;
+
+/**
+ * v1.6.0 Stage 3.6-C: 复习编排超载阈值.
+ * dueCards (review/relearning 状态) 数量 > 此值时, pacing 强制巩固模式:
+ * targetWords 取 dueCards 的 lemma, 主动建议复习而非引入新词.
+ */
+const REVIEW_OVERLOAD_THRESHOLD = 20;
 
 interface CacheEntry {
   key: string;
@@ -270,21 +280,90 @@ export async function generatePassage(
   difficulty: DifficultyLevel,
   dueCards: MemoryCard[] = [],
   // v1.5.3 fix V3-P3-006: 透传 AbortSignal, 让 loadSession 取消时能真正中断 LLM fetch.
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  // v2.2.1 Stage 1 (Bug 1): 强制跳过缓存读取, 供 loadSession 每次生成新 passage.
+  // 缓存写入逻辑保持不变 (forceRefresh 时仍写入缓存, 供页面刷新等场景命中).
+  forceRefresh?: boolean
 ): Promise<Passage> {
   const { llm } = useSettingsStore.getState();
   const hasDueCards = dueCards.length > 0;
   const cacheKey = buildCacheKey(language, difficulty, hasDueCards);
 
-  if (!hasDueCards) {
+  if (!hasDueCards && !forceRefresh) {
     const cached = getFromCache(cacheKey);
     if (cached) return cached;
   }
 
   // 1. 走 LLM (mock provider 在 disabled 时会直接返回空文本)
-  if (llm.enabled && llm.provider !== 'mock' && llm.apiKey.trim().length > 0) {
+  // v2.1.1 Stage 4: LLMSettings.apiKey 字段已移除, 此处不再有任何 apiKey 检查.
+  // v1.3.0 proxy 架构: API key 在后端 server/llm-proxy.js 的 .env 中.
+  if (llm.enabled && llm.provider !== 'mock') {
     try {
-      const { system, prompt } = buildPassagePrompt(language, difficulty, dueCards);
+      // v1.6.0 Stage 3.5-4: pacing 感知取词.
+      // v1.7.0 Stage 1: pacing 阈值改为自适应 (基于 ratingHistory recall 率),
+      //   替代 v1.6.0 硬编码 LEARNING_THRESHOLD=30.
+      // learning 词过载 (>= 自适应阈值) 时转入巩固模式:
+      //   targetWords = learning 词 (强化复现), optionalWords = [] (专注 target)
+      // 正常模式: targetWords = 未学词 (引入新词), optionalWords = learning 词 (复现)
+      // C1 (难度 5) 无词表 → learningWords 为 [] → isOverloaded=false → getUnlearnedWords 返回 []
+      // → wordlistConstraint 为 undefined, 沿用 v1.5.x 自由生成 (0 breaking change).
+      const wordlistState = getWordlistState();
+      // 先异步加载词表 + 取 learning 词 (getLearningWords 内部会 loadWordlist)
+      const learningWords = await wordlistState.getLearningWords(language, difficulty, 999);
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+      // v1.6.0 Stage 3.6-C: 复习编排 — dueCards 超载时强制巩固模式.
+      // 仅统计 review/relearning 状态的 due 卡片 (new/learning 由自适应阈值处理),
+      // 避免 learning 卡片 (初始学习流) 与 review 积压混淆.
+      const memoryState = getMemoryState();
+      const dueReviewCards = memoryState
+        .getDueCards(language)
+        .filter((c) => c.status === 'review' || c.status === 'relearning');
+      const isReviewOverloaded = dueReviewCards.length > REVIEW_OVERLOAD_THRESHOLD;
+
+      // v1.7.0 Stage 1: 自适应 pacing 阈值 (运行时计算, 不持久化).
+      // 首次用户 (无 ratingHistory) 基于难度估算; 有历史用户基于近 7 天 recall 率.
+      const ratingHistory = memoryState.ratingHistory;
+      const learningThreshold = getAdaptiveLearningThreshold(
+        getRecentRecallRate(ratingHistory),
+        difficulty,
+        ratingHistory.length > 0
+      );
+      const isOverloaded = learningWords.length >= learningThreshold;
+      let targetWords: string[];
+      let optionalWords: string[];
+      if (isReviewOverloaded) {
+        // v1.6.0 Stage 3.6-C: 优先级最高 — dueCards 超载 → 强制巩固, targetWords 取 dueCards 的 lemma.
+        // dueCards 已按 due 升序排 (getDueCards 内部排序), slice(0,8) 取最过期的.
+        targetWords = dueReviewCards.slice(0, 8).map((c) => c.lemma);
+        optionalWords = [];
+      } else if (isOverloaded) {
+        // v1.6.0 Stage 3.5-B: 巩固模式按 lapses 降序排, 困难词优先作 target.
+        // 反复遗忘的词 (lapses 高) 优先复现, 打破"困难词永远卡住"死锁.
+        const learningWithLapses = learningWords.map((lemma) => {
+          const card = memoryState.getCardByLemma(lemma, language);
+          return { lemma, lapses: card?.lapses ?? 0 };
+        });
+        learningWithLapses.sort((a, b) => b.lapses - a.lapses);
+        targetWords = learningWithLapses.slice(0, 8).map((w) => w.lemma);
+        optionalWords = [];
+      } else {
+        // 正常模式: 新词作 target, learning 词作 optional
+        targetWords = await wordlistState.getUnlearnedWords(language, difficulty, 8);
+        optionalWords = wordlistState.getLearningWordsSync(language, difficulty, 20);
+      }
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+      const wordlistConstraint = targetWords.length > 0
+        ? { targetWords, optionalWords }
+        : undefined;
+
+      const { system, prompt } = buildPassagePrompt(
+        language,
+        difficulty,
+        dueCards,
+        wordlistConstraint
+      );
       const result = await generateWithFallback(llm, {
         system,
         prompt,
@@ -298,7 +377,19 @@ export async function generatePassage(
         signal,
       });
 
-      const payload = extractPassageJson(result.text);
+      // v2.1.0 hotfix: extractPassageJson 的严格 slice 校验 (rawText.substring(start, end) !== surfaceForm)
+      // 会过滤掉所有 offset 不准确的 tokens, 导致 payload 为 null, fallback 到 mock.
+      // 但 LLM 返回的 token offsets 经常不准确, validateAndAlignPassagePayloadWithResults
+      // 的设计目的就是修复不准确的 offsets. 所以先用 safeJsonParse 作为 fallback,
+      // 跳过 slice 校验, 让 alignment validator 修复 offsets.
+      let payload = extractPassageJson(result.text);
+      if (!payload) {
+        const raw = safeJsonParse<PassageJsonPayload>(result.text);
+        if (raw && typeof raw.text === 'string' && raw.text.length > 0 &&
+            Array.isArray(raw.tokens) && raw.tokens.length > 0) {
+          payload = raw;
+        }
+      }
       // v1.5.3 fix V4-P3-005: LLM 返回后检查 signal.aborted, 避免浪费后处理 CPU/网络.
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (payload) {
@@ -317,6 +408,36 @@ export async function generatePassage(
           alignedPayload.tokens,
           tokenResults
         );
+
+        // v1.6.0 Stage 3.5: 对 passage 中所有词表内 token 标记 learning.
+        // 这样 recordEncounter 在用户答对时能生效 (progress 中已有记录).
+        // 不限于 targetWords — LLM 自由用的词表内词也算"已见".
+        const cachedWordlist = getCachedWordlist(language, difficulty);
+        if (cachedWordlist) {
+          const wordlistSet = new Set(
+            cachedWordlist.words.map((w) => w.lemma.toLowerCase())
+          );
+          const coveredLemmas = new Set<string>();
+          for (const tok of basePassage.tokens) {
+            if (wordlistSet.has(tok.lemma.toLowerCase())) {
+              coveredLemmas.add(tok.lemma);
+            }
+          }
+          // targetWords 覆盖率日志 (保留诊断能力)
+          if (wordlistConstraint) {
+            const targetSet = new Set(targetWords.map((w) => w.toLowerCase()));
+            const targetCovered = Array.from(coveredLemmas).filter((l) =>
+              targetSet.has(l.toLowerCase())
+            );
+            console.info(
+              `[Wordlist] target covered: ${targetCovered.length}/${targetWords.length}`,
+              targetCovered
+            );
+          }
+          for (const lemma of coveredLemmas) {
+            getWordlistState().markWordLearning(language, lemma);
+          }
+        }
 
         // 2. 评估每个 lemma 的真实难度 (去重)
         const uniqueLemmas = Array.from(
@@ -342,6 +463,11 @@ export async function generatePassage(
         // 4. 检测复合词 (德语)
         // v1.5.3 fix V3-P3-005: 用返回值替代原地修改, 避免副作用.
         enriched.tokens = await detectCompoundWordsForTokens(enriched.tokens, language);
+
+        // v2.2.0 Stage 1 (D4): LLM 路径产物显式标记 source='llm'.
+        // buildPassageFromLLM 默认不设 source, 由调用方 (本函数) 统一赋值,
+        // 让 UI 能明确区分 "AI 生成" vs "演示数据".
+        enriched.source = 'llm';
 
         if (!hasDueCards) putIntoCache(cacheKey, enriched);
         return enriched;

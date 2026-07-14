@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMemoryStore } from '../store/useMemoryStore';
 import { useReviewSessionStore } from '../store/useReviewSessionStore';
+import { subscribe, type MemoryCardsUpdatedPayload } from '../../../domain/events';
 import styles from './ReviewPromptBanner.module.css';
 import type { Language } from '../../../types';
 
@@ -15,12 +16,13 @@ export function ReviewPromptBanner({ language, onGenerate }: Props) {
   const [dueCount, setDueCount] = useState(0);
 
   useEffect(() => {
-    const updateCount = () => {
+    setDueCount(getDueCards(language).length);
+    const unsubscribe = subscribe<MemoryCardsUpdatedPayload>('memory:cards-updated', () => {
       setDueCount(getDueCards(language).length);
+    });
+    return () => {
+      unsubscribe();
     };
-    updateCount();
-    const interval = setInterval(updateCount, 1000);
-    return () => clearInterval(interval);
   }, [language, getDueCards]);
 
   // 无复现词时仅显示 1px 提示线，不占垂直空间

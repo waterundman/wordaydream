@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { fileURLToPath, URL } from 'node:url'
 
 // https://vite.dev/config/
 //
@@ -16,6 +17,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 // - 1.x 内部修复 'This plugin assigns to bundle variable' warning, R-1 兑现
 // - 0 改动: react() plugin + 其它 Vite 配置 + plugin 字段顺序
 export default defineConfig({
+  // v2.2.0 hotfix: 排除 @open-spaced-repetition/binding 的预构建.
+  // 该包是 Node.js 原生绑定 (napi-rs), 浏览器端需要 WASM 版本 (binding-wasm32-wasi, 未安装).
+  // fsrsOptimizer.ts 已改为动态 import + catch 降级, 但 Vite 依赖扫描器仍会捕获
+  // import('@open-spaced-repetition/binding') 并尝试预构建, 导致 WASM 依赖解析失败 → 500.
+  // exclude 后, 动态 import 在运行时按需加载, 失败时 catch 降级为"优化不可用".
+  optimizeDeps: {
+    exclude: ['@open-spaced-repetition/binding'],
+  },
+  resolve: {
+    alias: {
+      '@open-spaced-repetition/binding-wasm32-wasi': fileURLToPath(new URL('./src/vendor/empty-wasi.ts', import.meta.url)),
+    },
+  },
   plugins: [
     react(),
     VitePWA({

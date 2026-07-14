@@ -113,7 +113,8 @@ export async function llmEvaluate(
  * 规则 (v1.5.2 三分支):
  * - settings.llm.provider === 'mock' || !settings.llm.enabled → 'heuristic'
  *   (LLM evaluation 是 v1.6.0+ 真实实现, heuristic 是最稳的 fallback)
- * - openai/anthropic/deepseek/kimi/qwen/minimax + enabled → 'llm' (新增, 旧版 v1.5.0 走 heuristic)
+ * - openai/anthropic/deepseek + enabled → 'llm' (新增, 旧版 v1.5.0 走 heuristic)
+ *   (v2.1.1 Stage 3 / D3: 已移除 kimi/qwen/minimax, 这些 provider 无后端实现)
  * - 其它 (未知 provider) → 'heuristic' (安全 fallback, 0 break)
  */
 export async function selectDifficultyProvider(): Promise<DifficultyProvider> {
@@ -126,10 +127,7 @@ export async function selectDifficultyProvider(): Promise<DifficultyProvider> {
   if (
     llm.provider === 'openai' ||
     llm.provider === 'anthropic' ||
-    llm.provider === 'deepseek' ||
-    llm.provider === 'kimi' ||
-    llm.provider === 'qwen' ||
-    llm.provider === 'minimax'
+    llm.provider === 'deepseek'
   ) {
     return 'llm';
   }

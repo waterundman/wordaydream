@@ -10,6 +10,10 @@ interface Props {
   onClick: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  /** v2.1.0 Stage 4 (Contract 68): 重读模式下传 "true", 禁用作答交互. */
+  'aria-disabled'?: 'true' | 'false' | boolean;
+  /** v2.1.0 Stage 4 (Contract 68): 重读模式下传 "true", 标记节点供测试/样式识别. */
+  'data-replay'?: 'true' | 'false' | boolean;
 }
 
 function GrammarHighlightImpl({
@@ -20,6 +24,8 @@ function GrammarHighlightImpl({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  'aria-disabled': ariaDisabled,
+  'data-replay': dataReplay,
 }: Props) {
   const isPassiveHighlight = isTypeHovered && !isActive;
 
@@ -61,6 +67,8 @@ function GrammarHighlightImpl({
       role="button"
       tabIndex={0}
       aria-label={`语法点: ${grammarPoint.type}`}
+      aria-disabled={ariaDisabled}
+      data-replay={dataReplay}
     >
       <span className={styles.text}>{children}</span>
     </span>

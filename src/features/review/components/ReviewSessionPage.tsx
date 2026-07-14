@@ -6,6 +6,7 @@ import {
 import { RatingBar } from './RatingBar';
 import { EmptyState } from '../../../components/EmptyState';
 import { useGlobalShortcuts } from '../../reading/hooks/useGlobalShortcuts';
+import { useAppModeStore } from '../../../hooks/useAppModeStore';
 import styles from './ReviewSessionPage.module.css';
 import cardStyles from './ReviewCard.module.css';
 import type { Rating } from '../../../types';
@@ -82,7 +83,15 @@ export function ReviewSessionPage() {
   }
 
   if (mode === 'completed') {
-    return <ReviewCompletedView onExit={exitReview} />;
+    return (
+      <ReviewCompletedView
+        onContinueReading={exitReview}
+        onExit={() => {
+          exitReview();
+          useAppModeStore.getState().setMode('home');
+        }}
+      />
+    );
   }
 
   const card = queue[currentIndex];
@@ -374,8 +383,18 @@ function ReviewPausedView({ onResume, onExit }: { onResume: () => void; onExit: 
   );
 }
 
-function ReviewCompletedView({ onExit }: { onExit: () => void }) {
+function ReviewCompletedView({
+  onContinueReading,
+  onExit,
+}: {
+  onContinueReading: () => void;
+  onExit: () => void;
+}) {
   const results = useReviewSessionStore((s) => s.results);
+  // v2.1.0 Stage 1 (Contract 62): 订阅 previousMode, 决定渲染双 CTA 还是单按钮.
+  // previousMode='reading' → 双 CTA (继续阅读 + 返回主页); 否则 → 单按钮 (返回主舞台).
+  const previousMode = useAppModeStore((s) => s.previousMode);
+  const showContinueReading = previousMode === 'reading';
 
   // v1.5.3 fix V4-P3-004: 从订阅的 results 派生 stats, 不再调 getState().getStats().
   // 之前 getState() 非响应式 + getStats() 每次返回新对象, 导致 useMemo 永远失效.
@@ -445,13 +464,32 @@ function ReviewCompletedView({ onExit }: { onExit: () => void }) {
           </div>
         </div>
 
-        <button
-          type="button"
-          className={`${styles.actionBtn} ${styles.primary} ${styles.completedExitBtn}`}
-          onClick={onExit}
-        >
-          返回主舞台
-        </button>
+        {showContinueReading ? (
+          <div className={styles.completedActions}>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${styles.primary} ${styles.completedExitBtn}`}
+              onClick={onContinueReading}
+            >
+              继续阅读
+            </button>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${styles.completedExitBtn}`}
+              onClick={onExit}
+            >
+              返回主页
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`${styles.actionBtn} ${styles.primary} ${styles.completedExitBtn}`}
+            onClick={onExit}
+          >
+            返回主舞台
+          </button>
+        )}
       </main>
     </div>
   );

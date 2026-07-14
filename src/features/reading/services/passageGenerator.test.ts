@@ -13,8 +13,37 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildPassageFromLLM, generatePassage, clearPassageCache } from './passageGenerator';
 import type { AlignmentResult } from '../../llm/utils/alignmentValidator';
+import type { MemoryCard } from '../../../types';
 import * as routerModule from '../../llm/services/router';
+import * as promptsModule from '../../llm/config/prompts';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
+import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
+import { useMemoryStore } from '../../review/store/useMemoryStore';
+import { getCachedWordlist, clearWordlistCache } from '../../../data/wordlists';
+
+function makeCard(
+  partial: Partial<MemoryCard> &
+    Pick<MemoryCard, 'lexemeGroupId' | 'lemma' | 'objectiveDifficulty'>,
+): MemoryCard {
+  return {
+    id: partial.id ?? `card-${partial.lexemeGroupId}`,
+    lexemeGroupId: partial.lexemeGroupId,
+    lemma: partial.lemma,
+    objectiveDifficulty: partial.objectiveDifficulty,
+    firstLearnedAt: partial.firstLearnedAt ?? Date.now(),
+    lastReviewAt: partial.lastReviewAt ?? Date.now(),
+    learningSteps: partial.learningSteps ?? 0,
+    due: partial.due ?? 0,
+    stability: partial.stability ?? 0,
+    difficulty: partial.difficulty ?? 0,
+    elapsedDays: partial.elapsedDays ?? 0,
+    scheduledDays: partial.scheduledDays ?? 0,
+    reps: partial.reps ?? 0,
+    lapses: partial.lapses ?? 0,
+    status: partial.status ?? 'new',
+    language: partial.language,
+  };
+}
 
 describe('buildPassageFromLLM (Stage 4 hotfix P1-A: alignment status 写入)', () => {
   // 测试用 fixture: 3 个 token, 全部在英文 "Anna walked to the market" 文本中
@@ -256,5 +285,326 @@ describe('generatePassage (v1.3.0 Stage 2 T05 — 透传 expectedLanguage)', () 
       return options.expectedLanguage === 'de';
     });
     expect(callsWithExpectedLanguage.length).toBeGreaterThan(0);
+  });
+});
+
+// === v1.6.0 Stage 3.5-4 + 3.5-B: pacing + 困难词排序 ===
+describe('generatePassage (v1.6.0 Stage 3.5-4 + 3.5-B: pacing + 困难词排序)', () => {
+  const enPassageJson = JSON.stringify({
+    language: 'en',
+    difficulty: 1,
+    text: 'The cat sat on the mat.',
+    tokens: [
+      { lemma: 'cat', surfaceForm: 'cat', startIndex: 4, endIndex: 7, partOfSpeech: 'noun' },
+      { lemma: 'sit', surfaceForm: 'sat', startIndex: 8, endIndex: 11, partOfSpeech: 'verb' },
+    ],
+  });
+
+  beforeEach(() => {
+    if (typeof window !== 'undefined') window.localStorage.clear();
+    clearPassageCache();
+    clearWordlistCache();
+    useSettingsStore.setState((s) => ({
+      llm: {
+        ...s.llm,
+        enabled: true,
+        provider: 'openai',
+        apiKey: 'test-key',
+        baseUrl: '',
+        model: 'gpt-4o-mini',
+        temperature: 0.5,
+        timeout: 30,
+        maxRetries: 2,
+        streaming: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    clearPassageCache();
+    clearWordlistCache();
+    vi.restoreAllMocks();
+    useWordlistStore.getState().resetAll();
+    useMemoryStore.getState().resetAll();
+    if (typeof window !== 'undefined') window.localStorage.clear();
+  });
+
+  it('巩固模式: learning 词 >= 30 时, targetWords 取 learning 词 (非 unlearned), optionalWords 为空', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    // 标记 35 个词为 learning (>= LEARNING_THRESHOLD=30)
+    for (let i = 0; i < 35; i++) {
+      useWordlistStore.getState().markWordLearning('en', wordlist.words[i].lemma);
+    }
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    expect(buildPromptSpy).toHaveBeenCalled();
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    expect(constraint!.targetWords).toHaveLength(8);
+    expect(constraint!.optionalWords).toHaveLength(0);
+    // words[0] 是 learning 词, 应在 targetWords 中
+    expect(constraint!.targetWords).toContain(wordlist.words[0].lemma);
+    // words[50] 是 unlearned, 不应在 targetWords 中 (巩固模式不引入新词)
+    expect(constraint!.targetWords).not.toContain(wordlist.words[50].lemma);
+  });
+
+  it('巩固模式: 按 lapses 降序排, 高 lapses 词优先作 target', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    for (let i = 0; i < 35; i++) {
+      useWordlistStore.getState().markWordLearning('en', wordlist.words[i].lemma);
+    }
+
+    // 前 8 个词 lapses=5 (高), 后 27 个 lapses=0
+    const cards = new Map<string, MemoryCard>();
+    for (let i = 0; i < 35; i++) {
+      const lemma = wordlist.words[i].lemma;
+      cards.set(
+        `g-${lemma}`,
+        makeCard({
+          lexemeGroupId: `g-${lemma}`,
+          lemma,
+          objectiveDifficulty: 1,
+          language: 'en',
+          status: 'learning',
+          lapses: i < 8 ? 5 : 0,
+        }),
+      );
+    }
+    useMemoryStore.setState({ cards });
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    // 前 8 个 (高 lapses=5) 应全部在 targetWords 中
+    for (let i = 0; i < 8; i++) {
+      expect(constraint!.targetWords).toContain(wordlist.words[i].lemma);
+    }
+  });
+
+  it('正常模式: learning 词 < 30 时, targetWords 取 unlearned, optionalWords 取 learning', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    // 只标记 5 个词为 learning (< LEARNING_THRESHOLD=30)
+    for (let i = 0; i < 5; i++) {
+      useWordlistStore.getState().markWordLearning('en', wordlist.words[i].lemma);
+    }
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    expect(constraint!.targetWords).toHaveLength(8);
+    // targetWords 应为 unlearned 词 (不包含 learning 词)
+    expect(constraint!.targetWords).not.toContain(wordlist.words[0].lemma);
+    // optionalWords 应包含 learning 词
+    expect(constraint!.optionalWords).toContain(wordlist.words[0].lemma);
+  });
+
+  it('T07 [v1.7.0 Stage 1]: passageGenerator 使用自适应阈值 (低 recall -> 阈值 15, 20 词触发巩固)', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    // 设置低 recall 率 ratingHistory: 2 个 'again' -> recall=0.0 -> 阈值=15
+    // hasHistory=true (ratingHistory 非空), 所以走 recall 率分支
+    const now = Date.now();
+    useMemoryStore.setState({
+      ratingHistory: [
+        { cardId: 'c1', rating: 'again', at: now },
+        { cardId: 'c2', rating: 'again', at: now },
+      ],
+    });
+
+    // 标记 20 个词为 learning
+    // 20 >= 15 (adaptive 阈值) -> 巩固模式
+    // 20 < 30 (旧 LEARNING_THRESHOLD 常量) -> 正常模式 (证明使用了 adaptive)
+    for (let i = 0; i < 20; i++) {
+      useWordlistStore.getState().markWordLearning('en', wordlist.words[i].lemma);
+    }
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    expect(buildPromptSpy).toHaveBeenCalled();
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    // 巩固模式: optionalWords 为空, targetWords 取 learning 词 (非 unlearned)
+    expect(constraint!.optionalWords).toHaveLength(0);
+    expect(constraint!.targetWords).toContain(wordlist.words[0].lemma);
+  });
+});
+
+// === v1.6.0 Stage 3.6-C: 复习编排 pacing — dueCards 超载强制巩固 ===
+describe('generatePassage (v1.6.0 Stage 3.6-C: 复习编排 pacing — dueCards 超载强制巩固)', () => {
+  const enPassageJson = JSON.stringify({
+    language: 'en',
+    difficulty: 1,
+    text: 'The cat sat on the mat.',
+    tokens: [
+      { lemma: 'cat', surfaceForm: 'cat', startIndex: 4, endIndex: 7, partOfSpeech: 'noun' },
+      { lemma: 'sit', surfaceForm: 'sat', startIndex: 8, endIndex: 11, partOfSpeech: 'verb' },
+    ],
+  });
+
+  beforeEach(() => {
+    if (typeof window !== 'undefined') window.localStorage.clear();
+    clearPassageCache();
+    clearWordlistCache();
+    useSettingsStore.setState((s) => ({
+      llm: {
+        ...s.llm,
+        enabled: true,
+        provider: 'openai',
+        apiKey: 'test-key',
+        baseUrl: '',
+        model: 'gpt-4o-mini',
+        temperature: 0.5,
+        timeout: 30,
+        maxRetries: 2,
+        streaming: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    clearPassageCache();
+    clearWordlistCache();
+    vi.restoreAllMocks();
+    useWordlistStore.getState().resetAll();
+    useMemoryStore.getState().resetAll();
+    if (typeof window !== 'undefined') window.localStorage.clear();
+  });
+
+  /**
+   * 辅助: 创建 N 个 review 状态的 due 卡片 (past due), lemma 形如 revword1..revwordN.
+   * language='en' 确保精确匹配, due=0 确保被 getDueCards 收录.
+   */
+  function makeReviewDueCards(count: number): Map<string, MemoryCard> {
+    const cards = new Map<string, MemoryCard>();
+    for (let i = 0; i < count; i++) {
+      const lemma = `revword${i + 1}`;
+      cards.set(
+        `g-${lemma}`,
+        makeCard({
+          lexemeGroupId: `g-${lemma}`,
+          lemma,
+          objectiveDifficulty: 1,
+          language: 'en',
+          status: 'review',
+          due: 0,
+          reps: 3,
+          lapses: 1,
+        }),
+      );
+    }
+    return cards;
+  }
+
+  it('T13: pacing — dueCards (review) > 20 时强制巩固模式, targetWords 取 dueCards lemma 非未学词', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    // 21 个 review 状态 due 卡片 (> REVIEW_OVERLOAD_THRESHOLD=20)
+    useMemoryStore.setState({ cards: makeReviewDueCards(21) });
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    expect(buildPromptSpy).toHaveBeenCalled();
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    expect(constraint!.targetWords).toHaveLength(8);
+    expect(constraint!.optionalWords).toHaveLength(0);
+    // targetWords 应为 dueCards 的 lemma (revword1, revword2, ...), 不是 wordlist 未学词
+    expect(constraint!.targetWords).toContain('revword1');
+    expect(constraint!.targetWords).toContain('revword2');
+    // wordlist.words[50] 是未学词, 不应在 targetWords 中 (强制巩固模式不引入新词)
+    expect(constraint!.targetWords).not.toContain(wordlist.words[50].lemma);
+  });
+
+  it('T14: pacing 巩固模式 — targetWords = dueCards.slice(0, 8).map(c => c.lemma)', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+
+    // 25 个 review 状态 due 卡片, 取前 8 个的 lemma
+    useMemoryStore.setState({ cards: makeReviewDueCards(25) });
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    // targetWords 应恰好为前 8 个 dueCards 的 lemma (getDueCards 按 due 升序, 稳定排序保持插入序)
+    expect(constraint!.targetWords).toEqual([
+      'revword1', 'revword2', 'revword3', 'revword4',
+      'revword5', 'revword6', 'revword7', 'revword8',
+    ]);
+  });
+
+  it('T15: REVIEW_OVERLOAD_THRESHOLD 边界 — dueCards === 20 时不触发强制 (严格大于)', async () => {
+    await useWordlistStore.getState().getLevelTotal('en', 1);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    if (!wordlist) return;
+
+    // 20 个 review 状态 due 卡片 (=== REVIEW_OVERLOAD_THRESHOLD, 不 > 20)
+    useMemoryStore.setState({ cards: makeReviewDueCards(20) });
+
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+    const buildPromptSpy = vi.spyOn(promptsModule, 'buildPassagePrompt');
+
+    await generatePassage('en', 1, []);
+
+    const constraint = buildPromptSpy.mock.calls[0][3] as
+      | { targetWords: string[]; optionalWords: string[] }
+      | undefined;
+    expect(constraint).toBeDefined();
+    // 边界值 20 不触发 review-overload, 走正常模式: targetWords = unlearned
+    expect(constraint!.targetWords).toHaveLength(8);
+    // targetWords 不应包含 review 卡片的 lemma (正常模式取 unlearned, 非 dueCards)
+    expect(constraint!.targetWords).not.toContain('revword1');
+    expect(constraint!.targetWords).not.toContain('revword20');
   });
 });

@@ -80,6 +80,15 @@
   border-radius: 2px;
 }
 
+/* v2.1.0 Stage 4 (Contract 68): 重读模式 — 禁用 token 作答交互. */
+.tokenReplay {
+  pointer-events: none;
+}
+
+.tokenReplay:focus-visible {
+  outline: none;
+}
+
 /**
  * v1.2.0: alignment status tooltip 样式.
  * Radix Tooltip 默认 portal 到 body, 需要在全局选择器里也兼容一份

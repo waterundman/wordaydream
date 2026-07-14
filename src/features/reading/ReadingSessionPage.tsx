@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { InteractivePassage } from './components/InteractivePassage';
 import { ReadingHistoryPanel } from './components/ReadingHistoryPanel';
 import { useReadingSessionStore } from './store/useReadingSessionStore';
+import { useReadingHistoryStore } from './store/useReadingHistoryStore';
 import { useMemoryStore } from '../review/store/useMemoryStore';
 import { useSettingsStore } from '../settings/store/useSettingsStore';
+import { useWordlistStore } from '../wordlist/store/useWordlistStore';
 import { SettingsPanel } from '../settings/components/SettingsPanel';
 import { ReviewPromptBanner } from '../review/components/ReviewPromptBanner';
 import { AnalyticsPanel } from '../analytics/components/AnalyticsPanel';
@@ -12,6 +14,8 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import styles from './ReadingSessionPage.module.css';
 import type { Language, DifficultyLevel } from '../../types';
 import type { HistoryEntry } from './store/useReadingHistoryStore';
+
+const CEFR_LABELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
 
 const MD_BREAKPOINT = 768;
 
@@ -39,6 +43,7 @@ function useIsMobile() {
 
 export function ReadingSessionPage() {
   const { session, isLoading, loadSession, loadFromHistory, getResolvedCount, getTotalTokenCount, setActiveOccurrence } = useReadingSessionStore();
+  const currentHistoryId = useReadingSessionStore((s) => s.currentHistoryId);
   const { addCardFromToken } = useMemoryStore();
   const { openSettings, settingsOpen, llm } = useSettingsStore();
   // v1.5.3 fix V2-P2-009: 初始值从持久化 session / lastConfig 读取, 避免刷新后选择器与实际不一致.
@@ -52,6 +57,25 @@ export function ReadingSessionPage() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // v1.6.0: 课程化难度解锁 (CEFR 词表驱动)
+  const wordlistProgress = useWordlistStore((s) => s.progress);
+  const linearMode = useWordlistStore((s) => s.linearMode);
+
+  useEffect(() => {
+    // 预加载当前语言 A1-B2 词表, 确保解锁判定准确
+    for (let lvl = 1; lvl <= 4; lvl++) {
+      void useWordlistStore.getState().getLevelTotal(language, lvl as DifficultyLevel);
+    }
+  }, [language]);
+
+  const unlockedLevels = useMemo(() => {
+    void wordlistProgress;
+    void linearMode;
+    return CEFR_LABELS.map((_, i) =>
+      useWordlistStore.getState().isLevelUnlocked(language, (i + 1) as DifficultyLevel)
+    );
+  }, [language, wordlistProgress, linearMode]);
 
   const resolvedCount = getResolvedCount();
   const totalCount = getTotalTokenCount();
@@ -91,6 +115,8 @@ export function ReadingSessionPage() {
   };
 
   const handleReRead = (entry: HistoryEntry) => {
+    // v2.2.1 Stage 1 (Bug 2 P0): 加载中时禁止从历史重读, 避免与 in-flight loadSession 竞态.
+    if (isLoading) return;
     loadFromHistory(entry.passage, entry.language, entry.difficulty);
   };
 
@@ -114,7 +140,57 @@ export function ReadingSessionPage() {
     }
     // v1.5.3 fix V2-P3-005: 移除 session 对象依赖, 仅用 resolvedTokens.size 触发,
     // 避免 setActiveOccurrence 等不改变 resolvedTokens 的操作也重跑 effect.
-  }, [session?.resolvedTokens.size, addCardFromToken, session?.isReplay, session?.passage.tokens, session?.language]);
+    // v2.2.1 Stage 1 (Bug 2 P2): 进一步移除 session?.passage.tokens 与 session?.language 依赖,
+    // 避免 markOccurrenceResolved 产生新 tokens 数组引用时重跑 effect 触发 addCardFromToken 事件风暴.
+  }, [session?.resolvedTokens.size, addCardFromToken, session?.isReplay]);
+
+  // v2.1.0 Stage 2 (Contract 64): 阅读完成时激活 completeEntry (publish 'reading:completed').
+  // 触发条件: 非重读会话 + 有 token + 全部 resolved + 有 currentHistoryId.
+  // completeEntry 自身幂等 (检查 completedAt), effect 重复触发不会重复 publish.
+  // 历史重读 (isReplay) 不触发: 只读模式不应标记完成或重新发事件.
+  useEffect(() => {
+    if (!session) return;
+    if (session.isReplay) return;
+    if (totalCount === 0) return;
+    if (resolvedCount < totalCount) return;
+    if (!currentHistoryId) return;
+    useReadingHistoryStore.getState().completeEntry(currentHistoryId);
+  }, [resolvedCount, totalCount, session?.isReplay, currentHistoryId]);
+
+  // v2.1.0 Stage 2 (Contract 64): 阅读完成态 — 渲染 "读下一篇" CTA 的条件.
+  // 重读会话 (isReplay) 不显示完成 CTA: 只读回顾不应有 "读下一篇" 入口.
+  const isReadingCompleted = !!session && !session.isReplay && totalCount > 0 && resolvedCount >= totalCount;
+
+  // v2.2.0 Stage 1 (D4): passage 来源标签文案 + 配色.
+  // source === 'llm' → "AI 生成" (深墨色文字 + 暖白底)
+  // source === 'mock' 或 undefined → "演示数据" (灰色文字 + 浅米色底)
+  // source === 'mixed' → "AI 生成 (部分)" (深墨色文字 + 浅黄色底)
+  const passageSource = session?.passage.source;
+  const sourceBadgeConfig = (() => {
+    if (passageSource === 'llm') {
+      return {
+        label: 'AI 生成',
+        color: '#1c1917',
+        background: '#faf8f5',
+        icon: <path d="M12 2L9.5 8.5 2 9l5.5 5.5L6 22l6-3 6 3-1.5-7.5L22 9l-7.5-0.5L12 2z" fill="currentColor" />,
+      };
+    }
+    if (passageSource === 'mixed') {
+      return {
+        label: 'AI 生成 (部分)',
+        color: '#1c1917',
+        background: '#fef3c7',
+        icon: <path d="M12 2L9.5 8.5 2 9l5.5 5.5L6 22l6-3 6 3-1.5-7.5L22 9l-7.5-0.5L12 2z" fill="none" stroke="currentColor" strokeWidth="1.5" />,
+      };
+    }
+    // source === 'mock' 或 undefined (旧数据保守显示)
+    return {
+      label: '演示数据',
+      color: '#78716c',
+      background: '#f5f5f4',
+      icon: <path d="M4 4h16v4H4zM4 10h16v10H4z" fill="none" stroke="currentColor" strokeWidth="1.5" />,
+    };
+  })();
 
   return (
     <div className={styles.page}>
@@ -165,22 +241,31 @@ export function ReadingSessionPage() {
         </div>
 
         <div className={styles.controlSection}>
-          <label className={styles.sectionLabel}>难度</label>
+          <label className={styles.sectionLabel}>难度 (CEFR)</label>
           <div className={styles.difficultySlider}>
-            {[1, 2, 3, 4, 5].map((level) => (
-              <button
-                key={level}
-                className={`${styles.diffDot} ${difficulty === level ? styles.active : ''}`}
-                onClick={() => handleDifficultyChange(level as DifficultyLevel)}
-                aria-label={`难度 ${level}`}
-              >
-                <span className={styles.diffLabel}>{level}</span>
-              </button>
-            ))}
-          </div>
-          <div className={styles.difficultyLabels}>
-            <span>入门</span>
-            <span>进阶</span>
+            {CEFR_LABELS.map((cefr, i) => {
+              const level = (i + 1) as DifficultyLevel;
+              const unlocked = unlockedLevels[i];
+              const prevCefr = i > 0 ? CEFR_LABELS[i - 1] : null;
+              return (
+                <button
+                  key={level}
+                  className={`${styles.diffDot} ${difficulty === level ? styles.active : ''} ${!unlocked ? styles.locked : ''}`}
+                  onClick={() => unlocked && handleDifficultyChange(level)}
+                  disabled={!unlocked}
+                  aria-label={`${cefr}${!unlocked ? ' (未解锁)' : ''}`}
+                  title={!unlocked && prevCefr ? `完成 ${prevCefr} 80% 掌握可解锁` : cefr}
+                >
+                  <span className={styles.diffLabel}>{cefr}</span>
+                  {!unlocked && (
+                    <svg className={styles.lockIcon} viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -230,8 +315,66 @@ export function ReadingSessionPage() {
             </div>
           ) : (
             <>
+              {session && (
+                <div
+                  data-testid="passage-source-badge"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    padding: '2px var(--space-3)',
+                    borderRadius: '999px',
+                    background: sourceBadgeConfig.background,
+                    color: sourceBadgeConfig.color,
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 500,
+                    marginBottom: 'var(--space-3)',
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    aria-hidden="true"
+                  >
+                    {sourceBadgeConfig.icon}
+                  </svg>
+                  <span>{sourceBadgeConfig.label}</span>
+                </div>
+              )}
               <ReviewPromptBanner language={language} onGenerate={handleGenerate} />
-              <InteractivePassage />
+              <InteractivePassage isReplay={session?.isReplay ?? false} />
+              {session?.isReplay && (
+                <div className={styles.replayCta}>
+                  <p className={styles.replayText}>这是历史重读模式，词汇作答已禁用。</p>
+                  <button
+                    type="button"
+                    className={styles.replayBtn}
+                    onClick={() => {
+                      if (!session) return;
+                      loadFromHistory(session.passage, session.language, session.difficulty, { resetResolved: true });
+                    }}
+                  >
+                    重新练习
+                  </button>
+                </div>
+              )}
+              {isReadingCompleted && (
+                <div className={styles.completionCta}>
+                  <p className={styles.completionText}>本篇词汇已全部掌握</p>
+                  <button
+                    type="button"
+                    className={styles.readNextBtn}
+                    onClick={handleGenerate}
+                    disabled={isLoading}
+                  >
+                    读下一篇
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

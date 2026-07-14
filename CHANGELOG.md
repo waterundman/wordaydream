@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] — 2026-07-12
+
+### Stage 3.6: 学习闭环 (毕业机制 + 词表浏览页 + 复习编排 C)
+
+#### 新增
+- 毕业机制: 当前等级 100% mastered 触发 levelComplete 事件 + GraduationModal (等级毕业/课程毕业两种 mode)
+- 词表浏览页: AppMode 扩展 'wordlist', WordlistPage (筛选/搜索/详情展开/导出 JSON), WordlistRow (SVG 状态图标)
+- 复习编排 C: 首页 dueCards 提示 + "开始复习"按钮, pacing REVIEW_OVERLOAD_THRESHOLD=20 联动 dueCards 强制巩固
+- dailyGoal 新增 reviewsTarget 字段 (取 dueCards.length), persist migration v3→v4
+- useWordlistStore 新增 checkLevelCompletion / checkCourseCompletion / setReviewsTarget
+
+#### 变更
+- passageGenerator pacing 优先级: dueCards>20 > learning≥30 > 正常取未学词
+- HomePage: 毕业检测 (课程优先, 防重复弹) + "查看词表"按钮 + dueCards 提示 + dailyGoal "复习 Y/Z" 显示
+- App.tsx: AppMode 扩展 'wordlist' + 启动时 setReviewsTarget(getDueCards().length)
+
+#### 测试
+- 15 NEW 单元测试 (T01-T15): 毕业 5 + 词表页 5 + 复习编排 5
+- 219 → 234 pass (0 regression)
+
 ## [v1.5.2] - 2026-07-10
 
 ### Features

@@ -10,7 +10,7 @@ import type {
 } from '../../../types';
 import { getMockPassage } from '../../../mocks/passages';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
-import { generatePassage } from '../services/passageGenerator';
+import { generatePassage, clearPassageCache } from '../services/passageGenerator';
 import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
@@ -27,7 +27,13 @@ interface ReadingSessionState {
   currentHistoryId: string | null;
 
   loadSession: (language: Language, difficulty: DifficultyLevel) => Promise<void>;
-  loadFromHistory: (passage: Passage, language: Language, difficulty: DifficultyLevel) => void;
+  loadFromHistory: (
+    passage: Passage,
+    language: Language,
+    difficulty: DifficultyLevel,
+    options?: { resetResolved?: boolean }
+  ) => void;
+  setLastConfig: (config: { language: Language; difficulty: DifficultyLevel }) => void;
   setActiveOccurrence: (occurrenceId: string | null) => void;
   setHoveredGroup: (groupId: string | null) => void;
   setActiveGrammarPoint: (grammarPointId: string | null) => void;
@@ -122,6 +128,10 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         const controller = new AbortController();
         loadSessionAbortController = controller;
 
+        // v2.2.1 Stage 1 (Bug 1): 清理 passage 缓存, 确保本次生成拿到新 passage
+        // (与 generatePassage 的 forceRefresh 形成双保险, 页面刷新场景仍可命中缓存写入).
+        clearPassageCache();
+
         set({ isLoading: true });
         await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -133,7 +143,7 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         let passage: Passage;
         try {
           // v1.5.3 fix V3-P3-006: 透传 controller.signal, abort 时真正中断 LLM fetch.
-          passage = await generatePassage(language, difficulty, dueCards, controller.signal);
+          passage = await generatePassage(language, difficulty, dueCards, controller.signal, true);
         } catch {
           if (controller.signal.aborted) return;
           const basePassage = getMockPassage(language, difficulty);
@@ -195,17 +205,33 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         useAchievementStore.getState().checkAndUnlock(buildAchievementContext(false));
       },
 
-      loadFromHistory: (passage: Passage, language: Language, difficulty: DifficultyLevel) => {
+      loadFromHistory: (passage, language, difficulty, options) => {
+        // v2.2.1 Stage 1 (Bug 2 P0): 取消 in-flight loadSession, 避免历史重读与
+        // 正在进行的 loadSession 竞态覆盖 session 状态.
+        if (loadSessionAbortController) {
+          loadSessionAbortController.abort();
+          loadSessionAbortController = null;
+        }
+        const resetResolved = options?.resetResolved === true;
+        // resetResolved=true 时深拷贝 passage 并将所有 token.isResolved 置 false (不修改原 passage).
+        // resetResolved=false (默认) 时保留原 passage 引用 (向后兼容).
+        const effectivePassage = resetResolved
+          ? { ...passage, tokens: passage.tokens.map((t) => ({ ...t, isResolved: false })) }
+          : passage;
         const session: ReadingSession = {
           id: `session-${Date.now()}`,
           language,
           difficulty,
-          passage,
+          passage: effectivePassage,
           startedAt: Date.now(),
-          resolvedTokens: new Set(passage.tokens.filter((t) => t.isResolved).map((t) => t.id)),
+          resolvedTokens: resetResolved
+            ? new Set()
+            : new Set(passage.tokens.filter((t) => t.isResolved).map((t) => t.id)),
           activeOccurrenceId: null,
           // v1.5.2 fix P1-5: 标记为历史重读, ReadingSessionPage effect 跳过 addCardFromToken.
-          isReplay: true,
+          // v2.2.1 Stage 1 (Bug 2 P1): resetResolved=true (重新练习) 时 isReplay=false,
+          // 让用户能真正作答; resetResolved=false (普通历史回顾) 时仍为 true.
+          isReplay: resetResolved ? false : true,
         };
         set({
           session,
@@ -218,6 +244,8 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           currentHistoryId: null,
         });
       },
+
+      setLastConfig: (config) => set({ lastConfig: config }),
 
       setActiveOccurrence: (occurrenceId: string | null) => {
         set({ activeOccurrenceId: occurrenceId, activeGrammarPointId: null });

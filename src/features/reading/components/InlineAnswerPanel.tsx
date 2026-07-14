@@ -3,6 +3,7 @@ import { useReadingSessionStore } from '../store/useReadingSessionStore';
 import { evaluateAnswer } from '../../evaluation/services/evaluateAnswer';
 import { RemedyPanel } from '../../evaluation/components/RemedyPanel';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
+import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
 import { RatingBar } from '../../review/components/RatingBar';
 import { usePageEntranceAnimation } from '../hooks/usePageEntranceAnimation';
 import { useVocabPulseAnimation } from '../hooks/useVocabPulseAnimation';
@@ -32,6 +33,7 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
   const mountedRef = useRef(true);
   const { markOccurrenceResolved, setActiveOccurrence } = useReadingSessionStore();
   const { addCardFromToken, rateCard, getCardByLexemeGroup } = useMemoryStore();
+  const { recordEncounter } = useWordlistStore();
 
   // v1.5.2 fix P1-4: unmount 时清理 pending resolve timeout.
   // 之前 setTimeout 无 cleanup, 用户答对后 600ms 内关闭面板或切换会话,
@@ -138,6 +140,11 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
         if (!existing) {
           addCardFromToken(token, language);
         }
+        // v1.6.0 Stage 3.5: 记录语境相遇 (按 passageId 去重), 用于 mastered 语境闭环判定.
+        const passageId = useReadingSessionStore.getState().session?.id;
+        if (passageId) {
+          recordEncounter(language, token.lemma, passageId);
+        }
         // v1.5.2 fix P1-4: 用 ref 持有 timer, unmount 时 cleanup 避免跨会话误触发.
         resolveTimerRef.current = setTimeout(() => {
           resolveTimerRef.current = null;
@@ -146,14 +153,20 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
         if (token.kind === 'review' && token.cardId) {
           setShowRating(true);
         }
+      } else {
+        // v2.2.1 Stage 2 (Bug 3 门控点): 非 correct (partial/wrong/error) 时立即标记 resolved,
+        // 让进度条推进. 不调用 addCardFromToken (记忆卡片只记录答对的词).
+        markOccurrenceResolved(token.id);
       }
     } catch (error) {
-      // v1.5.2 fix P1-3: LLM 评估错误不再静默吞掉, 给用户明确反馈.
+      // v1.5.3 fix: 评估错误标注为 'error' 来源, UI 可区分"评估失败"与"学习反馈".
+      // 之前伪装成 'partial' 会误导用户以为自己部分答对.
       if (!mountedRef.current) return;
       setEvaluation({
         grade: 'partial',
         feedback: '评估服务暂时不可用，请稍后重试。',
         hint: error instanceof Error ? error.message : '未知错误',
+        source: 'error',
       });
     } finally {
       if (mountedRef.current) setIsSubmitting(false);
@@ -223,7 +236,14 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
             ref={inputRef}
             type="text"
             value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
+            onChange={(e) => {
+              setAnswer(e.target.value);
+              // v1.5.3: 用户重新输入时清除上一次评估反馈, 让"重试"体验自然,
+              // 避免旧的 wrong/partial 反馈和 RemedyPanel 干扰新一轮作答.
+              if (evaluation && evaluation.grade !== 'correct') {
+                setEvaluation(null);
+              }
+            }}
             placeholder={isReview ? '复现：回忆这个词的含义...' : '输入中文释义...'}
             className={styles.input}
             disabled={isSubmitting || evaluation?.grade === 'correct'}
@@ -240,16 +260,38 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
 
         {evaluation && (
           <div className={`${styles.feedback} ${styles[evaluation.grade]}`}>
-            <p className={styles.feedbackText}>{evaluation.feedback}</p>
-            {evaluation.hint && evaluation.grade !== 'correct' && (
+            <div className={styles.feedbackHeader}>
+              <p className={styles.feedbackText}>{evaluation.feedback}</p>
+              {evaluation.source && (
+                <span className={styles.sourceTag} data-source={evaluation.source}>
+                  {evaluation.source === 'llm'
+                    ? 'AI 评估'
+                    : evaluation.source === 'heuristic'
+                    ? '离线评估'
+                    : '评估异常'}
+                </span>
+              )}
+            </div>
+            {evaluation.hint && evaluation.grade !== 'correct' && evaluation.source !== 'error' && (
               <p className={styles.hint}>{evaluation.hint}</p>
+            )}
+            {evaluation.source === 'error' && (
+              <button
+                type="button"
+                className={styles.retryBtn}
+                onClick={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
+                disabled={isSubmitting || !answer.trim()}
+              >
+                {isSubmitting ? '重试中...' : '重试评估'}
+              </button>
             )}
           </div>
         )}
 
-        {evaluation?.grade === 'wrong' && (
-          <RemedyPanel token={token} userAnswer={answer} language={language} />
-        )}
+        {(evaluation?.grade === 'wrong' || evaluation?.grade === 'partial') &&
+          evaluation?.source !== 'error' && (
+            <RemedyPanel token={token} userAnswer={answer} language={language} />
+          )}
 
         {showRating && (
           <RatingBar

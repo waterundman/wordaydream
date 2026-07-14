@@ -38,10 +38,17 @@
  * - offlineMode.test.ts T01-T05: 验证 useOfflineModeStore 状态机
  */
 
-import type { GenerateOptions } from './provider';
+import type { GenerateOptions, ExpectJson } from './provider';
 import type { LLMResponse, LLMSettings } from '../../../types';
 import { MockLLMProvider } from './mockProvider';
-import { parseLLMResponse } from './jsonParser';
+import {
+  parseLLMResponse,
+  PassagePayloadSchema,
+  EvaluationPayloadSchema,
+  DifficultyPayloadSchema,
+  GlossPayloadSchema,
+} from './jsonParser';
+import { z } from 'zod';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useToastStore } from '../../../store/useToastStore';
 // v1.4.0 Stage 1: factory 内部 routeDeepSeek 已切到 deepseekGenerate 函数
@@ -77,6 +84,43 @@ const LOG_PREFIX = '[LLM Router]';
 function log(level: 'info' | 'warn' | 'error', message: string) {
   const timestamp = new Date().toISOString();
   console[level](`${LOG_PREFIX} ${timestamp} ${message}`);
+}
+
+/**
+ * v2.1.1 Stage 2 (D1): 根据 expectJson 类型选择对应的 zod schema.
+ *
+ * 映射:
+ * - true / 'passage' -> PassagePayloadSchema (向后兼容: true 等价 'passage')
+ * - 'evaluation' -> EvaluationPayloadSchema
+ * - 'difficulty' -> DifficultyPayloadSchema
+ * - 'gloss' -> GlossPayloadSchema
+ * - 'generic' -> 宽松 schema (z.object({}).passthrough(), 接受任意 JSON object)
+ * - false / undefined -> undefined (不走 JSON 解析路径)
+ *
+ * 返回 undefined 表示调用方不应走 JSON 解析路径 (走 retryWithBackoff).
+ */
+function getSchemaForExpectJson(
+  expectJson: ExpectJson | undefined
+): z.ZodType<any> | undefined {
+  switch (expectJson) {
+    case true:
+    case 'passage':
+      return PassagePayloadSchema;
+    case 'evaluation':
+      return EvaluationPayloadSchema;
+    case 'difficulty':
+      return DifficultyPayloadSchema;
+    case 'gloss':
+      return GlossPayloadSchema;
+    case 'generic':
+      // 宽松校验: 接受任意 JSON object, 不强制字段
+      return z.object({}).passthrough();
+    case false:
+    case undefined:
+      return undefined;
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -291,6 +335,11 @@ async function generateWithJsonRetry(
   // 注意: provider 本身不读 expectedLanguage, 仅 router 内 parse 阶段使用.
   const expectedLanguage = options.expectedLanguage;
 
+  // v2.1.1 Stage 2 (D1): 根据 expectJson 类型选择 schema.
+  // expectJson=true / 'passage' / 'evaluation' / 'difficulty' / 'gloss' / 'generic'
+  // 均走 JSON 解析路径, 但使用不同的 zod schema 校验.
+  const schema = getSchemaForExpectJson(options.expectJson);
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const isRetry = attempt > 0;
     const currentOptions: GenerateOptions = isRetry
@@ -309,11 +358,18 @@ async function generateWithJsonRetry(
         } catch {
           // 通知失败不应阻塞主流程
         }
-        return new MockLLMProvider().generate(options);
+        // v2.2.1 Stage 2 (Bug 3 主因 B): fallback 时标记 fallbackToMock: true,
+        // 让 evaluateAnswerViaLLM 能检测到并走 mockEvaluate, 而非解析 passage 文本.
+        return { ...(await new MockLLMProvider().generate(options)), fallbackToMock: true };
       }
 
       lastRawText = result.text;
-      const parseResult = parseLLMResponse(result.text, expectedLanguage);
+      // v2.1.1 Stage 2: 传 schema 到 parseLLMResponse, 而非硬编码 PassagePayloadSchema.
+      // schema 为 undefined 时 (不应发生, 调用前已检查 expectJson), 回退到默认 PassagePayloadSchema.
+      const parseResult = parseLLMResponse(result.text, {
+        schema: schema ?? PassagePayloadSchema,
+        expectedLanguage,
+      });
       if (parseResult.ok && parseResult.data) {
         log(
           'info',
@@ -351,7 +407,9 @@ async function generateWithJsonRetry(
   } catch {
     // 通知失败不应阻塞主流程
   }
-  return new MockLLMProvider().generate(options);
+  // v2.2.1 Stage 2 (Bug 3 主因 B): fallback 时标记 fallbackToMock: true,
+  // 让 evaluateAnswerViaLLM 能检测到并走 mockEvaluate, 而非解析 passage 文本.
+  return { ...(await new MockLLMProvider().generate(options)), fallbackToMock: true };
 }
 
 /**
@@ -423,8 +481,11 @@ export async function generateWithFallback(
   // v1.4.0 Stage 1: factory 返回函数式 ProviderFn (0 class 引用)
   const providerFn = resolveProviderFn(settings);
 
-  // expectJson 走 parse-retry 流程, 否则走网络重试
-  if (options.expectJson === true) {
+  // v2.1.1 Stage 2 (D1): expectJson 类型化, 任何 truthy 值 (true / 'passage' /
+  // 'evaluation' / 'difficulty' / 'gloss' / 'generic') 均走 JSON parse-retry 流程.
+  // false / undefined 走原 retryWithBackoff (网络重试) 路径.
+  // getSchemaForExpectJson 在 generateWithJsonRetry 内部映射 schema.
+  if (options.expectJson) {
     // v1.2.0: JSON 重试次数从 settings.jsonMaxAttempts 读取 (默认 3, clamp 1-5)
     const jsonMaxAttempts = resolveJsonMaxAttempts(settings, options);
     return generateWithJsonRetry(providerFn, options, combinedSignal, jsonMaxAttempts);
@@ -485,7 +546,7 @@ export async function generateWithFallback(
  * v1.4.0 Stage 1: 测试 provider 连接 (改走 Edge Function 探测)
  *
  * v1.3.0: 直接 new v1.2.0 class-based provider, 调 provider.testConnection() 探测 API key
- *   - 缺点: API key 暴露在客户端 (settings.apiKey), 不安全
+ *   - 缺点: API key 暴露在客户端, 不安全 (v2.1.1 Stage 4 后 settings.apiKey 已移除, key 在后端 .env 中)
  *   - 缺点: class 模式违背 v1.3.0 函数式 provider 趋势
  *
  * v1.4.0 Stage 1: POST Edge Function 一个 maxTokens=1 的最小探测请求

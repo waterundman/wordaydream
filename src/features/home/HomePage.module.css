@@ -100,6 +100,144 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* === v1.6.0 Stage 3.5-6: 每日学习目标 (ProgressRing 下方日进度) === */
+.dailyGoal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-tertiary, #6b655b);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.dailyGoalItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.dailyGoalLabel {
+  font-size: var(--text-xs, 0.75rem);
+  letter-spacing: var(--tracking-wide, 0.02em);
+}
+
+.dailyGoalValue {
+  font-weight: 600;
+  color: var(--color-text-secondary, #4a4540);
+  font-variant-numeric: tabular-nums;
+}
+
+.dailyGoalDone {
+  color: var(--color-accent, #2d5a4d);
+}
+
+.dailyGoalDivider {
+  color: var(--color-border-strong, #d4d1c8);
+  user-select: none;
+}
+
+/* === v1.6.0 Stage 3.6-C: 复习编排提示 (ProgressRing 下方, dueCards 积压时显示) === */
+.reviewPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-accent-soft, #f0f5f3);
+  border: 1px solid var(--color-accent, #2d5a4d);
+  border-radius: var(--radius-md, 0.5rem);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  animation: reviewPromptEnter var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.reviewPromptText {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 500;
+  color: var(--color-ink, #1c1917);
+}
+
+.reviewPromptBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-accent, #2d5a4d);
+  border: 1px solid var(--color-accent, #2d5a4d);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+              border-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+              transform var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.reviewPromptBtn:hover {
+  background: var(--color-accent-hover, #234a3f);
+  border-color: var(--color-accent-hover, #234a3f);
+}
+
+.reviewPromptBtn:active {
+  transform: scale(0.97);
+}
+
+.reviewPromptBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+@keyframes reviewPromptEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reviewPrompt {
+    animation: none;
+  }
+}
+
+/* === v1.6.0 Stage 2: 查看词表按钮 === */
+.wordlistBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 500;
+  color: var(--color-text-secondary, #4a4540);
+  background: var(--color-bg-elevated, #ffffff);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+  width: 100%;
+}
+
+.wordlistBtn:hover {
+  color: var(--color-ink, #1c1917);
+  border-color: var(--color-accent, #2d5a4d);
+  background: var(--color-accent-soft, #f0f5f3);
+}
+
+.wordlistBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
 /* === Tablet (max-width: 1023px): stack 单列 === */
 @media (max-width: 1023px) {
   .split {

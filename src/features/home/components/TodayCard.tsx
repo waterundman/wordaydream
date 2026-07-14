@@ -10,9 +10,17 @@
 import { useReadingSessionStore } from '../../reading/store/useReadingSessionStore';
 import styles from './TodayCard.module.css';
 
+export interface SessionStatus {
+  newWordsDone: number;
+  newWordsTarget: number;
+  reviewsDone: number;
+  reviewsTarget: number;
+  dueCount: number;
+}
+
 interface TodayCardProps {
   onStart: () => void;
-  isCompleted?: boolean;
+  sessionStatus: SessionStatus;
   newWordsCount?: number;
   /**
    * Stage 4 滚动揭示 className (来自 useScrollReveal). 可选, 透传到根元素.
@@ -21,9 +29,29 @@ interface TodayCardProps {
   revealClassName?: string;
 }
 
+function resolveCopy(s: SessionStatus): { copy: string; isCompleted: boolean } {
+  if (s.dueCount > 0) {
+    return { copy: `今日待复习 ${s.dueCount} 词`, isCompleted: false };
+  }
+  if (s.newWordsDone < s.newWordsTarget) {
+    return { copy: `今日新学 ${s.newWordsDone} 词, 目标 ${s.newWordsTarget}`, isCompleted: false };
+  }
+  if (s.reviewsTarget > 0 && s.reviewsDone < s.reviewsTarget) {
+    return { copy: `今日已复习 ${s.reviewsDone} 词`, isCompleted: false };
+  }
+  if (
+    s.newWordsDone >= s.newWordsTarget &&
+    (s.reviewsTarget === 0 || s.reviewsDone >= s.reviewsTarget) &&
+    s.dueCount === 0
+  ) {
+    return { copy: '今日学习已完成。点击继续阅读更多内容。', isCompleted: true };
+  }
+  return { copy: '今天从一次阅读开始。每个词都在它出现的语境里。', isCompleted: false };
+}
+
 export function TodayCard({
   onStart,
-  isCompleted,
+  sessionStatus,
   newWordsCount = 8,
   revealClassName,
 }: TodayCardProps) {
@@ -35,6 +63,7 @@ export function TodayCard({
   const rootClass = revealClassName
     ? `${styles.card} ${revealClassName}`
     : styles.card;
+  const { copy, isCompleted } = resolveCopy(sessionStatus);
   return (
     <div className={rootClass}>
       <div className={styles.header}>
@@ -49,11 +78,7 @@ export function TodayCard({
           <span className={styles.dot}>·</span>
           <span className={styles.metaItem}>新词 {newWordsCount}</span>
         </div>
-        <p className={styles.copy}>
-          {isCompleted
-            ? '今日学习已完成。点击继续阅读更多内容。'
-            : '今天从一次阅读开始。每个词都在它出现的语境里。'}
-        </p>
+        <p className={styles.copy}>{copy}</p>
       </div>
       <button className={styles.cta} onClick={onStart} type="button">
         {isCompleted ? '继续阅读' : '开始阅读'}

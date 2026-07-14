@@ -143,6 +143,14 @@ export interface Passage {
   lexemeGroups: LexemeGroup[];
   /** 语法知识点列表 */
   grammarPoints: GrammarPoint[];
+  /**
+   * v2.2.0 Stage 1 (D4): 文章来源标签.
+   * - 'llm': 由 LLM 真实生成
+   * - 'mock': 演示数据 (LLM 不可用 / fallback)
+   * - 'mixed': LLM 生成但部分字段 (如 grammarPoints) 来自 mock
+   * undefined 表示旧数据, UI 视同 'mock' 处理 (保守显示).
+   */
+  source?: 'llm' | 'mock' | 'mixed';
 }
 
 /**
@@ -161,6 +169,8 @@ export interface AnswerEvaluation {
   feedback: string;
   /** 提示信息（可选） */
   hint?: string;
+  /** 评估来源 (v1.5.3: 诚实标注, 让用户知道反馈来自 LLM 还是启发式) */
+  source?: 'llm' | 'heuristic' | 'error';
 }
 
 /**
@@ -258,16 +268,14 @@ export type Rating = 'again' | 'hard' | 'good' | 'easy';
 
 /**
  * LLM 提供商类型
- * @enum {'mock' | 'openai' | 'anthropic' | 'deepseek' | 'kimi' | 'qwen' | 'minimax'}
+ *
+ * v2.1.1 Stage 3 (D3): 收窄为 4 个有实现的 provider, 移除 kimi/qwen/minimax
+ * (这些 provider 在 llm-proxy.js 后端未实现, UI 展示会误导用户).
+ * 旧用户的 kimi/qwen/minimax 设置由 useSettingsStore.persist.migrate 自动迁移为 mock.
+ *
+ * @enum {'mock' | 'openai' | 'anthropic' | 'deepseek'}
  */
-export type LLMProvider =
-  | 'mock'
-  | 'openai'
-  | 'anthropic'
-  | 'deepseek'
-  | 'kimi'
-  | 'qwen'
-  | 'minimax';
+export type LLMProvider = 'mock' | 'openai' | 'anthropic' | 'deepseek';
 
 /**
  * LLM 难度评估结果
@@ -297,14 +305,14 @@ export interface DifficultyEvaluation {
 
 /**
  * LLM 设置配置
+ *
+ * v2.1.1 Stage 4 (D2): 移除 apiKey/baseUrl 字段.
+ * v1.3.0 proxy 架构迁移后, API key 在后端 server/llm-proxy.js 的 .env 中,
+ * baseUrl 由后端 provider factory 决定, 前端不再需要这两个字段.
  */
 export interface LLMSettings {
   /** 提供商类型 */
   provider: LLMProvider;
-  /** API 密钥 */
-  apiKey: string;
-  /** API 基础 URL */
-  baseUrl: string;
   /** 模型名称 */
   model: string;
   /** 温度参数 */

@@ -1,11 +1,21 @@
-import type { Passage, Language, DifficultyLevel } from '../types';
+import type { Passage, Language, DifficultyLevel, LexemeGroup, TokenOccurrence } from '../types';
 
+/**
+ * v2.2.0 Stage 1 (D4): Mock 演示数据透明化.
+ *
+ * 设计原则:
+ * - 所有 mock passage 显式标记 `source: 'mock'`, 让 UI 能明确显示 "演示数据" 标签.
+ * - EN/DE 各 3 篇 (A2/B1/B2), 难度 1 复用 A2 (降级 token 难度), 难度 5 复用 B2.
+ * - tokens 的 startIndex/endIndex 必须与 text 严格对齐 (v1.1.0 alignmentValidator 思路自检).
+ * - 同一 (language, difficulty) 在 1 分钟内多次调用返回同一 Mock (避免刷新换篇).
+ */
 export const mockEnglishPassage: Passage = {
   id: 'passage-en-001',
   language: 'en',
   difficulty: 2,
   title: 'The Quiet Revolution',
   text: 'The small town of Willowbrook was undergoing a quiet revolution. For decades, nothing had changed the pace of daily life, but a group of determined residents had begun to transform the old marketplace. They renovated the dilapidated buildings, planted trees along the cobblestone streets, and invited artisans to set up workshops. The initiative attracted visitors from neighboring cities, who marveled at the charm and authenticity of the place. What started as a modest endeavor soon blossomed into a thriving cultural hub, proving that meaningful change can emerge from the most unexpected places when people share a common vision.',
+  source: 'mock',
   tokens: [
     {
       id: 'tok-001',
@@ -145,12 +155,489 @@ export const mockEnglishPassage: Passage = {
   ],
 };
 
+/**
+ * v2.2.0 Stage 1 (D4): EN B1 (difficulty 3) — 主题: 科技创新.
+ */
+export const mockEnglishPassageB1: Passage = {
+  id: 'passage-en-b1-001',
+  language: 'en',
+  difficulty: 3,
+  title: 'The Pace of Innovation',
+  text: 'Innovation drives modern economies forward. Entrepreneurs develop groundbreaking products that transform industries. Recently, artificial intelligence has accelerated this process, enabling machines to perform tasks once thought impossible. Researchers collaborate across borders, sharing data and insights to solve complex problems. While these advancements bring opportunities, they also raise ethical questions that society must address thoughtfully.',
+  source: 'mock',
+  tokens: [
+    {
+      id: 'en-b1-tok-001',
+      lexemeGroupId: 'en-b1-lex-innovation',
+      surfaceForm: 'Innovation',
+      lemma: 'innovation',
+      objectiveDifficulty: 3,
+      startIndex: 0,
+      endIndex: 10,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b1-tok-002',
+      lexemeGroupId: 'en-b1-lex-entrepreneurs',
+      surfaceForm: 'Entrepreneurs',
+      lemma: 'entrepreneur',
+      objectiveDifficulty: 3,
+      startIndex: 44,
+      endIndex: 57,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b1-tok-003',
+      lexemeGroupId: 'en-b1-lex-groundbreaking',
+      surfaceForm: 'groundbreaking',
+      lemma: 'groundbreaking',
+      objectiveDifficulty: 4,
+      startIndex: 66,
+      endIndex: 80,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b1-tok-004',
+      lexemeGroupId: 'en-b1-lex-accelerated',
+      surfaceForm: 'accelerated',
+      lemma: 'accelerate',
+      objectiveDifficulty: 3,
+      startIndex: 155,
+      endIndex: 166,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b1-tok-005',
+      lexemeGroupId: 'en-b1-lex-impossible',
+      surfaceForm: 'impossible',
+      lemma: 'impossible',
+      objectiveDifficulty: 3,
+      startIndex: 229,
+      endIndex: 239,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b1-tok-006',
+      lexemeGroupId: 'en-b1-lex-advancements',
+      surfaceForm: 'advancements',
+      lemma: 'advancement',
+      objectiveDifficulty: 4,
+      startIndex: 346,
+      endIndex: 358,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b1-tok-007',
+      lexemeGroupId: 'en-b1-lex-thoughtfully',
+      surfaceForm: 'thoughtfully',
+      lemma: 'thoughtfully',
+      objectiveDifficulty: 4,
+      startIndex: 440,
+      endIndex: 452,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+  ],
+  lexemeGroups: [
+    { id: 'en-b1-lex-innovation', lemma: 'innovation', objectiveDifficulty: 3, occurrences: ['en-b1-tok-001'] },
+    { id: 'en-b1-lex-entrepreneurs', lemma: 'entrepreneur', objectiveDifficulty: 3, occurrences: ['en-b1-tok-002'] },
+    { id: 'en-b1-lex-groundbreaking', lemma: 'groundbreaking', objectiveDifficulty: 4, occurrences: ['en-b1-tok-003'] },
+    { id: 'en-b1-lex-accelerated', lemma: 'accelerate', objectiveDifficulty: 3, occurrences: ['en-b1-tok-004'] },
+    { id: 'en-b1-lex-impossible', lemma: 'impossible', objectiveDifficulty: 3, occurrences: ['en-b1-tok-005'] },
+    { id: 'en-b1-lex-advancements', lemma: 'advancement', objectiveDifficulty: 4, occurrences: ['en-b1-tok-006'] },
+    { id: 'en-b1-lex-thoughtfully', lemma: 'thoughtfully', objectiveDifficulty: 4, occurrences: ['en-b1-tok-007'] },
+  ],
+  grammarPoints: [
+    {
+      id: 'en-b1-grammar-001',
+      text: 'has accelerated',
+      type: '时态',
+      difficulty: 3,
+      explanation: '现在完成时表示过去发生并对现在产生影响的动作，由 has/have + 过去分词构成',
+      examples: ['The company has launched a new product.', 'Scientists have discovered a breakthrough.'],
+      startIndex: 151,
+      endIndex: 166,
+      isActive: false,
+    },
+    {
+      id: 'en-b1-grammar-002',
+      text: 'thought impossible',
+      type: '宾语补足语',
+      difficulty: 3,
+      explanation: '宾语补足语用于补充说明宾语的状态或性质，这里 impossible 补充说明 tasks 的状态',
+      examples: ['They considered the problem solved.', 'She found the book interesting.'],
+      startIndex: 221,
+      endIndex: 239,
+      isActive: false,
+    },
+    {
+      id: 'en-b1-grammar-003',
+      text: 'must address',
+      type: '情态动词',
+      difficulty: 3,
+      explanation: '情态动词 must 表示必要性或义务，后面接动词原形',
+      examples: ['We must solve this problem.', 'Citizens must address these issues together.'],
+      startIndex: 427,
+      endIndex: 439,
+      isActive: false,
+    },
+  ],
+};
+
+/**
+ * v2.2.0 Stage 1 (D4): EN B2 (difficulty 4) — 主题: 哲学思辨.
+ */
+export const mockEnglishPassageB2: Passage = {
+  id: 'passage-en-b2-001',
+  language: 'en',
+  difficulty: 4,
+  title: 'The Search for Meaning',
+  text: 'The question of what constitutes a meaningful life has preoccupied philosophers since antiquity. Some argue that purpose emerges through the pursuit of virtue, while others contend that significance arises from authentic engagement with the world. Skeptics counter that meaning is merely an illusion, a narrative constructed retrospectively to justify our choices. Navigating these competing frameworks requires intellectual humility and a willingness to interrogate our own assumptions. Perhaps the most profound insight is that the search itself may be more valuable than any definitive answer.',
+  source: 'mock',
+  tokens: [
+    {
+      id: 'en-b2-tok-001',
+      lexemeGroupId: 'en-b2-lex-constitutes',
+      surfaceForm: 'constitutes',
+      lemma: 'constitute',
+      objectiveDifficulty: 4,
+      startIndex: 21,
+      endIndex: 32,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-002',
+      lexemeGroupId: 'en-b2-lex-preoccupied',
+      surfaceForm: 'preoccupied',
+      lemma: 'preoccupy',
+      objectiveDifficulty: 4,
+      startIndex: 55,
+      endIndex: 66,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-003',
+      lexemeGroupId: 'en-b2-lex-philosophers',
+      surfaceForm: 'philosophers',
+      lemma: 'philosopher',
+      objectiveDifficulty: 4,
+      startIndex: 67,
+      endIndex: 79,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-004',
+      lexemeGroupId: 'en-b2-lex-antiquity',
+      surfaceForm: 'antiquity',
+      lemma: 'antiquity',
+      objectiveDifficulty: 4,
+      startIndex: 86,
+      endIndex: 95,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-005',
+      lexemeGroupId: 'en-b2-lex-authentic',
+      surfaceForm: 'authentic',
+      lemma: 'authentic',
+      objectiveDifficulty: 4,
+      startIndex: 211,
+      endIndex: 220,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-006',
+      lexemeGroupId: 'en-b2-lex-retrospectively',
+      surfaceForm: 'retrospectively',
+      lemma: 'retrospectively',
+      objectiveDifficulty: 5,
+      startIndex: 325,
+      endIndex: 340,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-007',
+      lexemeGroupId: 'en-b2-lex-humility',
+      surfaceForm: 'humility',
+      lemma: 'humility',
+      objectiveDifficulty: 4,
+      startIndex: 425,
+      endIndex: 433,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'en-b2-tok-008',
+      lexemeGroupId: 'en-b2-lex-interrogate',
+      surfaceForm: 'interrogate',
+      lemma: 'interrogate',
+      objectiveDifficulty: 4,
+      startIndex: 455,
+      endIndex: 466,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+  ],
+  lexemeGroups: [
+    { id: 'en-b2-lex-constitutes', lemma: 'constitute', objectiveDifficulty: 4, occurrences: ['en-b2-tok-001'] },
+    { id: 'en-b2-lex-preoccupied', lemma: 'preoccupy', objectiveDifficulty: 4, occurrences: ['en-b2-tok-002'] },
+    { id: 'en-b2-lex-philosophers', lemma: 'philosopher', objectiveDifficulty: 4, occurrences: ['en-b2-tok-003'] },
+    { id: 'en-b2-lex-antiquity', lemma: 'antiquity', objectiveDifficulty: 4, occurrences: ['en-b2-tok-004'] },
+    { id: 'en-b2-lex-authentic', lemma: 'authentic', objectiveDifficulty: 4, occurrences: ['en-b2-tok-005'] },
+    { id: 'en-b2-lex-retrospectively', lemma: 'retrospectively', objectiveDifficulty: 5, occurrences: ['en-b2-tok-006'] },
+    { id: 'en-b2-lex-humility', lemma: 'humility', objectiveDifficulty: 4, occurrences: ['en-b2-tok-007'] },
+    { id: 'en-b2-lex-interrogate', lemma: 'interrogate', objectiveDifficulty: 4, occurrences: ['en-b2-tok-008'] },
+  ],
+  grammarPoints: [
+    {
+      id: 'en-b2-grammar-001',
+      text: 'has preoccupied',
+      type: '时态',
+      difficulty: 4,
+      explanation: '现在完成时表示过去发生并持续到现在的动作或状态，由 has/have + 过去分词构成',
+      examples: ['This question has preoccupied thinkers for centuries.', 'The mystery has fascinated researchers.'],
+      startIndex: 51,
+      endIndex: 66,
+      isActive: false,
+    },
+    {
+      id: 'en-b2-grammar-002',
+      text: 'arises from',
+      type: '动词词组',
+      difficulty: 4,
+      explanation: '动词词组 arises from 表示"源自于、产生于"，主语通常是抽象概念',
+      examples: ['Conflicts arise from misunderstanding.', 'Innovation arises from curiosity.'],
+      startIndex: 199,
+      endIndex: 210,
+      isActive: false,
+    },
+    {
+      id: 'en-b2-grammar-003',
+      text: 'may be more valuable',
+      type: '情态动词+比较级',
+      difficulty: 4,
+      explanation: '情态动词 may 表示可能性，与比较级连用表达谨慎的判断',
+      examples: ['The journey may be more important than the destination.', 'This approach may be more effective.'],
+      startIndex: 548,
+      endIndex: 568,
+      isActive: false,
+    },
+  ],
+};
+
+/**
+ * v2.2.0 Stage 1 (D4): DE A2 (difficulty 2) — 主题: 日常生活.
+ */
+export const mockGermanPassageA2: Passage = {
+  id: 'passage-de-a2-001',
+  language: 'de',
+  difficulty: 2,
+  title: 'Ein normaler Tag',
+  text: 'Jeden Morgen stehe ich früh auf und trinke einen Kaffee. Danach gehe ich mit dem Hund im Park spazieren. Der Bäcker um die Ecke hat immer frische Brötchen. Am Nachmittag besuche ich meine Großeltern und wir kochen zusammen. Am Abend lese ich gerne ein Buch oder höre Musik. Das Leben ist hier sehr ruhig und schön.',
+  source: 'mock',
+  tokens: [
+    {
+      id: 'de-a2-tok-001',
+      lexemeGroupId: 'de-a2-lex-frueh',
+      surfaceForm: 'früh',
+      lemma: 'früh',
+      objectiveDifficulty: 2,
+      startIndex: 23,
+      endIndex: 27,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-a2-tok-002',
+      lexemeGroupId: 'de-a2-lex-kaffee',
+      surfaceForm: 'Kaffee',
+      lemma: 'Kaffee',
+      objectiveDifficulty: 2,
+      startIndex: 49,
+      endIndex: 55,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-a2-tok-003',
+      lexemeGroupId: 'de-a2-lex-spazieren',
+      surfaceForm: 'spazieren',
+      lemma: 'spazieren',
+      objectiveDifficulty: 2,
+      startIndex: 94,
+      endIndex: 103,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-a2-tok-004',
+      lexemeGroupId: 'de-a2-lex-baecker',
+      surfaceForm: 'Bäcker',
+      lemma: 'Bäcker',
+      objectiveDifficulty: 2,
+      startIndex: 109,
+      endIndex: 115,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-a2-tok-005',
+      lexemeGroupId: 'de-a2-lex-frisch',
+      surfaceForm: 'frische',
+      lemma: 'frisch',
+      objectiveDifficulty: 2,
+      startIndex: 138,
+      endIndex: 145,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-a2-tok-006',
+      lexemeGroupId: 'de-a2-lex-broetchen',
+      surfaceForm: 'Brötchen',
+      lemma: 'Brötchen',
+      objectiveDifficulty: 3,
+      startIndex: 146,
+      endIndex: 154,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-a2-tok-007',
+      lexemeGroupId: 'de-a2-lex-grosseltern',
+      surfaceForm: 'Großeltern',
+      lemma: 'Großeltern',
+      objectiveDifficulty: 3,
+      startIndex: 188,
+      endIndex: 198,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: true,
+      compoundParts: ['Groß', 'Eltern'],
+    },
+    {
+      id: 'de-a2-tok-008',
+      lexemeGroupId: 'de-a2-lex-zusammen',
+      surfaceForm: 'zusammen',
+      lemma: 'zusammen',
+      objectiveDifficulty: 2,
+      startIndex: 214,
+      endIndex: 222,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+  ],
+  lexemeGroups: [
+    { id: 'de-a2-lex-frueh', lemma: 'früh', objectiveDifficulty: 2, occurrences: ['de-a2-tok-001'] },
+    { id: 'de-a2-lex-kaffee', lemma: 'Kaffee', objectiveDifficulty: 2, occurrences: ['de-a2-tok-002'] },
+    { id: 'de-a2-lex-spazieren', lemma: 'spazieren', objectiveDifficulty: 2, occurrences: ['de-a2-tok-003'] },
+    { id: 'de-a2-lex-baecker', lemma: 'Bäcker', objectiveDifficulty: 2, occurrences: ['de-a2-tok-004'] },
+    { id: 'de-a2-lex-frisch', lemma: 'frisch', objectiveDifficulty: 2, occurrences: ['de-a2-tok-005'] },
+    { id: 'de-a2-lex-broetchen', lemma: 'Brötchen', objectiveDifficulty: 3, occurrences: ['de-a2-tok-006'] },
+    { id: 'de-a2-lex-grosseltern', lemma: 'Großeltern', objectiveDifficulty: 3, occurrences: ['de-a2-tok-007'] },
+    { id: 'de-a2-lex-zusammen', lemma: 'zusammen', objectiveDifficulty: 2, occurrences: ['de-a2-tok-008'] },
+  ],
+  grammarPoints: [
+    {
+      id: 'de-a2-grammar-001',
+      text: 'stehe ich früh auf',
+      type: '可分动词',
+      difficulty: 2,
+      explanation: '德语可分动词 aufstehen 的前缀 auf 位于句末，主语 ich 之后是动词变位形式 stehe',
+      examples: ['Ich stehe jeden Tag um sieben Uhr auf.', 'Wann stehst du morgen auf?'],
+      startIndex: 13,
+      endIndex: 31,
+      isActive: false,
+    },
+    {
+      id: 'de-a2-grammar-002',
+      text: 'mit dem Hund im Park spazieren',
+      type: '动词位置',
+      difficulty: 2,
+      explanation: '德语中 gehen + spazieren 表示散步，spazieren 位于句末',
+      examples: ['Ich gehe im Wald spazieren.', 'Wir gehen am Strand spazieren.'],
+      startIndex: 73,
+      endIndex: 103,
+      isActive: false,
+    },
+    {
+      id: 'de-a2-grammar-003',
+      text: 'lese ich gerne',
+      type: '副词位置',
+      difficulty: 2,
+      explanation: '德语中副词 gerne 表示喜欢做某事，位于动词之后',
+      examples: ['Ich lese gerne Romane.', 'Sie hört gerne Musik.'],
+      startIndex: 233,
+      endIndex: 247,
+      isActive: false,
+    },
+  ],
+};
+
 export const mockGermanPassage: Passage = {
   id: 'passage-de-001',
   language: 'de',
   difficulty: 3,
   title: 'Die alte Bibliothek',
   text: 'Am Stadtrand stand eine alte Bibliothek, die schon fast in Vergessenheit geraten war. Die Fassade war verwittert und die Fenster waren mit Staub bedeckt, doch hinter den Mauern verbarg sich ein Schatz aus vergangenen Zeiten. Jeden Tag kam ein alter Mann vorbei, der einen Moment innehalten und durch das vergitterte Fenster blickte. Eines Tages beschloss er, das Gebäude wieder zum Leben zu erwecken. Er sammelte Geld, suchte freiwillige Helfer und begann mit den Restaurierungsarbeiten. Eine Hausfrau aus dem Dorf half ihm, und ein Arbeitgeber aus der Stadt spendete Materialien. Nach einem Jahr war die Bibliothek wiedereröffnet, und die Menschen strömten herbei, um die wunderbare Sammlung von Büchern zu bestaunen, die die Zeit überdauert hatten.',
+  source: 'mock',
   tokens: [
     {
       id: 'de-tok-001',
@@ -334,16 +821,291 @@ export const mockGermanPassage: Passage = {
   ],
 };
 
-export function getMockPassage(language: Language, difficulty: DifficultyLevel): Passage {
-  const base = language === 'en' ? mockEnglishPassage : mockGermanPassage;
-  const tokens = base.tokens.filter((t) => t.objectiveDifficulty <= difficulty + 1 && t.objectiveDifficulty >= Math.max(1, difficulty - 1));
-  const lexemeGroupIds = new Set(tokens.map((t) => t.lexemeGroupId));
-  const lexemeGroups = base.lexemeGroups.filter((g) => lexemeGroupIds.has(g.id));
+/**
+ * v2.2.0 Stage 1 (D4): DE B2 (difficulty 4) — 主题: 科学发现.
+ */
+export const mockGermanPassageB2: Passage = {
+  id: 'passage-de-b2-001',
+  language: 'de',
+  difficulty: 4,
+  title: 'Die Revolution der Physik',
+  text: 'Die moderne Physik hat unser Verständnis der Wirklichkeit grundlegend transformiert. Mit der Quantenmechanik wurde offenbart, dass die Naturgesetze auf subatomarer Ebene unserem intuitiven Empfinden widersprechen. Forscher entdeckten, dass Teilchen gleichzeitig Welleneigenschaften aufweisen, eine Erkenntnis, die das klassische Kausalitätsprinzip infrage stellt. Diese Paradigmenverschiebung hat nicht nur die Wissenschaft revolutioniert, sondern auch philosophische Debatten über Determinismus und Willensfreiheit neu entfacht.',
+  source: 'mock',
+  tokens: [
+    {
+      id: 'de-b2-tok-001',
+      lexemeGroupId: 'de-b2-lex-wirklichkeit',
+      surfaceForm: 'Wirklichkeit',
+      lemma: 'Wirklichkeit',
+      objectiveDifficulty: 4,
+      startIndex: 45,
+      endIndex: 57,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-b2-tok-002',
+      lexemeGroupId: 'de-b2-lex-grundlegend',
+      surfaceForm: 'grundlegend',
+      lemma: 'grundlegend',
+      objectiveDifficulty: 4,
+      startIndex: 58,
+      endIndex: 69,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-b2-tok-003',
+      lexemeGroupId: 'de-b2-lex-quantenmechanik',
+      surfaceForm: 'Quantenmechanik',
+      lemma: 'Quantenmechanik',
+      objectiveDifficulty: 5,
+      startIndex: 93,
+      endIndex: 108,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: true,
+      compoundParts: ['Quanten', 'Mechanik'],
+    },
+    {
+      id: 'de-b2-tok-004',
+      lexemeGroupId: 'de-b2-lex-offenbart',
+      surfaceForm: 'offenbart',
+      lemma: 'offenbaren',
+      objectiveDifficulty: 4,
+      startIndex: 115,
+      endIndex: 124,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-b2-tok-005',
+      lexemeGroupId: 'de-b2-lex-subatomar',
+      surfaceForm: 'subatomarer',
+      lemma: 'subatomar',
+      objectiveDifficulty: 5,
+      startIndex: 152,
+      endIndex: 163,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-b2-tok-006',
+      lexemeGroupId: 'de-b2-lex-widersprechen',
+      surfaceForm: 'widersprechen',
+      lemma: 'widersprechen',
+      objectiveDifficulty: 4,
+      startIndex: 199,
+      endIndex: 212,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-b2-tok-007',
+      lexemeGroupId: 'de-b2-lex-welleneigenschaften',
+      surfaceForm: 'Welleneigenschaften',
+      lemma: 'Welleneigenschaft',
+      objectiveDifficulty: 5,
+      startIndex: 262,
+      endIndex: 281,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: true,
+      compoundParts: ['Wellen', 'Eigenschaften'],
+    },
+    {
+      id: 'de-b2-tok-008',
+      lexemeGroupId: 'de-b2-lex-kausalitaetsprinzip',
+      surfaceForm: 'Kausalitätsprinzip',
+      lemma: 'Kausalitätsprinzip',
+      objectiveDifficulty: 5,
+      startIndex: 329,
+      endIndex: 347,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: true,
+      compoundParts: ['Kausalität', 'Prinzip'],
+    },
+    {
+      id: 'de-b2-tok-009',
+      lexemeGroupId: 'de-b2-lex-paradigmenverschiebung',
+      surfaceForm: 'Paradigmenverschiebung',
+      lemma: 'Paradigmenverschiebung',
+      objectiveDifficulty: 5,
+      startIndex: 370,
+      endIndex: 392,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: true,
+      compoundParts: ['Paradigmen', 'Verschiebung'],
+    },
+    {
+      id: 'de-b2-tok-010',
+      lexemeGroupId: 'de-b2-lex-determinismus',
+      surfaceForm: 'Determinismus',
+      lemma: 'Determinismus',
+      objectiveDifficulty: 5,
+      startIndex: 482,
+      endIndex: 495,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+    },
+    {
+      id: 'de-b2-tok-011',
+      lexemeGroupId: 'de-b2-lex-willensfreiheit',
+      surfaceForm: 'Willensfreiheit',
+      lemma: 'Willensfreiheit',
+      objectiveDifficulty: 5,
+      startIndex: 500,
+      endIndex: 515,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: true,
+      compoundParts: ['Willens', 'Freiheit'],
+    },
+  ],
+  lexemeGroups: [
+    { id: 'de-b2-lex-wirklichkeit', lemma: 'Wirklichkeit', objectiveDifficulty: 4, occurrences: ['de-b2-tok-001'] },
+    { id: 'de-b2-lex-grundlegend', lemma: 'grundlegend', objectiveDifficulty: 4, occurrences: ['de-b2-tok-002'] },
+    { id: 'de-b2-lex-quantenmechanik', lemma: 'Quantenmechanik', objectiveDifficulty: 5, occurrences: ['de-b2-tok-003'] },
+    { id: 'de-b2-lex-offenbart', lemma: 'offenbaren', objectiveDifficulty: 4, occurrences: ['de-b2-tok-004'] },
+    { id: 'de-b2-lex-subatomar', lemma: 'subatomar', objectiveDifficulty: 5, occurrences: ['de-b2-tok-005'] },
+    { id: 'de-b2-lex-widersprechen', lemma: 'widersprechen', objectiveDifficulty: 4, occurrences: ['de-b2-tok-006'] },
+    { id: 'de-b2-lex-welleneigenschaften', lemma: 'Welleneigenschaft', objectiveDifficulty: 5, occurrences: ['de-b2-tok-007'] },
+    { id: 'de-b2-lex-kausalitaetsprinzip', lemma: 'Kausalitätsprinzip', objectiveDifficulty: 5, occurrences: ['de-b2-tok-008'] },
+    { id: 'de-b2-lex-paradigmenverschiebung', lemma: 'Paradigmenverschiebung', objectiveDifficulty: 5, occurrences: ['de-b2-tok-009'] },
+    { id: 'de-b2-lex-determinismus', lemma: 'Determinismus', objectiveDifficulty: 5, occurrences: ['de-b2-tok-010'] },
+    { id: 'de-b2-lex-willensfreiheit', lemma: 'Willensfreiheit', objectiveDifficulty: 5, occurrences: ['de-b2-tok-011'] },
+  ],
+  grammarPoints: [
+    {
+      id: 'de-b2-grammar-001',
+      text: 'grundlegend transformiert',
+      type: '时态',
+      difficulty: 4,
+      explanation: '德语完成时 (Perfekt) 表示过去发生并对现在产生影响的动作，由 haben/sein + 过去分词构成',
+      examples: ['Wir haben das Problem gelöst.', 'Sie hat die Aufgabe übernommen.'],
+      startIndex: 58,
+      endIndex: 83,
+      isActive: false,
+    },
+    {
+      id: 'de-b2-grammar-002',
+      text: 'wurde offenbart',
+      type: '被动语态',
+      difficulty: 4,
+      explanation: '德语被动语态 (Passiv) 由 werden + 过去分词构成，wurde 是过去时形式',
+      examples: ['Das Haus wurde gebaut.', 'Der Brief wurde geschrieben.'],
+      startIndex: 109,
+      endIndex: 124,
+      isActive: false,
+    },
+    {
+      id: 'de-b2-grammar-003',
+      text: 'infrage stellt',
+      type: '可分动词',
+      difficulty: 4,
+      explanation: '可分动词 infragestellen 的前缀 infrage 位于从句末尾，stellt 是变位形式',
+      examples: ['Er stellt den Vertrag infrage.', 'Wir stellen die Theorie infrage.'],
+      startIndex: 348,
+      endIndex: 362,
+      isActive: false,
+    },
+  ],
+};
 
+/**
+ * v2.2.0 Stage 1 (D4): 按 difficulty 选择对应难度的 Mock passage.
+ *
+ * 难度映射:
+ * - 1 (A1) → 复用 A2 数据 (降级 token 难度, 通过 getMockPassage 内部 token 过滤实现)
+ * - 2 (A2) → A2 mock
+ * - 3 (B1) → B1 mock
+ * - 4 (B2) → B2 mock
+ * - 5 (C1) → 复用 B2 数据
+ */
+function pickBaseMock(language: Language, difficulty: DifficultyLevel): Passage {
+  if (language === 'en') {
+    if (difficulty <= 2) return mockEnglishPassage;       // A2
+    if (difficulty === 3) return mockEnglishPassageB1;    // B1
+    return mockEnglishPassageB2;                            // B2 (difficulty 4 or 5)
+  }
+  // language === 'de'
+  if (difficulty <= 2) return mockGermanPassageA2;        // A2
+  if (difficulty === 3) return mockGermanPassage;         // B1
+  return mockGermanPassageB2;                              // B2 (difficulty 4 or 5)
+}
+
+interface MockCacheEntry {
+  /** 选定的基础 mock passage (未经 token 过滤) */
+  baseMock: Passage;
+  /** 按 difficulty 过滤后的 tokens (含原始 objectiveDifficulty) */
+  filteredTokens: TokenOccurrence[];
+  /** 与 filteredTokens 对应的 lexemeGroups */
+  filteredLexemeGroups: LexemeGroup[];
+  /** 缓存写入时间戳 */
+  cachedAt: number;
+}
+
+const mockCache = new Map<string, MockCacheEntry>();
+const MOCK_CACHE_TTL_MS = 60_000;
+
+/** 测试/调试用: 清空 mock 缓存 */
+export function clearMockPassageCache(): void {
+  mockCache.clear();
+}
+
+/**
+ * 获取指定 (language, difficulty) 的 Mock passage.
+ *
+ * Contract:
+ * - 返回的 Passage 必须有 `source: 'mock'`
+ * - 同一 (language, difficulty) 在 1 分钟内多次调用返回同一 Mock (避免刷新换篇)
+ * - tokens 的 startIndex/endIndex 与 text 严格对齐 (v1.1.0 alignmentValidator 思路自检)
+ * - 返回新对象 (调用方可安全 mutation isResolved/isActive, 不污染缓存)
+ */
+export function getMockPassage(language: Language, difficulty: DifficultyLevel): Passage {
+  const key = `${language}::${difficulty}`;
+  const now = Date.now();
+
+  let entry = mockCache.get(key);
+  if (!entry || now - entry.cachedAt > MOCK_CACHE_TTL_MS) {
+    const base = pickBaseMock(language, difficulty);
+    // 沿用 v1.1.0 token 难度过滤策略: 保留 ±1 难度范围内的 tokens
+    // 对 difficulty 1 (A1) 复用 A2 数据时, 仅保留难度 1-2 的 tokens (降级)
+    // 对 difficulty 5 (C1) 复用 B2 数据时, 保留难度 4-5 的 tokens
+    const tokens = base.tokens.filter(
+      (t) => t.objectiveDifficulty <= difficulty + 1 && t.objectiveDifficulty >= Math.max(1, difficulty - 1)
+    );
+    const lexemeGroupIds = new Set(tokens.map((t) => t.lexemeGroupId));
+    const lexemeGroups = base.lexemeGroups.filter((g) => lexemeGroupIds.has(g.id));
+    entry = { baseMock: base, filteredTokens: tokens, filteredLexemeGroups: lexemeGroups, cachedAt: now };
+    mockCache.set(key, entry);
+  }
+
+  // 返回新对象, 让调用方可安全 mutation (isResolved/isActive)
   return {
-    ...base,
+    ...entry.baseMock,
     difficulty,
-    tokens: tokens.map((t) => ({ ...t, isResolved: false, isActive: false })),
-    lexemeGroups,
+    tokens: entry.filteredTokens.map((t) => ({ ...t, isResolved: false, isActive: false })),
+    lexemeGroups: entry.filteredLexemeGroups.map((g) => ({ ...g, occurrences: [...g.occurrences] })),
+    source: 'mock',
   };
 }

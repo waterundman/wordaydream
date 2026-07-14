@@ -125,6 +125,26 @@
   font-weight: 600;
 }
 
+/* v1.6.0: 未解锁难度圆点 */
+.diffDot.locked {
+  background: var(--color-border);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.diffDot.locked:hover {
+  background: var(--color-border);
+}
+
+.diffDot.locked .diffLabel {
+  display: none;
+}
+
+.lockIcon {
+  width: 12px;
+  height: 12px;
+}
+
 .difficultyLabels {
   display: flex;
   justify-content: space-between;
@@ -289,6 +309,92 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* v2.1.0 Stage 2 (Contract 64): 阅读完成 CTA — 主区域底部, 非弹窗, 不阻塞阅读 */
+.completionCta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  padding: var(--space-6) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-family: var(--font-sans);
+}
+
+.completionText {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.readNextBtn {
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-size: var(--text-base);
+  font-weight: 500;
+  font-family: var(--font-sans);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.readNextBtn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.readNextBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* v2.1.0 Stage 4 (Contract 68): 历史重读模式 "重新练习" CTA */
+.replayCta {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border-strong, #d4d1c8);
+  border-radius: var(--radius-md, 0.5rem);
+  text-align: center;
+  background: var(--color-bg-subtle, #f5f2ed);
+}
+
+.replayText {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-secondary, #4a4540);
+}
+
+.replayBtn {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-accent, #2d5a4d);
+  border: none;
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.replayBtn:hover {
+  background: var(--color-accent-hover, #234a3f);
+}
+
+.replayBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .replayBtn {
+    transition: none;
+  }
 }
 
 /* Mobile toggle button */

@@ -35,3 +35,16 @@ __pycache__/
 
 # 服务器日志
 server/logs/
+
+# Local Netlify folder
+.netlify
+
+# 临时诊断脚本和截图 (v2.2.0/v2.2.1 端到端测试产物)
+scripts/diag*.py
+scripts/e2e_screenshots/
+scripts/e2e_screenshots_v221/
+.trae-html-share-packages/
+deno.lock
+lemmas_all.json
+minirobot-market-analysis/
+pnpm-lock.yaml

@@ -1,0 +1,49 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--color-surface, #faf8f5);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--color-ink, #1c1917);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-flame, #e07a3b);
+}
+
+.text {
+  flex: 1;
+  font-weight: 500;
+}
+
+.btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1.25rem;
+  background: var(--color-flame, #e07a3b);
+  color: #faf8f5;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 200ms ease;
+}
+
+.btn:hover {
+  opacity: 0.88;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}

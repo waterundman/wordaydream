@@ -7,6 +7,7 @@ import { SIMPLE_REMEDY_TEMPLATES_EN, SIMPLE_REMEDY_TEMPLATES_DE } from '../../ll
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { buildAchievementContext } from '../../achievements/services/buildContext';
+import { useAppModeStore } from '../../../hooks/useAppModeStore';
 
 export type ReviewMode = 'idle' | 'reviewing' | 'completed';
 
@@ -103,6 +104,11 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
           });
           return;
         }
+
+        // v2.1.0 Stage 1 (Contract 61): 进入复习前记录当前 AppMode 为 previousMode,
+        // 供 exitReview 的 returnToPrevious 恢复 (修复 I1: 闭环断裂).
+        // 必须在 set mode='reviewing' 之前调用, 此时 currentMode 仍是来源模式 (如 reading).
+        useAppModeStore.getState().recordPreviousMode();
 
         set({
           mode: 'reviewing',
@@ -239,6 +245,11 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
           isPaused: false,
           showRatingBar: false,
         });
+        // v2.1.0 Stage 1 (Contract 61): 退出复习时回到 previousMode (如 reading),
+        // 修复 I1 闭环断裂. previousMode 由 startReview 调用 recordPreviousMode 记录.
+        // 若 previousMode=null (无记录, 如 persist 恢复), returnToPrevious 回 home.
+        // App.tsx useEffect (line 58-64) 第二条作为兜底: 异常 idle 且 appMode 仍 review 时回 home.
+        useAppModeStore.getState().returnToPrevious();
       },
 
       recordContext: (cardId, sentence) => {

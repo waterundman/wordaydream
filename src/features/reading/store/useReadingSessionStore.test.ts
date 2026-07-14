@@ -19,7 +19,7 @@ import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
-import type { MemoryCard, Passage } from '../../../types';
+import type { MemoryCard, Passage, TokenOccurrence } from '../../../types';
 
 function makeCard(
   partial: Partial<MemoryCard> & Pick<MemoryCard, 'lexemeGroupId' | 'lemma' | 'objectiveDifficulty'>,
@@ -147,5 +147,120 @@ describe('useReadingSessionStore.loadSession T05', () => {
     // loadSession 自身会 addEntry, 所以 totalSessions === 1
     expect(ctx.totalSessions).toBe(1);
     expect(ctx.languages).toEqual(['en']);
+  });
+});
+
+/**
+ * v2.1.0 Stage 4 (Contract 68): loadFromHistory resetResolved + setLastConfig 测试
+ *
+ * 覆盖 test_spec:
+ * - T19a: loadFromHistory(passage, 'en', 2, { resetResolved: true })
+ *         → resolvedTokens.size === 0, all token.isResolved === false, isReplay === false
+ *         (v2.2.1 Stage 1 Bug 2 P1: resetResolved=true 时 isReplay=false, 让用户能真正作答)
+ * - T19b: loadFromHistory(passage, 'en', 2) (无 options)
+ *         → resolvedTokens 包含原 isResolved=true 的 token id (向后兼容)
+ * - T19c: loadFromHistory(passage, 'en', 2, { resetResolved: false })
+ *         → 同默认行为 (resolvedTokens 包含原 isResolved tokens)
+ * - T19d: setLastConfig setter 正确更新 lastConfig
+ * - T19e: resetResolved=true 不修改原 passage 对象 (深拷贝)
+ */
+function makePassageWithTokens(resolvedFlags: boolean[]): Passage {
+  const tokens: TokenOccurrence[] = resolvedFlags.map((isResolved, i) => ({
+    id: `tok-${i}`,
+    lexemeGroupId: `grp-${i}`,
+    surfaceForm: `word${i}`,
+    lemma: `word${i}`,
+    objectiveDifficulty: 2,
+    startIndex: i * 6,
+    endIndex: i * 6 + 5,
+    isResolved,
+    isActive: false,
+    kind: 'normal' as const,
+    isCompound: false,
+    alignmentStatus: 'perfect',
+    originalOffset: 0,
+  }));
+  return {
+    id: 'test-passage-reset',
+    language: 'en',
+    difficulty: 2,
+    text: tokens.map((t) => t.surfaceForm).join(' '),
+    tokens,
+    lexemeGroups: [],
+    grammarPoints: [],
+  };
+}
+
+describe('useReadingSessionStore loadFromHistory resetResolved (v2.1.0 Stage 4 Contract 68)', () => {
+  beforeEach(() => {
+    useMemoryStore.setState({ cards: new Map() });
+    useReadingHistoryStore.setState({ history: [], maxHistory: 50 });
+    useReadingSessionStore.setState({
+      session: null,
+      activeOccurrenceId: null,
+      hoveredGroupId: null,
+      activeGrammarPointId: null,
+      hoveredGrammarTypeId: null,
+      isLoading: false,
+      lastConfig: null,
+      currentHistoryId: null,
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('T19a: resetResolved=true → resolvedTokens 清空, tokens.isResolved 全 false, isReplay=false', () => {
+    const passage = makePassageWithTokens([true, false, true, true]);
+    useReadingSessionStore.getState().loadFromHistory(passage, 'en', 2, { resetResolved: true });
+
+    const state = useReadingSessionStore.getState();
+    expect(state.session).not.toBeNull();
+    expect(state.session!.resolvedTokens.size).toBe(0);
+    expect(state.session!.passage.tokens.every((t) => !t.isResolved)).toBe(true);
+    // v2.2.1 Stage 1 (Bug 2 P1): resetResolved=true (重新练习) → isReplay=false, 允许作答.
+    expect(state.session!.isReplay).toBe(false);
+  });
+
+  it('T19b: 无 options (默认) → resolvedTokens 包含原 isResolved=true 的 token id', () => {
+    const passage = makePassageWithTokens([true, false, true, true]);
+    useReadingSessionStore.getState().loadFromHistory(passage, 'en', 2);
+
+    const state = useReadingSessionStore.getState();
+    expect(state.session).not.toBeNull();
+    // 原 passage 有 3 个 isResolved=true (tok-0, tok-2, tok-3)
+    expect(state.session!.resolvedTokens.size).toBe(3);
+    expect(state.session!.resolvedTokens.has('tok-0')).toBe(true);
+    expect(state.session!.resolvedTokens.has('tok-2')).toBe(true);
+    expect(state.session!.resolvedTokens.has('tok-3')).toBe(true);
+    expect(state.session!.resolvedTokens.has('tok-1')).toBe(false);
+  });
+
+  it('T19c: resetResolved=false → 同默认行为 (resolvedTokens 包含原 isResolved tokens)', () => {
+    const passage = makePassageWithTokens([true, false, true]);
+    useReadingSessionStore.getState().loadFromHistory(passage, 'en', 2, { resetResolved: false });
+
+    const state = useReadingSessionStore.getState();
+    expect(state.session).not.toBeNull();
+    expect(state.session!.resolvedTokens.size).toBe(2);
+    expect(state.session!.resolvedTokens.has('tok-0')).toBe(true);
+    expect(state.session!.resolvedTokens.has('tok-2')).toBe(true);
+  });
+
+  it('T19d: setLastConfig setter 正确更新 lastConfig', () => {
+    useReadingSessionStore.getState().setLastConfig({ language: 'de', difficulty: 3 });
+    expect(useReadingSessionStore.getState().lastConfig).toEqual({ language: 'de', difficulty: 3 });
+
+    useReadingSessionStore.getState().setLastConfig({ language: 'en', difficulty: 1 });
+    expect(useReadingSessionStore.getState().lastConfig).toEqual({ language: 'en', difficulty: 1 });
+  });
+
+  it('T19e: resetResolved=true 不修改原 passage 对象 (深拷贝)', () => {
+    const passage = makePassageWithTokens([true, false, true]);
+    const originalResolvedFlags = passage.tokens.map((t) => t.isResolved);
+
+    useReadingSessionStore.getState().loadFromHistory(passage, 'en', 2, { resetResolved: true });
+
+    // 原 passage 对象的 tokens 不受影响
+    expect(passage.tokens.map((t) => t.isResolved)).toEqual(originalResolvedFlags);
+    expect(passage.tokens[0].isResolved).toBe(true);
   });
 });

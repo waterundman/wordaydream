@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Passage, Language, DifficultyLevel } from '../../../types';
+import { publish } from '../../../domain/events';
 
 export interface HistoryEntry {
   id: string;
@@ -48,10 +49,26 @@ export const useReadingHistoryStore = create<ReadingHistoryState>()(
       },
 
       completeEntry: (id) => {
+        // v2.1.0 Stage 2 (Contract 63): 激活死代码 — 之前 completeEntry 全项目 0 调用点,
+        // 现由 ReadingSessionPage 在所有 token resolved 时调用.
+        // 幂等性: 已完成的 entry 不重复 publish, 避免重复触发订阅方副作用.
+        const existing = get().history.find((entry) => entry.id === id);
+        if (!existing) return;
+        if (existing.completedAt) return;
+
         const history = get().history.map((entry) =>
           entry.id === id ? { ...entry, completedAt: Date.now() } : entry
         );
         set({ history });
+
+        // v2.1.0 Stage 2 (Contract 63): 发布 'reading:completed' 事件,
+        // 供 ReviewPromptBanner / TodayCard 等订阅方响应阅读完成 (替代轮询).
+        publish('reading:completed', {
+          entryId: id,
+          passageId: existing.passage.id,
+          language: existing.language,
+          difficulty: existing.difficulty,
+        });
       },
 
       getEntry: (id) => {
@@ -73,7 +90,7 @@ export const useReadingHistoryStore = create<ReadingHistoryState>()(
     }),
     {
       name: 'wordaydream:reading-history',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       // v1.5.3 fix V2-P2-007: 压缩持久化, 去除 tokens 中历史重读不需要的冗余字段.
       // 历史重读 (loadFromHistory) 仅需 token 的位置/词形/难度/解析状态用于渲染,
@@ -108,8 +125,22 @@ export const useReadingHistoryStore = create<ReadingHistoryState>()(
           },
         })),
       }),
-      // v1.5.2 fix L3: 占位 migrate, 未来 schema bump 需补真实迁移逻辑.
-      migrate: (persistedState) => persistedState,
+      // v2.1.0 hotfix: v1.5.3 fix V3-P3-001 之前 ID 格式为 `history-${Date.now()}` (无 counter 后缀),
+      // 同毫秒添加的多条 entry 会产生重复 ID, 触发 React duplicate key 警告并可能导致列表渲染异常.
+      // 此 migrate 检测重复 ID 并添加 index 后缀使其唯一, 一次性清理 localStorage 中的旧数据.
+      migrate: (persistedState: unknown) => {
+        const state = persistedState as Partial<ReadingHistoryState>;
+        if (!state || !Array.isArray(state.history)) return state as ReadingHistoryState;
+        const seenIds = new Set<string>();
+        const migratedHistory = state.history.map((entry, index) => {
+          if (seenIds.has(entry.id)) {
+            return { ...entry, id: `${entry.id}-migrated-${index}` };
+          }
+          seenIds.add(entry.id);
+          return entry;
+        });
+        return { ...state, history: migratedHistory } as ReadingHistoryState;
+      },
     }
   )
 );

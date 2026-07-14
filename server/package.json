@@ -4,8 +4,8 @@
   "description": "LLM 代理服务 - 隐藏 API key, 转发请求到 OpenAI/Anthropic/DeepSeek",
   "type": "module",
   "scripts": {
-    "start": "node llm-proxy.js",
-    "dev": "node --watch llm-proxy.js"
+    "start": "node --env-file=../.env llm-proxy.js",
+    "dev": "node --env-file=../.env --watch llm-proxy.js"
   },
   "dependencies": {
     "express": "^4.21.0",

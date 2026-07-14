@@ -33,6 +33,7 @@ interface TokenSpanProps {
   isActive: boolean;
   isFocused: boolean;
   language: Language;
+  isReplay: boolean;
   children: React.ReactNode;
 }
 
@@ -64,9 +65,12 @@ const TokenSpan = memo(function TokenSpan({
   isActive,
   isFocused,
   language,
+  isReplay,
   children,
 }: TokenSpanProps) {
-  const showPanel = isActive && !token.isCompound;
+  // v2.1.0 Stage 4 (Contract 68): 重读模式下禁用作答面板.
+  // isReplay=true 时即使 isActive 也不渲染 InlineAnswerPanel (重读模式不可作答).
+  const showPanel = isActive && !token.isCompound && !isReplay;
   const wrapperRef = useRef<HTMLSpanElement>(null);
   const tooltipText = useMemo(
     () => buildAlignmentTooltip(token.alignmentStatus, token.originalOffset),
@@ -74,10 +78,39 @@ const TokenSpan = memo(function TokenSpan({
   );
   const showAlignmentTooltip = tooltipText !== null;
 
+  const wrapperClassName = [
+    styles.tokenWrapper,
+    isFocused ? styles.focused : '',
+    isReplay ? styles.tokenReplay : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  // v2.1.0 Stage 4 (Contract 68): 重读模式下阻止 click/keydown 事件传播到
+  // LinkedOccurrenceHighlight 的内部 handler, 防止 setActiveOccurrence 触发.
+  // CSS pointer-events:none 在真实浏览器中生效, 此 capture handler 作为
+  // JS 层守卫 (jsdom 测试环境下 CSS 不生效时仍能阻止交互).
+  const handleReplayClickCapture = useCallback((e: React.SyntheticEvent) => {
+    if (isReplay) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, [isReplay]);
+
+  const handleReplayKeyDownCapture = useCallback((e: React.SyntheticEvent) => {
+    if (isReplay) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, [isReplay]);
+
   const trigger = (
     <span
       ref={wrapperRef}
-      className={`${styles.tokenWrapper} ${isFocused ? styles.focused : ''}`}
+      className={wrapperClassName}
+      data-replay={isReplay ? 'true' : undefined}
+      onClickCapture={handleReplayClickCapture}
+      onKeyDownCapture={handleReplayKeyDownCapture}
     >
       <LinkedOccurrenceHighlight token={token} language={language}>
         {children}
@@ -120,6 +153,7 @@ interface GrammarSpanProps {
   grammarPoint: GrammarPoint;
   isActive: boolean;
   isTypeHovered: boolean;
+  isReplay: boolean;
   onClick: (gp: GrammarPoint) => void;
   onMouseEnter: (gp: GrammarPoint) => void;
   onMouseLeave: () => void;
@@ -131,6 +165,7 @@ const GrammarSpan = memo(function GrammarSpan({
   grammarPoint,
   isActive,
   isTypeHovered,
+  isReplay,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -150,6 +185,8 @@ const GrammarSpan = memo(function GrammarSpan({
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={onMouseLeave}
+        aria-disabled={isReplay ? 'true' : undefined}
+        data-replay={isReplay ? 'true' : undefined}
       >
         {children}
       </GrammarHighlight>
@@ -166,9 +203,10 @@ const GrammarSpan = memo(function GrammarSpan({
 
 interface Props {
   language?: Language;
+  isReplay?: boolean;
 }
 
-export function InteractivePassage({ language }: Props = {}) {
+export function InteractivePassage({ language, isReplay = false }: Props = {}) {
   const { session, activeOccurrenceId, setActiveOccurrence } = useReadingSessionStore();
   const [visibleParagraphs, setVisibleParagraphs] = useState<Set<number>>(new Set());
   const [activeGrammarPointId, setActiveGrammarPointId] = useState<string | null>(null);
@@ -668,6 +706,7 @@ export function InteractivePassage({ language }: Props = {}) {
                       isActive={isActive}
                       isFocused={isFocused}
                       language={effectiveLanguage}
+                      isReplay={isReplay}
                     >
                       {item.content}
                     </TokenSpan>
@@ -685,6 +724,7 @@ export function InteractivePassage({ language }: Props = {}) {
                       grammarPoint={grammarPoint}
                       isActive={isActive}
                       isTypeHovered={isTypeHovered}
+                      isReplay={isReplay}
                       onClick={handleGrammarClick}
                       onMouseEnter={handleGrammarMouseEnter}
                       onMouseLeave={handleGrammarMouseLeave}

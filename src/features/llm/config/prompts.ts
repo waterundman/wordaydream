@@ -371,11 +371,21 @@ If any check fails, REGENERATE the output until all checks pass. Do not return p
  *   防止 LLM 在 user 选了 'de' 时仍返回英文 passage (Run 3/4 E2E bug).
  * - user prompt 顶部也加 "Target language: {code} (MUST be in {Language})",
  *   双保险.
+ *
+ * v1.6.0 NEW: wordlistConstraint 参数, 约束 LLM 覆盖词表中未学词.
+ * - targetWords: 必须覆盖至少 ceil(targetWords.length / 2) 个
+ * - optionalWords: 可选覆盖, 丰富词汇多样性
+ * - 不传或为空时, 沿用 v1.5.x 自由生成行为 (0 breaking change)
  */
 export function buildPassagePrompt(
   language: Language,
   difficulty: DifficultyLevel,
-  dueCards: Pick<MemoryCard, 'lemma'>[] = []
+  dueCards: Pick<MemoryCard, 'lemma'>[] = [],
+  // v1.6.0 NEW: 词表约束
+  wordlistConstraint?: {
+    targetWords: string[];
+    optionalWords: string[];
+  }
 ): { system: string; prompt: string; expectJson: true } {
   const reviewWords = dueCards
     .map((c) => c.lemma)
@@ -386,15 +396,72 @@ export function buildPassagePrompt(
   // 不再在 buildPassagePrompt 里追加, 避免重复 token.
   const system = PASSAGE_GENERATION_PROMPT_SYSTEM({ language });
 
+  // v1.6.0: 构造词表约束段落
+  const wordlistSection = buildWordlistConstraintSection(wordlistConstraint);
+
+  const basePrompt = PASSAGE_GENERATION_PROMPT_USER({
+    language,
+    difficulty,
+    reviewWords,
+  });
+
+  // v1.6.0: 把词表约束插入到 self-check 之前
+  const prompt = wordlistSection
+    ? injectWordlistConstraint(basePrompt, wordlistSection)
+    : basePrompt;
+
   return {
     system,
-    prompt: PASSAGE_GENERATION_PROMPT_USER({
-      language,
-      difficulty,
-      reviewWords,
-    }),
+    prompt,
     expectJson: true,
   };
+}
+
+/**
+ * v1.6.0: 构造词表约束段落
+ */
+function buildWordlistConstraintSection(constraint?: {
+  targetWords: string[];
+  optionalWords: string[];
+}): string | null {
+  if (!constraint || constraint.targetWords.length === 0) return null;
+
+  const minCover = Math.max(4, Math.ceil(constraint.targetWords.length / 2));
+  const targetList = constraint.targetWords.map(w => `"${w}"`).join(', ');
+  const optionalList = constraint.optionalWords.length > 0
+    ? constraint.optionalWords.map(w => `"${w}"`).join(', ')
+    : null;
+
+  let section = `Wordlist constraint (v1.6.0 — 课程化词表驱动):
+- Your passage MUST include at least ${minCover} of these target words (unlearned vocabulary at this CEFR level):
+  [${targetList}]
+- These target words MUST appear in the "tokens" array with correct startIndex/endIndex and lemma matching.
+- Use the dictionary form (lemma) in "tokens[].lemma", and the inflected form in "tokens[].surfaceForm".`;
+
+  if (optionalList) {
+    section += `
+- You MAY also naturally include any of these optional words (already encountered, for reinforcement):
+  [${optionalList}]`;
+  }
+
+  section += `
+- If a target word does not fit the narrative naturally, skip it, but include at least ${minCover}.
+- After generating, self-check: count how many target words appear in "text" and "tokens".`;
+
+  return section;
+}
+
+/**
+ * v1.6.0: 把词表约束段落注入到 prompt 的 self-check 之前
+ */
+function injectWordlistConstraint(prompt: string, constraintSection: string): string {
+  const selfCheckMarker = 'MANDATORY self-check';
+  const idx = prompt.indexOf(selfCheckMarker);
+  if (idx < 0) {
+    // 兜底: 直接追加到末尾
+    return `${prompt}\n\n${constraintSection}`;
+  }
+  return `${prompt.slice(0, idx)}${constraintSection}\n\n${prompt.slice(idx)}`;
 }
 
 // =====================================================================
@@ -546,5 +613,51 @@ export function buildGrammarDetectionPrompt(
     system: GRAMMAR_DETECTION_PROMPT_SYSTEM,
     prompt: GRAMMAR_DETECTION_PROMPT_USER({ language, difficulty, text }),
     expectJson: true,
+  };
+}
+
+// =====================================================================
+// v1.5.3: 答案评估 Prompt
+// =====================================================================
+
+export const EVALUATE_ANSWER_PROMPT_SYSTEM = `You are a language learning assistant that judges whether a user's Chinese definition of a target-language word is correct.
+
+Judgment criteria:
+- "correct": The user's definition matches the main sense of the word. Synonyms and near-synonyms count as correct (e.g. "革命" for "revolution" is correct, "变革" is also correct).
+- "partial": The user's definition is related but misses the key meaning, or only captures a secondary/figurative sense while missing the primary sense.
+- "wrong": The user's definition is unrelated or completely off.
+
+Output rules:
+- Output JSON only, no markdown, no extra text.
+- "feedback" must be a single concise Chinese sentence (max 40 characters) explaining the judgment.
+- "hint" is optional; if provided, it should guide the user toward the correct answer without revealing it directly (max 30 characters).
+- For "correct" grade, feedback should be a brief affirmation, no hint needed.
+
+Output format:
+{ "grade": "correct" | "partial" | "wrong", "feedback": "<中文反馈>", "hint": "<可选中文提示>" }`;
+
+export function EVALUATE_ANSWER_PROMPT_USER(params: {
+  lemma: string;
+  language: Language;
+  userAnswer: string;
+}): string {
+  return `Target word (lemma): ${params.lemma} (language: ${params.language === 'de' ? 'German' : 'English'})
+User's Chinese definition: ${params.userAnswer}
+
+Judge if the user's Chinese definition captures the meaning of the target word.
+Return JSON only.`;
+}
+
+export function buildEvaluateAnswerPrompt(params: {
+  lemma: string;
+  language: Language;
+  userAnswer: string;
+}): { system: string; prompt: string; expectJson: true; temperature: 0; maxTokens: 200 } {
+  return {
+    system: EVALUATE_ANSWER_PROMPT_SYSTEM,
+    prompt: EVALUATE_ANSWER_PROMPT_USER(params),
+    expectJson: true,
+    temperature: 0,
+    maxTokens: 200,
   };
 }

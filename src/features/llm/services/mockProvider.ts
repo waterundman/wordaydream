@@ -43,15 +43,48 @@ export function lookupEvaluation(lemma: string, userAnswer: string): {
   grade: 'correct' | 'partial' | 'wrong';
   feedback: string;
   hint?: string;
+  source?: 'llm' | 'heuristic' | 'error';
 } {
   const normalized = userAnswer.trim().toLowerCase();
   const keywords = EVAL_KEYWORDS[lemma.toLowerCase()] || [];
 
+  // v1.5.3 fix: 未知词 (不在硬编码字典中) 不再一律返回 partial.
+  // 改为基于用户答案的启发式判别:
+  // - 空答案 / 极短答案 → wrong (明显不会)
+  // - 答案包含 lemma 本身或其子串 → partial (可能猜了词形但没给释义)
+  // - 答案是中文且长度 >= 2 → partial (诚实告知无法精确判别, 但不否定用户)
+  // - 答案是目标语言原文 (非中文) → wrong (答非所问)
   if (keywords.length === 0) {
+    if (normalized.length === 0) {
+      return {
+        grade: 'wrong',
+        feedback: '请输入这个词的中文释义。',
+        source: 'heuristic',
+      };
+    }
+    // 检测答案是否为中文
+    const hasChinese = /[\u4e00-\u9fff]/.test(normalized);
+    if (!hasChinese) {
+      return {
+        grade: 'wrong',
+        feedback: '请用中文输入这个词的释义，而不是原文或英文解释。',
+        hint: '想想这个词在文章中的语境，用中文表达它的含义。',
+        source: 'heuristic',
+      };
+    }
+    // 中文答案且长度合理 → 诚实告知无法精确判别
+    if (normalized.length >= 2) {
+      return {
+        grade: 'partial',
+        feedback: '已记录你的答案。当前为离线模式，无法精确判别词义匹配度。切换到 AI 模式可获得准确评估。',
+        hint: '点击"显示释义"查看标准答案，对比你的回答。',
+        source: 'heuristic',
+      };
+    }
     return {
-      grade: 'partial',
-      feedback: '答案已记录，系统正在学习这个词。',
-      hint: '继续尝试不同的释义。',
+      grade: 'wrong',
+      feedback: '释义太简短，请尝试更完整的解释。',
+      source: 'heuristic',
     };
   }
 
@@ -59,7 +92,13 @@ export function lookupEvaluation(lemma: string, userAnswer: string): {
   let partial = false;
 
   for (const kw of keywords) {
-    if (normalized === kw || normalized.includes(kw)) {
+    // v1.5.3 fix: 精确匹配用 === 避免子串误判 (之前 "我不太确定是不是革命" 会被判 correct)
+    if (normalized === kw) {
+      exact = true;
+      break;
+    }
+    // 包含关键词但仍算正确 (用户可能写了 "革命，变革" 这种列举式答案)
+    if (normalized.includes(kw) && normalized.length <= kw.length + 6) {
       exact = true;
       break;
     }
@@ -75,6 +114,7 @@ export function lookupEvaluation(lemma: string, userAnswer: string): {
     return {
       grade: 'correct',
       feedback: '完全正确！这个词已经融入你的记忆库。',
+      source: 'heuristic',
     };
   }
   if (partial) {
@@ -82,12 +122,14 @@ export function lookupEvaluation(lemma: string, userAnswer: string): {
       grade: 'partial',
       feedback: '有一部分对了，但还不够准确。',
       hint: PARTIAL_HINTS[lemma.toLowerCase()] || '再想想，试试更常见的释义。',
+      source: 'heuristic',
     };
   }
   return {
     grade: 'wrong',
     feedback: '这个方向不对，让我们换个角度来看这个词。',
     hint: PARTIAL_HINTS[lemma.toLowerCase()] || '别担心，我们一起来理解这个词。',
+    source: 'heuristic',
   };
 }
 

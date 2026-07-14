@@ -690,3 +690,102 @@ describe('generateWithFallback (v1.4.0 Stage 3 T15..T17 — 3 provider 完整切
     expect((result.parsed as { text: string }).text).toBe('provider-resp');
   });
 });
+
+/**
+ * v2.2.1 Stage 2 Bug 3 修复测试 (T07, T12)
+ *
+ * 验证 generateWithJsonRetry 的两处 fallback 路径都标记 fallbackToMock: true.
+ * - T07: provider 返回 fallbackToMock: true 时, router fallback 结果含 fallbackToMock: true
+ * - T07b: 所有重试失败时, router fallback 结果含 fallbackToMock: true
+ * - T12: LLM 评估失败 fallback 后结果含 fallbackToMock: true (防止 llmAdapter 误标 source: 'llm')
+ *
+ * 设计:
+ * - 复用 router.test.ts 顶部 vi.mock('./providerFactory') + vi.mock('./mockProvider')
+ * - mockGenerate 控制每次 LLM 调用的返回值
+ * - mockMockGenerate 默认返回 { text: 'mock-fallback', parsed: undefined }
+ * - 验证 result.fallbackToMock === true (v2.2.1 Stage 2 新增标记)
+ */
+describe('generateWithFallback (v2.2.1 Stage 2 Bug 3 — fallbackToMock 标记)', () => {
+  const baseSettings = {
+    provider: 'deepseek' as const,
+    apiKey: 'test-key',
+    baseUrl: 'https://test.api.deepseek.com/v1',
+    model: 'deepseek-chat',
+    temperature: 0.5,
+    enabled: true,
+    timeout: 5,
+    maxRetries: 2,
+    streaming: false,
+    jsonMaxAttempts: 2 as const,
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    for (const k of LLM_PROVIDER_ENV_KEYS) {
+      vi.stubEnv(k, k === 'VITE_LLM_PROVIDER' ? 'deepseek' : '');
+    }
+    resetProviderCache();
+    // v2.2.1: 显式重置 getProvider mock 实现, 避免前序 describe (T12-T17) 的
+    // vi.spyOn(providerFactory, 'getProvider').mockReturnValue(...) 残留.
+    // restoreAllMocks 在 vi.mock 创建的模块上行为不确定, 用 mockImplementation 强制覆盖.
+    vi.mocked(providerFactory.getProvider).mockImplementation(
+      (() => async (options: unknown) => mockGenerate(options)) as never
+    );
+    mockMockGenerate.mockResolvedValue({ text: 'mock-fallback', parsed: undefined });
+    useToastStore.setState({ toasts: [], notifications: {} });
+    useAnalyticsStore.setState({ llmRepairCount: 0 });
+    useSettingsStore.setState((s) => ({
+      llm: { ...s.llm, jsonMaxAttempts: 2 },
+    }));
+  });
+
+  it('v2.2.1-T07 [critical]: provider 返回 fallbackToMock 时, router fallback 结果含 fallbackToMock: true', async () => {
+    // provider 返回 fallbackToMock: true (e.g. Edge Function 报错, provider 内部 fallback)
+    mockGenerate.mockResolvedValueOnce({ text: '', fallbackToMock: true });
+
+    const result = await generateWithFallback(baseSettings, {
+      prompt: 'gen passage',
+      expectJson: true,
+    });
+
+    // router 应走 mock fallback, 且结果含 fallbackToMock: true
+    expect(mockMockGenerate).toHaveBeenCalledTimes(1);
+    expect(result.fallbackToMock).toBe(true);
+    expect(result.text).toBe('mock-fallback');
+  });
+
+  it('v2.2.1-T07b [critical]: 所有重试失败时, router fallback 结果含 fallbackToMock: true', async () => {
+    // 2 次都返回损坏 JSON, 触发 mock fallback
+    mockGenerate.mockResolvedValueOnce({ text: 'broken {attempt 1}' });
+    mockGenerate.mockResolvedValueOnce({ text: 'broken {attempt 2}' });
+
+    const result = await generateWithFallback(baseSettings, {
+      prompt: 'gen passage',
+      expectJson: true,
+    });
+
+    // router 走 mock fallback, 且结果含 fallbackToMock: true
+    expect(mockMockGenerate).toHaveBeenCalledTimes(1);
+    expect(result.fallbackToMock).toBe(true);
+    expect(result.text).toBe('mock-fallback');
+  });
+
+  it('v2.2.1-T12 [critical]: LLM 评估失败 fallback 后结果含 fallbackToMock: true (防止 llmAdapter 误标 source: llm)', async () => {
+    // 模拟 evaluateAnswerViaLLM 场景: expectJson='evaluation', 所有重试失败
+    mockGenerate.mockResolvedValueOnce({ text: 'broken {attempt 1}' });
+    mockGenerate.mockResolvedValueOnce({ text: 'broken {attempt 2}' });
+
+    const result = await generateWithFallback(baseSettings, {
+      prompt: 'evaluate answer',
+      expectJson: 'evaluation',
+    });
+
+    // fallback 结果必须含 fallbackToMock: true, 让 evaluateAnswerViaLLM
+    // 能通过 if (result.fallbackToMock) 检测并走 mockEvaluate (source: heuristic),
+    // 而非误标为 source: 'llm'
+    expect(result.fallbackToMock).toBe(true);
+    // parsed 应为 undefined (不应被误当评估结果)
+    expect(result.parsed).toBeUndefined();
+  });
+});

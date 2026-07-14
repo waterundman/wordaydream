@@ -467,3 +467,98 @@ describe('InteractivePassage Stage 2 alignment tooltip', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('(已隐藏)');
   });
 });
+
+/**
+ * v2.1.0 Stage 4 (Contract 68): InteractivePassage isReplay 禁用作答测试
+ *
+ * 覆盖 test_spec:
+ * - T20a: isReplay=true → token wrapper 有 data-replay="true" 属性
+ * - T20b: isReplay=true → 点击 token 不触发 setActiveOccurrence (activeOccurrenceId 仍为 null)
+ * - T20c: isReplay=false (默认) → token 可点击, 点击后 activeOccurrenceId 被设置
+ *
+ * 设计:
+ * - 使用真实 store + setState 注入 session (含 1 个 isResolved=false token)
+ * - jsdom 不执行 CSS pointer-events:none, TokenSpan wrapper 上的
+ *   onClickCapture/onKeyDownCapture 作为 JS 层守卫阻止事件传播
+ * - data-replay 属性作为可测试标记 (CSS module 类名在 css:false 下为 undefined)
+ */
+describe('InteractivePassage isReplay (v2.1.0 Stage 4 Contract 68)', () => {
+  function makeReplaySession(): ReadingSession {
+    const text = 'The cat sat.';
+    const token: TokenOccurrence = {
+      id: 'tok-cat',
+      lexemeGroupId: 'grp-cat',
+      surfaceForm: 'cat',
+      lemma: 'cat',
+      objectiveDifficulty: 2,
+      startIndex: 4,
+      endIndex: 7,
+      isResolved: false,
+      isActive: false,
+      kind: 'normal',
+      isCompound: false,
+      alignmentStatus: 'perfect',
+      originalOffset: 0,
+    };
+    return makeSession(text, 'en', [token]);
+  }
+
+  beforeEach(() => {
+    useReadingSessionStore.setState({
+      session: null,
+      activeOccurrenceId: null,
+      hoveredGroupId: null,
+      activeGrammarPointId: null,
+      hoveredGrammarTypeId: null,
+      isLoading: false,
+      lastConfig: null,
+      currentHistoryId: null,
+    });
+  });
+
+  it('T20a: isReplay=true → token wrapper 有 data-replay="true" 属性', () => {
+    useReadingSessionStore.setState({ session: makeReplaySession() });
+
+    render(<InteractivePassage isReplay={true} />);
+
+    const replayWrapper = document.querySelector('[data-replay="true"]');
+    expect(replayWrapper).not.toBeNull();
+    expect(replayWrapper).toBeInTheDocument();
+  });
+
+  it('T20b: isReplay=true → 点击 token 不触发 setActiveOccurrence (activeOccurrenceId 仍为 null)', () => {
+    useReadingSessionStore.setState({ session: makeReplaySession() });
+
+    render(<InteractivePassage isReplay={true} />);
+
+    // 找到 token 内部的 button (LinkedOccurrenceHighlight 的 role=button)
+    const tokenBtn = screen.getByRole('button', { name: 'cat' });
+    expect(tokenBtn).toBeInTheDocument();
+
+    fireEvent.click(tokenBtn);
+
+    // activeOccurrenceId 应仍为 null (replay 模式禁止激活)
+    expect(useReadingSessionStore.getState().activeOccurrenceId).toBeNull();
+  });
+
+  it('T20c: isReplay=false (默认) → token 可点击, 点击后 activeOccurrenceId 被设置', () => {
+    useReadingSessionStore.setState({ session: makeReplaySession() });
+
+    render(<InteractivePassage isReplay={false} />);
+
+    const tokenBtn = screen.getByRole('button', { name: 'cat' });
+    fireEvent.click(tokenBtn);
+
+    // 非 replay 模式: 点击后 activeOccurrenceId 应为 token id
+    expect(useReadingSessionStore.getState().activeOccurrenceId).toBe('tok-cat');
+  });
+
+  it('T20d: isReplay=true → 无 data-replay 属性于 wrapper (isReplay=false 时)', () => {
+    useReadingSessionStore.setState({ session: makeReplaySession() });
+
+    render(<InteractivePassage isReplay={false} />);
+
+    const replayWrapper = document.querySelector('[data-replay="true"]');
+    expect(replayWrapper).toBeNull();
+  });
+});
