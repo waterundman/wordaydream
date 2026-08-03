@@ -78,11 +78,10 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # v1.5.1 强化: 失败重试 2 次 (避免 transient network 错误)
-    strategy:
-      fail-fast: false
-      matrix:
-        attempt: [1, 2]
+    env:
+      # 部署所需的 secrets (未配置时 deploy job 会因 if 跳过)
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -91,19 +90,34 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Check required secrets
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "FAIL: NETLIFY_AUTH_TOKEN secret not set"
+            exit 1
+          fi
+          if [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "FAIL: NETLIFY_SITE_ID secret not set"
+            exit 1
+          fi
+          echo "Secrets OK"
+
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Build
+      - name: Build (production env from secrets)
         run: npm run build
         env:
-          VITE_LLM_PROVIDER: ${{ secrets.VITE_LLM_PROVIDER }}
+          # v2.4.0 fix: 生产构建从 secrets 读取真实 provider, 不再硬编码 mock.
+          # VITE_LLM_PROVIDER / VITE_LLM_PROXY_URL 由 Netlify UI secrets 注入,
+          # 未配置时回退到 mock (避免 build 失败, 但 LLM 功能不可用).
+          VITE_LLM_PROVIDER: ${{ secrets.VITE_LLM_PROVIDER || 'mock' }}
           VITE_LLM_PROXY_URL: ${{ secrets.VITE_LLM_PROXY_URL }}
-          VITE_LLM_GRAYSCALE: ${{ secrets.VITE_LLM_GRAYSCALE }}
+          VITE_LLM_GRAYSCALE: ${{ secrets.VITE_LLM_GRAYSCALE || '100' }}
           VITE_OFFLINE_FALLBACK: 'true'
           VITE_APP_VERSION: '1.5.1'
 
-      - name: Deploy to Netlify (attempt ${{ matrix.attempt }}/2)
+      - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: './dist'
@@ -116,35 +130,31 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
-      # v1.5.1 强化: post-deploy health check
-      # 验证部署后 site 可访问 + manifest.webmanifest + sw.js 200 OK
+      # v2.4.0 fix: post-deploy health check.
+      # 原 URL 用 site ID 拼接 (UUID 不是合法域名), 改用 NETLIFY_SITE_URL secret.
+      # 未配置 NETLIFY_SITE_URL 时跳过 health check (不阻塞 deploy).
       - name: Post-deploy health check
-        if: success() && matrix.attempt == 2
+        if: success() && env.NETLIFY_SITE_URL != ''
         run: |
-          SITE_URL="https://${{ secrets.NETLIFY_SITE_ID }}.netlify.app"
-          echo "Health check: $SITE_URL"
-          # 检查根路径
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL" || echo "000")
+          echo "Health check: $NETLIFY_SITE_URL"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_SITE_URL" || echo "000")
           if [ "$HTTP_CODE" != "200" ]; then
             echo "FAIL: root path returned $HTTP_CODE"
             exit 1
           fi
-          # 检查 manifest
-          MANIFEST_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL/manifest.webmanifest" || echo "000")
+          MANIFEST_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_SITE_URL/manifest.webmanifest" || echo "000")
           if [ "$MANIFEST_CODE" != "200" ]; then
             echo "FAIL: manifest.webmanifest returned $MANIFEST_CODE"
             exit 1
           fi
-          # 检查 sw.js
-          SW_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL/sw.js" || echo "000")
+          SW_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_SITE_URL/sw.js" || echo "000")
           if [ "$SW_CODE" != "200" ]; then
             echo "FAIL: sw.js returned $SW_CODE"
             exit 1
           fi
           echo "OK: root=$HTTP_CODE manifest=$MANIFEST_CODE sw.js=$SW_CODE"
-          echo "See docs/OPERATIONS.md Section 1.7 for Edge Function verification (curl POST)."
         env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_URL: ${{ secrets.NETLIFY_SITE_URL }}
 
       # v1.5.1 强化: status badge (在 README 显示)
       # 见 https://github.com/badges/shields (workflow 状态徽章)

@@ -9,12 +9,12 @@
   command = "npm run build"
   publish = "dist"
 
-[functions]
-  directory = "netlify/functions"
-
-# v1.3.0 Edge Function 路由
+# v2.3.1: LLM proxy edge function 路由.
+# 前端 (vite.config.ts dev server + 生产 router.ts) 统一走 /api/llm-proxy,
+# 这里把 /api/llm-proxy 映射到 llm-proxy edge function, 保证 dev / prod 路径一致.
+# 原 path "/.netlify/edge-functions/llm-proxy" 与 vite dev server 不一致, 已废弃.
 [[edge_functions]]
-  path = "/.netlify/edge-functions/llm-proxy"
+  path = "/api/llm-proxy"
   function = "llm-proxy"
 
 [dev]

@@ -63,29 +63,26 @@ jobs:
           VITE_OFFLINE_FALLBACK: 'true'
           VITE_APP_VERSION: '1.5.1'
 
-      - name: Run Lighthouse CI (5% buffer + retry 3)
-        id: lhci
-        uses: treosh/lighthouse-ci-action@v11
-        with:
-          # 5% buffer: 阈值比 lighthouse.config.js 低 5%, 减少 CI 波动
-          # 例: PWA >= 90 改为 PWA >= 85 (5% buffer)
-          configPath: ./lighthouse.config.js
-          # v1.5.1 强化: retry 3 次取中位数 (避免单次波动)
-          # lhci autorun 默认跑 3 次, 3 次全失败才报失败
-          # 这里设 maxNumberOfRuns: 3 与 retry 等效
-          # (treosh/lighthouse-ci-action 内部调用 lhci autorun, 已支持多次)
-          uploadArtifacts: true
-          temporaryPublicStorage: true
-          # 目标 URL: workflow_dispatch input 或默认
-          url: ${{ github.event.inputs.target_url || 'https://wordaydream.netlify.app' }}
+      # v2.4.0 fix: 直接用 @lhci/cli (已在 devDependencies), 不再依赖 treosh/lighthouse-ci-action.
+      # 原 action (v11) 2+ 年未更新, 与 Lighthouse 11 兼容性差, 且 configPath 期望 LHCI config
+      # 不是 lighthouse config. .lighthouserc.cjs 用 staticDistDir 测试 ./dist 产物, 不依赖外部 URL.
+      - name: Run Lighthouse CI (4 项评级, 3 次取中位数, 5% buffer)
+        run: npx lhci autorun --config=./.lighthouserc.cjs
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
-          # 5% buffer 在 lighthouse.config.js 内已强化 (assertScore margin), 无需环境变量
-          # retry 3 在 lhci autorun 默认行为, 无需环境变量
+
+      - name: Upload Lighthouse Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: |
+            .lighthouseci/
+          retention-days: 30
 
       - name: Summary
         if: always()
         run: |
           echo "Lighthouse CI run completed (see artifacts for full report)"
-          echo "5% buffer applied (PWA / Performance / A11y / BP / SEO thresholds -5%)"
-          echo "Retry 3 applied (lhci autorun runs 3 times, takes median)"
+          echo "4 项评级 (PWA 已在 Lighthouse 10 移除, 仅 performance / a11y / BP / SEO)"
+          echo "5% buffer applied, retry 3 (numberOfRuns: 3 in .lighthouserc.cjs)"

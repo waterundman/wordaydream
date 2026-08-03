@@ -51,6 +51,14 @@ const WEB_SERVER_COMMAND = USE_DEV
   : 'npm run build && npm run preview -- --port 4173 --strictPort';
 
 export default defineConfig({
+  // v2.4.0 fix: testMatch 排除 harmony_full.spec.ts.
+  // harmony_full.spec.ts 是鸿蒙端完整套件, 由 playwright.harmony.config.ts 单独跑,
+  // 不应在 Web 端 4 浏览器矩阵跑 (会导致 HF01 产物检查 SKIP + HF02/HF10 的
+  // 0 console.error 守护在 CI 慢机器上 flaky).
+  testDir: './e2e',
+  testMatch: /.*\.spec\.ts/,
+  testIgnore: /harmony_full\.spec\.ts/,
+
   // v1.5.2 fix M12: 默认 preview (production build) 模式, SW 才会注册
   // 本地快速调试: E2E_USE_DEV=true npx playwright test (跳过 SW test)
   webServer: {
