@@ -57,7 +57,7 @@ import { InteractivePassage } from '../features/reading/components/InteractivePa
 import { useReadingSessionStore } from '../features/reading/store/useReadingSessionStore';
 import { generatePassageViaLLM, normalizePassagePayload, validateAndAlignPassagePayload } from '../features/llm/services/llmAdapter';
 import { generateWithFallback, resetProviderCache } from '../features/llm/services/router';
-import { MockLLMProvider, DEFAULT_SUCCESS_PAYLOAD, resetFixture, setFixture } from '../features/llm/services/mockProvider';
+import { MockLLMProvider, DEFAULT_SUCCESS_PAYLOAD, resetFixture, setFixture, type MockFixture } from '../features/llm/services/mockProvider';
 import { useSettingsStore } from '../features/settings/store/useSettingsStore';
 // v1.5.0 Stage 2 P1_1: 10 fixture 集中注册表 (5 基础 + 5 NEW 多语种)
 import { FIXTURE_CATALOG, NEW_FIXTURES_V150 } from '../__fixtures__';
@@ -553,8 +553,8 @@ describe.each(NEW_FIXTURES_V150)(
     });
 
     it(`${caseId} [v1.5.0 critical]: ${description} -> alignment ${expectedStatus} + 渲染 OK`, async () => {
-      // 设置当前 NEW fixture
-      setFixture({ kind: kind as any });
+      // 设置当前 NEW fixture (NEW_FIXTURES_V150 不含 success, 故无需 payload)
+      setFixture({ kind } as unknown as MockFixture);
 
       // 1. 调 generatePassageViaLLM 跑完整管线
       const payload = await generatePassageViaLLM('en', 2, []);
