@@ -82,6 +82,9 @@ jobs:
       # 部署所需的 secrets (未配置时 deploy job 会因 if 跳过)
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      # v2.4.0 fix: NETLIFY_SITE_URL 提到 job 级 env.
+      # step 的 if 在 step 执行前求值, 读不到 step 级 env, 必须放 job 级.
+      NETLIFY_SITE_URL: ${{ secrets.NETLIFY_SITE_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -153,8 +156,6 @@ jobs:
             exit 1
           fi
           echo "OK: root=$HTTP_CODE manifest=$MANIFEST_CODE sw.js=$SW_CODE"
-        env:
-          NETLIFY_SITE_URL: ${{ secrets.NETLIFY_SITE_URL }}
 
       # v1.5.1 强化: status badge (在 README 显示)
       # 见 https://github.com/badges/shields (workflow 状态徽章)

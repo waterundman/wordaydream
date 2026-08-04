@@ -64,10 +64,21 @@ export default defineConfig({
   webServer: {
     command: WEB_SERVER_COMMAND,
     url: BASE_URL,
-    reuseExistingServer: true, // 已有 server 时复用, 不重复启动
-    timeout: 120 * 1000, // 120s 启动超时 (preview 模式需先 build)
-    stdout: 'pipe', // 捕获 server 日志
+    // v2.4.0 fix: dev 模式可复用已有 server; preview 模式必须由本处 build+preview 启动
+    reuseExistingServer: USE_DEV,
+    // v2.4.0 fix: preview 需先 build, 120s 对大项目不够, 放宽到 300s
+    timeout: 300 * 1000,
+    stdout: 'pipe',
     stderr: 'pipe',
+    // v2.4.0 fix: webServer 内 build 也需注入 VITE env (否则 provider 缺失).
+    // CI 不再单独 build, 由 webServer 统一 build + preview, 避免重复 build.
+    env: {
+      VITE_LLM_PROVIDER: 'mock',
+      VITE_LLM_PROXY_URL: 'http://localhost:8888/.netlify/edge-functions/llm-proxy',
+      VITE_LLM_GRAYSCALE: '0',
+      VITE_OFFLINE_FALLBACK: 'true',
+      VITE_APP_VERSION: '1.5.1',
+    },
   },
 
   // v1.5.1 强化: baseURL 统一, 测试内可用相对路径 (例: page.goto('/'))

@@ -47,27 +47,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      # v1.5.1 强化: 使用 microsoft/playwright-github-action@v1
-      # 内置 browser binaries 缓存, 避免每次都下载 ~300MB
+      # v2.4.0 fix: 删 microsoft/playwright-github-action@v1 (已废弃, 且其锁定的
+      # playwright 版本与 @playwright/test 不匹配, 导致 browser binary 版本冲突).
+      # 改用本地 @playwright/test 的 npx playwright install --with-deps, 版本必然一致.
       - name: Install Playwright Browsers
-        uses: microsoft/playwright-github-action@v1
-        with:
-          # 缓存 browser binaries
-          cache: true
-          # 4 browser projects (与 playwright.config.ts projects 对齐)
-          # 全部安装: chromium / firefox / webkit
-          # mobile-chrome 复用 chromium
-          install-deps: true
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Build (mock provider, 避免真实 API key 触发)
-        run: npm run build
-        env:
-          VITE_LLM_PROVIDER: mock
-          VITE_LLM_PROXY_URL: 'http://localhost:8888/.netlify/edge-functions/llm-proxy'
-          VITE_LLM_GRAYSCALE: '0'
-          VITE_OFFLINE_FALLBACK: 'true'
-          VITE_APP_VERSION: '1.5.1'
-
+      # v2.4.0 fix: 删单独 build 步骤.
+      # 由 playwright.config.ts webServer 统一 build + preview (带完整 VITE env),
+      # 避免 CI 重复 build 导致 20min 超时.
       - name: Run Playwright tests (4 scenarios)
         run: npx playwright test
         env:
