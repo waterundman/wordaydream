@@ -15,6 +15,67 @@ import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { buildAchievementContext } from '../../achievements/services/buildContext';
+import { useCourseStore } from '../../course/store/useCourseStore';
+import { getLessonById } from '../../../data/courses';
+
+/**
+ * v2.2.4 Stage 3 (Bug 14): 从(可能不完整的)JSON 文本中增量提取 "text" 字段的当前值.
+ *
+ * LLM 流式返回 JSON passage payload, 每个 chunk 是 JSON 片段.
+ * 用户不应看到整个 JSON, 只应看到 passage.text (文章正文).
+ * 此函数从累积 buffer 中增量提取 text 字段值 (已反转义), 未找到或未开始则返回 ''.
+ *
+ * 策略: 用正则定位 "text":" 起始, 然后逐字符扫描处理转义, 直到遇到未转义的闭合引号.
+ * text 字段通常在 title 之后、tokens 之前, 能在流式早期开始展示.
+ *
+ * @param accumulated 累积的原始 JSON 片段
+ * @returns 已接收到的 text 字段内容 (已反转义), 未找到返回 ''
+ */
+function extractStreamingText(accumulated: string): string {
+  // 定位 "text":" 或 "text" : " (允许空格)
+  const keyMatch = accumulated.match(/"text"\s*:\s*"/);
+  if (!keyMatch || keyMatch.index === undefined) return '';
+  const start = keyMatch.index + keyMatch[0].length;
+
+  let result = '';
+  let i = start;
+  while (i < accumulated.length) {
+    const ch = accumulated[i];
+    if (ch === '\\') {
+      // 转义序列
+      const next = accumulated[i + 1];
+      if (next === undefined) break; // 转义字符被截断, 等待更多 chunk
+      switch (next) {
+        case '"': result += '"'; break;
+        case '\\': result += '\\'; break;
+        case '/': result += '/'; break;
+        case 'n': result += '\n'; break;
+        case 't': result += '\t'; break;
+        case 'r': result += '\r'; break;
+        case 'b': result += '\b'; break;
+        case 'f': result += '\f'; break;
+        case 'u': {
+          // \uXXXX, 需 4 位 hex; 不足则等待更多 chunk
+          const hex = accumulated.slice(i + 2, i + 6);
+          if (hex.length < 4) { i = accumulated.length; continue; }
+          result += String.fromCharCode(parseInt(hex, 16));
+          i += 6;
+          continue;
+        }
+        default: result += next;
+      }
+      i += 2;
+      continue;
+    }
+    if (ch === '"') {
+      // 未转义的闭合引号, text 字段完整
+      break;
+    }
+    result += ch;
+    i += 1;
+  }
+  return result;
+}
 
 interface ReadingSessionState {
   session: ReadingSession | null;
@@ -25,8 +86,10 @@ interface ReadingSessionState {
   isLoading: boolean;
   lastConfig: { language: Language; difficulty: DifficultyLevel } | null;
   currentHistoryId: string | null;
+  /** v2.2.4 Stage 2 (流式): 流式生成期间的渐进预览文本 (null = 非流式生成中) */
+  streamingPreviewText: string | null;
 
-  loadSession: (language: Language, difficulty: DifficultyLevel) => Promise<void>;
+  loadSession: (language: Language, difficulty: DifficultyLevel, lessonId?: string) => Promise<void>;
   loadFromHistory: (
     passage: Passage,
     language: Language,
@@ -38,7 +101,7 @@ interface ReadingSessionState {
   setHoveredGroup: (groupId: string | null) => void;
   setActiveGrammarPoint: (grammarPointId: string | null) => void;
   setHoveredGrammarType: (grammarTypeId: string | null) => void;
-  markOccurrenceResolved: (occurrenceId: string) => void;
+  markOccurrenceResolved: (occurrenceId: string, grade?: 'correct' | 'partial' | 'wrong') => void;
   getLinkedOccurrences: (groupId: string) => TokenOccurrence[];
   getResolvedCount: () => number;
   getTotalTokenCount: () => number;
@@ -131,8 +194,9 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
       isLoading: false,
       lastConfig: null,
       currentHistoryId: null,
+      streamingPreviewText: null,
 
-      loadSession: async (language: Language, difficulty: DifficultyLevel) => {
+      loadSession: async (language: Language, difficulty: DifficultyLevel, lessonId?: string) => {
         // v1.5.3 fix V2-P2-004: 请求取消机制.
         // 快速连续点击"生成新文本"或切换语言/难度时, 旧请求 abort, 避免竞态覆盖.
         if (loadSessionAbortController) {
@@ -145,7 +209,7 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         // (与 generatePassage 的 forceRefresh 形成双保险, 页面刷新场景仍可命中缓存写入).
         clearPassageCache();
 
-        set({ isLoading: true });
+        set({ isLoading: true, streamingPreviewText: null });
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         // abort 检查: 300ms 等待期间可能被新请求取消
@@ -159,10 +223,48 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           (c) => c.status === 'review' || c.status === 'relearning'
         );
 
+        // v2.3.0 Stage 5: lessonId 非空时, 查找 lesson.targetLemmas 传给 generatePassage,
+        // 让 LLM 在 passage 中自然融入课程目标词 (修复 Stage 3 gap: 之前 loadSession 未把
+        // targetLemmas 注入 prompt). 不改变 loadSession 签名, 仅内部读取课程静态定义.
+        let targetLemmas: string[] | undefined;
+        if (lessonId) {
+          const courseState = useCourseStore.getState();
+          if (courseState.currentCourseId && courseState.currentModuleId) {
+            const found = getLessonById(
+              courseState.currentCourseId,
+              courseState.currentModuleId,
+              lessonId
+            );
+            if (found) {
+              targetLemmas = found.lesson.targetLemmas;
+            }
+          }
+        }
+
         let passage: Passage;
         try {
           // v1.5.3 fix V3-P3-006: 透传 controller.signal, abort 时真正中断 LLM fetch.
-          passage = await generatePassage(language, difficulty, dueCards, controller.signal, true);
+          // v2.2.4 Stage 2 (流式): 传 onChunk 回调, 流式生成时更新 streamingPreviewText.
+          //   generatePassage 内部判断 llm.streaming + onChunk 决定是否走流式分支.
+          // v2.2.4 Stage 3 (Bug 14): 流式预览只展示 passage.text 内容, 不展示整个 JSON.
+          //   之前直接拼接原始 delta (JSON 片段), 用户看到 {"title":"...","text":"..."} 流式增长.
+          //   修复: 累积原始 buffer, 用 extractStreamingText 增量提取 text 字段值 (反转义后).
+          let rawStreamBuffer = '';
+          passage = await generatePassage(
+            language,
+            difficulty,
+            dueCards,
+            controller.signal,
+            true,
+            (delta) => {
+              if (!controller.signal.aborted) {
+                rawStreamBuffer += delta;
+                const textSoFar = extractStreamingText(rawStreamBuffer);
+                set({ streamingPreviewText: textSoFar });
+              }
+            },
+            targetLemmas
+          );
         } catch {
           if (controller.signal.aborted) return;
           const basePassage = getMockPassage(language, difficulty);
@@ -206,6 +308,8 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           startedAt: Date.now(),
           resolvedTokens: new Set(),
           activeOccurrenceId: null,
+          // v2.3.0 Stage 3: 课程化模式关联课时 ID.
+          lessonId: lessonId,
         };
         set({
           session,
@@ -214,9 +318,25 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           activeGrammarPointId: null,
           hoveredGrammarTypeId: null,
           isLoading: false,
+          streamingPreviewText: null,
           lastConfig: { language, difficulty },
           currentHistoryId: historyId,
         });
+
+        // v2.3.0 Stage 3: lessonId 非空时, passage 生成 + 对齐完成后,
+        // 对每个 token 的 lemma (去重后) 调用 recordEncounter (遇到, 非学会).
+        // 只调用 recordEncounter; recordLearning 在答题答对后才调用.
+        // lessonId 为空或未提供时完全跳过 (向后兼容, 不调用 useCourseStore).
+        if (lessonId) {
+          const courseStore = useCourseStore.getState();
+          const seenLemmas = new Set<string>();
+          for (const token of passage.tokens) {
+            const lemmaKey = token.lemma.toLowerCase();
+            if (seenLemmas.has(lemmaKey)) continue;
+            seenLemmas.add(lemmaKey);
+            courseStore.recordEncounter(lessonId, token.lemma);
+          }
+        }
 
         // Stage 1: 累计 streak 并用真实数据触发成就评估。
         // v1.5.3 fix V3-P2-005: 用 buildAchievementContext 统一构建, 与复习流共用.
@@ -259,6 +379,7 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           activeGrammarPointId: null,
           hoveredGrammarTypeId: null,
           isLoading: false,
+          streamingPreviewText: null,
           lastConfig: { language, difficulty },
           currentHistoryId: null,
         });
@@ -282,7 +403,7 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         set({ hoveredGrammarTypeId: grammarTypeId });
       },
 
-      markOccurrenceResolved: (occurrenceId: string) => {
+      markOccurrenceResolved: (occurrenceId: string, grade?: 'correct' | 'partial' | 'wrong') => {
         const { session } = get();
         if (!session) return;
 
@@ -293,6 +414,11 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           (t) => t.lexemeGroupId === token.lexemeGroupId
         );
 
+        // v2.2.4 Stage 3 (Bug 13): resolvedGrade 解耦视觉表现.
+        // isResolved=true 推进进度 (答对答错都前进), resolvedGrade 决定变绿/揭开动画.
+        // grade 未传时 (旧调用方兼容) 默认 'correct', 保持旧行为.
+        const resolvedGrade = grade ?? 'correct';
+
         const updatedTokens: TokenOccurrence[] = session.passage.tokens.map((t) => {
           const isInGroup = groupTokens.find((gt) => gt.id === t.id);
           if (isInGroup) {
@@ -300,6 +426,7 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
               ...t,
               isResolved: true,
               isActive: false,
+              resolvedGrade,
             };
           }
           return t;

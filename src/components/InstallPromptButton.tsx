@@ -23,6 +23,7 @@
 
 import { useState } from 'react';
 import { useOfflineModeStore } from '../features/llm/store/offlineMode';
+import { detectPlatform } from '../platform/detect';
 import styles from './InstallPromptButton.module.css';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -41,6 +42,9 @@ export function InstallPromptButton() {
   const event = useOfflineModeStore((s) => s.installPromptEvent);
   const clearEvent = useOfflineModeStore((s) => s.setInstallPromptEvent);
   const [installing, setInstalling] = useState(false);
+
+  // v0.1.0-harmony Stage 2: 鸿蒙 ArkWeb 不支持 PWA install prompt → 不渲染
+  if (!detectPlatform().supportsInstallPrompt()) return null;
 
   // 没有可用的 install prompt -> 不渲染
   if (!isBeforeInstallPromptEvent(event)) return null;

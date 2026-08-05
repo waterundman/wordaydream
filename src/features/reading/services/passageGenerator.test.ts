@@ -808,3 +808,111 @@ describe('generatePassage (v2.2.3 Stage 1 D1-2: wordlist 补偿)', () => {
     }
   });
 });
+
+// === v2.3.0 Stage 3: targetLemmas 注入 + 命中率校验 ===
+describe('generatePassage (v2.3.0 Stage 3: targetLemmas 注入 + 命中率校验)', () => {
+  // mock LLM 返回合法英文 passage: tokens lemma = 'cat', 'sit'
+  const enPassageJson = JSON.stringify({
+    language: 'en',
+    difficulty: 1,
+    title: 'Test',
+    text: 'The cat sat on the mat.',
+    tokens: [
+      { lemma: 'cat', surfaceForm: 'cat', startIndex: 4, endIndex: 7, partOfSpeech: 'noun' },
+      { lemma: 'sit', surfaceForm: 'sat', startIndex: 8, endIndex: 11, partOfSpeech: 'verb' },
+    ],
+  });
+
+  beforeEach(() => {
+    if (typeof window !== 'undefined') window.localStorage.clear();
+    clearPassageCache();
+    clearRecentTitles();
+    clearWordlistCache();
+    useSettingsStore.setState((s) => ({
+      llm: {
+        ...s.llm,
+        enabled: true,
+        provider: 'openai',
+        apiKey: 'test-key',
+        baseUrl: '',
+        model: 'gpt-4o-mini',
+        temperature: 0.5,
+        timeout: 30,
+        maxRetries: 2,
+        streaming: false,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    clearPassageCache();
+    clearRecentTitles();
+    clearWordlistCache();
+    vi.restoreAllMocks();
+    useWordlistStore.getState().resetAll();
+    useMemoryStore.getState().resetAll();
+    if (typeof window !== 'undefined') window.localStorage.clear();
+  });
+
+  it('T01 [critical]: targetLemmas 非空时 LLM prompt 包含 MUST INCLUDE 指令 + 词列表', async () => {
+    // 抑制命中率 warn (mock passage 不含 dog/bird, 命中率 < 60%, 但 T01 只验证 prompt)
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const spy = vi
+      .spyOn(routerModule, 'generateWithFallback')
+      .mockResolvedValue({ text: enPassageJson });
+
+    const targetLemmas = ['cat', 'dog', 'bird'];
+    await generatePassage('en', 1, [], undefined, true, undefined, targetLemmas);
+
+    // 第一次调用是 passage 生成, 其 options.prompt 应包含 MUST INCLUDE 指令
+    expect(spy).toHaveBeenCalled();
+    const passageCallOpts = spy.mock.calls[0][1] as { prompt: string };
+    expect(passageCallOpts.prompt).toContain('MUST INCLUDE');
+    expect(passageCallOpts.prompt).toContain('cat');
+    expect(passageCallOpts.prompt).toContain('dog');
+    expect(passageCallOpts.prompt).toContain('bird');
+  });
+
+  it('T02 [critical]: targetLemmas 命中率 < 60% 时 console.warn 但不抛错', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: enPassageJson });
+
+    // mock passage tokens lemma = cat, sit; targetLemmas 5 个中只 cat 命中 → 1/5 = 20% < 60%
+    const targetLemmas = ['cat', 'unseen1', 'unseen2', 'unseen3', 'unseen4'];
+    const passage = await generatePassage('en', 1, [], undefined, true, undefined, targetLemmas);
+
+    // 不抛错: 返回有效 passage
+    expect(passage).toBeDefined();
+    expect(passage.tokens.length).toBeGreaterThan(0);
+
+    // console.warn 被调用且含 targetLemmas hit rate 信息
+    const hitRateWarnCalls = warnSpy.mock.calls.filter((call) =>
+      call.some(
+        (arg) => typeof arg === 'string' && arg.includes('targetLemmas hit rate')
+      )
+    );
+    expect(hitRateWarnCalls.length).toBeGreaterThan(0);
+  });
+
+  it('T03 [critical]: targetLemmas 为空/未提供时走原逻辑 (prompt 不含 MUST INCLUDE)', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const spy = vi
+      .spyOn(routerModule, 'generateWithFallback')
+      .mockResolvedValue({ text: enPassageJson });
+
+    // 未提供 targetLemmas (undefined) — 完全向后兼容
+    await generatePassage('en', 1, [], undefined, true);
+
+    expect(spy).toHaveBeenCalled();
+    const passageCallOpts = spy.mock.calls[0][1] as { prompt: string };
+    // MUST INCLUDE (全大写) 是 targetLemmas 注入独有, 原逻辑不含
+    expect(passageCallOpts.prompt).not.toContain('MUST INCLUDE');
+
+    // 空数组也走原逻辑
+    spy.mockClear();
+    await generatePassage('en', 1, [], undefined, true, undefined, []);
+    expect(spy).toHaveBeenCalled();
+    const opts2 = spy.mock.calls[0][1] as { prompt: string };
+    expect(opts2.prompt).not.toContain('MUST INCLUDE');
+  });
+});

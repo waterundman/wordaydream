@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.4] — 2026-07-XX
+
+### 全量代码审查与质量提升
+
+- Stage 1 (类型安全): 16 处 `'en' | 'de'` 收敛为 `Language` 类型; llmAdapter 消除 4 处 `as unknown as` 断言; jsonParser 补 `grammarPoints?` 字段
+- Stage 2 (工程规范): vite-env.d.ts Window 接口扩展; events.ts 移除 `reading:completed` 死事件; router.ts `safeNotify` helper 提取 + 6 处 catch 加日志; 5 个 store 占位 migrate 清理; useToastStore 移除无用 persist
+- Stage 3 (可访问性): ErrorBoundary `onReset` prop + "返回首页"按钮; useFocusTrap hook 抽取; tokens.css 补 12 个状态色变量 (light/dark/sepia 三套); ReadingHistoryPanel selector 反模式修复 + div→button
+- Stage 4 (暗色模式): 6 个文件硬编码颜色修复; vitest pool 切换为 threads; oxlint `no-explicit-any` 从 warn → error; typecheck script
+
+### Round 2 审查修复 (P0×1 + P1×5 + P2×6 + P3×关键项)
+
+- P0: CHANGELOG v2.2.4 条目补全
+- P1: offlineMode 残留占位 migrate 清理; persistMigration 扫描名单扩到 10 store + 占位 migrate 检测; useFocusTrap/ErrorBoundary 测试覆盖; ARCHITECTURE.md 全面重写
+- P2: 5 个模态接入 useFocusTrap (KeyboardShortcutsHelp / AchievementListModal / GraduationModal / GrammarPanel / ReviewPausedView); AnalyticsPanel div→button + ARIA; llmAdapter useLLMGenerator 泛型类型洞删除; passage-full-pipeline + offline-install no-explicit-any 修复; 14 个 CSS 模块补 prefers-reduced-motion
+- P3: difficultyEvaluator 死导出清理; dequal.ts 整文件删除
+
+### Round 3 审查修复 (P1×1 + P2×1 + P3×关键项)
+
+- P1 (R3-P1-001): ReviewPausedView ESC 行为与 UI 提示不一致 — 暂停态 ESC 应恢复复习而非退出整个会话; 添加 capture 阶段 ESC 监听器 + stopPropagation 阻止冒泡到 useGlobalShortcuts
+- P2 (R3-P2-001): prefers-reduced-motion 通用重置块在 14 个 CSS 模块中重复 — 集中到 tokens.css (`*, *::before, *::after` + `scroll-behavior`), 各模块仅保留特有 `animation: none` 规则
+- P3: ARCHITECTURE.md 4 个 store version 占位符填实数; AnalyticsPanel button 重置补 `appearance: none`; DIFFICULTY_ANCHORS 死导出清理
+
+### Round 4-6 审查修复 (P2×1 + P3×多项文档/注释)
+
+- P2 (R4-P2-001): ReviewPausedView ESC 焦点检查 — 仅当焦点在 pausedOverlay 内时才拦截, 避免堆叠模态 (KeyboardShortcutsHelp) 时 ESC 被误吞
+- P3 (R4): SettingsPanel CSS 残留 `*` 选择器清理; ARCHITECTURE.md useReviewSessionStore/useAchievementStore API 示例修正
+- P3 (R5): ARCHITECTURE.md useReadingSessionStore/useMemoryStore API 示例 + 持久化字段表全面校对修正
+- P3 (R6): ARCHITECTURE.md useReadingHistoryStore/useWordlistStore/useSettingsStore/useStreakStore API 示例 + 持久化字段表修正; useAchievementStore/useStreakStore 文件头 persistenceMiddleware 陈旧注释清理; useReadingSessionStore 标注 "(瞬时)" 改为 "(部分持久化)"
+
+#### 测试
+- 545/545 PASS (Round 2 新增 useFocusTrap 5 + ErrorBoundary 8 + persistMigration 12)
+
 ## [2.2.3] — 2026-07-XX
 
 ### 组件优化

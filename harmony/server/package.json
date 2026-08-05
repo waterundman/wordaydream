@@ -1,0 +1,29 @@
+{
+  "name": "wordaydream-harmony-llm-proxy",
+  "version": "0.1.0-harmony-stage4",
+  "description": "Wordaydream Harmony Stage 4 独立 LLM Proxy Node.js 服务 (脱离 Netlify Edge Function)",
+  "type": "module",
+  "main": "llm-proxy.js",
+  "scripts": {
+    "start": "node llm-proxy.js",
+    "dev": "node --watch llm-proxy.js",
+    "health": "node -e \"fetch('http://localhost:'+(process.env.PORT||3001)+'/health').then(r=>r.json()).then(j=>console.log(JSON.stringify(j,null,2))).catch(e=>{console.error(e);process.exit(1)})\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "wordaydream",
+    "harmony",
+    "arkweb",
+    "llm-proxy",
+    "openai",
+    "anthropic",
+    "deepseek"
+  ],
+  "license": "MIT"
+}

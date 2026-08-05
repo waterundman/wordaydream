@@ -1,0 +1,181 @@
+/* LessonCompleteModal (v2.3.0 Stage 5)
+ *
+ * 课时完成反馈弹窗.
+ *
+ * 设计约束:
+ * - 配色用 tokens.css 变量 (warm white #faf8f5 + dark ink #1c1917)
+ * - 无 emoji
+ * - overlay 半透明背景, card 居中 max-width 32rem
+ * - 统计区域 3 列 grid
+ * - 进入动画 fade + scale, prefers-reduced-motion 降级
+ * - 点击外部 / ESC 不关闭 (必须点按钮)
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: rgba(28, 25, 23, 0.55);
+  backdrop-filter: blur(2px);
+  animation: overlayEnter var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.card {
+  width: 100%;
+  max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-8) var(--space-6);
+  background: var(--color-bg-elevated, #ffffff);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: var(--shadow-lg, 0 12px 24px rgba(0, 0, 0, 0.08));
+  font-family: var(--font-sans, system-ui, sans-serif);
+  color: var(--color-ink, #1c1917);
+  animation: cardEnter var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.title {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 600;
+  color: var(--color-accent, #2d5a4d);
+  letter-spacing: var(--tracking-tight, -0.01em);
+  margin: 0;
+  text-align: center;
+}
+
+.lessonTitle {
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  font-family: var(--font-serif, Georgia, serif);
+  line-height: 1.3;
+  margin: 0;
+  text-align: center;
+}
+
+/* === 统计区域: 3 列 grid === */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border, #e8e4dc);
+  border-bottom: 1px solid var(--color-border, #e8e4dc);
+}
+
+.stat {
+  margin: 0;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-secondary, #4a4540);
+  text-align: center;
+  line-height: 1.6;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.statNum {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === 按钮区域 === */
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-8);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-accent, #2d5a4d);
+  border: 1px solid var(--color-accent, #2d5a4d);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: var(--touch-min-size, 44px);
+  transition:
+    background-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    border-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    transform var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.primaryBtn:hover {
+  background: var(--color-accent-hover, #234a3f);
+  border-color: var(--color-accent-hover, #234a3f);
+}
+
+.primaryBtn:active {
+  transform: scale(0.97);
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+@keyframes overlayEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* === Mobile === */
+@media (max-width: 767px) {
+  .card {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .stats {
+    gap: var(--space-2);
+  }
+
+  .statNum {
+    font-size: var(--text-lg, 1.125rem);
+  }
+}
+
+/* === Reduced motion: 关闭动画/过渡 === */
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .card {
+    animation: none;
+  }
+
+  .primaryBtn,
+  .primaryBtn:hover,
+  .primaryBtn:active {
+    transition: none;
+    transform: none;
+  }
+}

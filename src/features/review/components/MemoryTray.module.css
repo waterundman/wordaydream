@@ -185,3 +185,10 @@
   color: var(--color-text-tertiary);
   line-height: var(--leading-relaxed);
 }
+
+/* v2.2.4 Round 3 (R3-P2-001): 通用重置已集中到 tokens.css, 此处仅保留模块特有规则 */
+@media (prefers-reduced-motion: reduce) {
+  .cardItem {
+    animation: none !important;
+  }
+}

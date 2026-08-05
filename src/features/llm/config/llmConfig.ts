@@ -35,7 +35,12 @@
  *   (因为 vite-env.d.ts 显式标注 readonly, 而 zod schema 接受 string 即可)
  */
 
-import { z } from "zod";
+// v0.4.0-harmony Stage 3 (D3): zod 改为动态 import (TMA), 不阻塞首屏.
+// zod 仅在 LLM 配置校验时需要, 加载到 data-parsers chunk 中.
+// import type 仅提供类型命名空间 (zType.infer / zType.ZodType), 编译时完全擦除, 不影响 bundle.
+// zType 别名避免与运行时 const { z } 冲突 (TS2440).
+import type { z as zType } from 'zod';
+const { z } = await import('zod');
 
 /**
  * v1.3.0 LLM config zod schema
@@ -44,7 +49,7 @@ import { z } from "zod";
  * - provider: 当前激活的 provider (openai / anthropic / deepseek)
  *   v1.2.0 还有 kimi/qwen/minimax, 但 v1.3.0 Edge Function 只暴露 3 个,
  *   所以这里枚举只取 3 个 (kimi/qwen/minimax 暂不在 v1.3.0 scope 内).
- * - proxyUrl: Netlify Edge Function URL (生产: /.netlify/edge-functions/llm-proxy)
+ * - proxyUrl: IGA Pages serverless function URL (生产 + dev: /api/llm-proxy)
  * - maxTokens: 单次 LLM 调用最大 token 数 (clamp [1, 8192])
  * - temperature: 采样温度 (clamp [0, 2])
  * - retryAttempts: 网络重试次数 (clamp [1, 5])
@@ -62,7 +67,7 @@ const LLMConfigSchema = z.object({
   provider: z.enum(["openai", "anthropic", "deepseek"]).default("openai"),
   proxyUrl: z
     .string()
-    .default("http://localhost:8888/.netlify/edge-functions/llm-proxy"),
+    .default("/api/llm-proxy"),
   maxTokens: z.number().int().min(1).max(8192).default(2048),
   temperature: z.number().min(0).max(2).default(0.7),
   retryAttempts: z.number().int().min(1).max(5).default(3),
@@ -71,7 +76,7 @@ const LLMConfigSchema = z.object({
   grayscale: z.number().int().min(0).max(100).default(100),
 });
 
-export type LLMConfig = z.infer<typeof LLMConfigSchema>;
+export type LLMConfig = zType.infer<typeof LLMConfigSchema>;
 
 /**
  * process-wide 缓存: 整个 app lifecycle 只 parse 一次 env

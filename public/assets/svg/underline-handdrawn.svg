@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 6" fill="none">
+  <!-- Hand-drawn wobbly underline for vocabulary words -->
+  <path d="M2 3 C 10 1, 20 5, 30 2 C 40 4, 50 1, 60 3 C 70 5, 80 2, 90 4 C 100 1, 110 5, 120 2 C 130 4, 140 1, 150 3 C 160 5, 170 2, 180 4 C 188 3, 194 3, 198 3" stroke="#d97757" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+</svg>

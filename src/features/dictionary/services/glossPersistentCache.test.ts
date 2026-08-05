@@ -193,7 +193,7 @@ describe('glossPersistentCache (v2.2.0 Stage 4 D3)', () => {
       // 直接操作 IndexedDB 把 timestamp 改到 31 天前
       const thirtyOneDaysAgo = Date.now() - 31 * 24 * 60 * 60 * 1000;
       await new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 1);
+        const req = indexedDB.open(DB_NAME, 2);
         req.onsuccess = () => {
           const db = req.result;
           const tx = db.transaction('glosses', 'readwrite');
@@ -231,7 +231,7 @@ describe('glossPersistentCache (v2.2.0 Stage 4 D3)', () => {
       // 改 timestamp 到 31 天前
       const thirtyOneDaysAgo = Date.now() - 31 * 24 * 60 * 60 * 1000;
       await new Promise<void>((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 1);
+        const req = indexedDB.open(DB_NAME, 2);
         req.onsuccess = () => {
           const db = req.result;
           const tx = db.transaction('glosses', 'readwrite');
@@ -257,5 +257,160 @@ describe('glossPersistentCache (v2.2.0 Stage 4 D3)', () => {
       // 注意: count 可能含其他 entry, 这里单独验证此 key 不存在
       expect(await getCachedGloss('en', 'expired')).toBeNull();
     });
+  });
+
+  // ===== v0.3.0-harmony Stage 4 (D3) new tests =====
+
+  describe('T19 (Stage 4): DB_VERSION upgrade 1 -> 2 creates by_timestamp index', () => {
+    it('v1 data exists -> upgrade to v2 -> by_timestamp index exists + data preserved', async () => {
+      const STORE_NAME = 'glosses';
+
+      // Step 1: Manually create v1 DB and insert data (simulate v0.2.0 user data)
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 2);
+        req.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+          }
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.put({
+            key: 'en::old',
+            definitions: ['old-def'],
+            timestamp: Date.now() - 1000,
+            llmProvider: 'test',
+            llmModel: 'test-model',
+            sourceHash: 'h-old',
+          });
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+        req.onerror = () => reject(req.error);
+      });
+
+      // Step 2: Trigger v2 upgrade via setCachedGloss (DB_VERSION=2)
+      await setCachedGloss('en', 'new', {
+        definitions: ['new-def'],
+        llmProvider: 'test',
+        llmModel: 'test-model',
+        sourceHash: 'h-new',
+      });
+
+      // Step 3: Verify by_timestamp index exists + old data preserved
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 2);
+        req.onsuccess = () => {
+          const db = req.result;
+          const store = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME);
+          expect(store.indexNames.contains('by_timestamp')).toBe(true);
+          const getReq = store.get('en::old');
+          getReq.onsuccess = () => {
+            expect(getReq.result).toBeDefined();
+            expect(getReq.result.definitions).toEqual(['old-def']);
+            db.close();
+            resolve();
+          };
+          getReq.onerror = () => reject(getReq.error);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+
+    it('fresh DB (v0 -> v2) creates store + index in one step', async () => {
+      await setCachedGloss('en', 'fresh', {
+        definitions: ['fresh-def'],
+        llmProvider: 'test',
+        llmModel: 'test-model',
+        sourceHash: 'h-fresh',
+      });
+
+      const cached = await getCachedGloss('en', 'fresh');
+      expect(cached).not.toBeNull();
+      expect(cached!.definitions).toEqual(['fresh-def']);
+    });
+  });
+
+  describe('T20 (Stage 4): evictIndexedDbIfNeeded deletes oldest N via index cursor', () => {
+    it('5001 entries -> evict to 5000, oldest N deleted (cursor.delete)', async () => {
+      const STORE_NAME = 'glosses';
+      const baseTime = Date.now() - 6000 * 1000; // 100 min ago, well within 30-day TTL
+
+      // Step 1: Bulk insert 5001 entries (raw IndexedDB, single transaction)
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 2);
+        req.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          const oldVersion = event.oldVersion;
+          if (oldVersion < 1 || !db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+          }
+          if (oldVersion < 2) {
+            const tx = (event.target as IDBOpenDBRequest).transaction;
+            if (tx !== null) {
+              const store = tx.objectStore(STORE_NAME);
+              if (!store.indexNames.contains('by_timestamp')) {
+                store.createIndex('by_timestamp', 'timestamp', { unique: false });
+              }
+            }
+          }
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          for (let i = 0; i < 5001; i++) {
+            store.put({
+              key: `en::word${i}`,
+              definitions: [`def${i}`],
+              timestamp: baseTime + i,
+              llmProvider: 'test',
+              llmModel: 'test-model',
+              sourceHash: `h${i}`,
+            });
+          }
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+        req.onerror = () => reject(req.error);
+      });
+
+      // Step 2: Verify count = 5001
+      expect(await getCachedGlossCount()).toBe(5001);
+
+      // Step 3: Trigger LRU eviction (write 5002nd entry)
+      await setCachedGloss('en', 'trigger-eviction', {
+        definitions: ['trigger'],
+        llmProvider: 'test',
+        llmModel: 'test-model',
+        sourceHash: 'h-trigger',
+      });
+
+      // Step 4: Verify count = 5000 (deleted 2: 5002 - 5000 = 2)
+      expect(await getCachedGlossCount()).toBe(5000);
+
+      // Step 5: Verify oldest 2 entries deleted (word0, word1)
+      expect(await getCachedGloss('en', 'word0')).toBeNull();
+      expect(await getCachedGloss('en', 'word1')).toBeNull();
+
+      // Step 6: Verify 3rd entry (word2) still exists
+      const survivor = await getCachedGloss('en', 'word2');
+      expect(survivor).not.toBeNull();
+      expect(survivor!.definitions).toEqual(['def2']);
+
+      // Step 7: Verify newest entry still exists
+      const newest = await getCachedGloss('en', 'word5000');
+      expect(newest).not.toBeNull();
+      expect(newest!.definitions).toEqual(['def5000']);
+    }, 30000); // 30s timeout (5001 entries insert + eviction)
   });
 });

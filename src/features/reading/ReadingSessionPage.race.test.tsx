@@ -167,7 +167,9 @@ describe('v2.2.1 Stage 1 (Bug 2 P0): handleReRead isLoading 守卫', () => {
 
 describe('v2.2.1 Stage 1 (Bug 2 P2): useEffect 依赖数组修正', () => {
   it('T06 [non-critical]: markOccurrenceResolved 产生新 tokens 引用时不重触发 addCardFromToken', () => {
-    // 构造含 1 个已 resolved token 的 session (resolvedTokens.size = 1)
+    // v2.2.4 Stage 3 (Bug 9): resolvedTokens effect 已移除, addCardFromToken 不再由 ReadingSessionPage 调用.
+    // 唯一调用入口是 InlineAnswerPanel.handleSubmit 在 grade === 'correct' 时.
+    // 此测试改为验证: mount + markOccurrenceResolved 后 addCardFromToken 均不被调用.
     const tokens = [
       makeToken('t1', 'g1', true),
       makeToken('t2', 'g2', false),
@@ -201,8 +203,8 @@ describe('v2.2.1 Stage 1 (Bug 2 P2): useEffect 依赖数组修正', () => {
 
     render(<ReadingSessionPage />);
 
-    // Mount 后 effect 触发一次: 为已 resolved 的 t1 调用 addCardFromToken
-    expect(addCardSpy).toHaveBeenCalledTimes(1);
+    // Mount 后 addCardFromToken 不被调用 (effect 已移除)
+    expect(addCardSpy).not.toHaveBeenCalled();
 
     // 调用 markOccurrenceResolved 同一已 resolved token:
     // - 产生新 tokens 数组引用 (.map)
@@ -211,8 +213,7 @@ describe('v2.2.1 Stage 1 (Bug 2 P2): useEffect 依赖数组修正', () => {
       useReadingSessionStore.getState().markOccurrenceResolved('t1');
     });
 
-    // 依赖数组 [resolvedTokens.size, addCardFromToken, isReplay] 均未变 → effect 不重触发
-    // 若旧依赖数组含 session.passage.tokens, 新引用会触发 effect → addCardFromToken 再次调用 (bug)
-    expect(addCardSpy).toHaveBeenCalledTimes(1);
+    // markOccurrenceResolved 后 addCardFromToken 仍不被调用 (无 effect)
+    expect(addCardSpy).not.toHaveBeenCalled();
   });
 });

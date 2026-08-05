@@ -1,0 +1,62 @@
+/* Dividers (Design v3)
+ *
+ * BotanicalDivider / TornPaperDivider 共享墨迹绘制动画:
+ * path 的 stroke-dasharray / stroke-dashoffset 由 --path-length 驱动
+ * (useInkDrawPaths hook 测量总长后写入 CSS 变量)
+ * .visible 时 dashoffset -> 0, 0.8s ease-out
+ */
+
+.botanicalWrap {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-3) 0;
+}
+
+.tornWrap {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-3) 0;
+}
+
+.inkSvg {
+  width: 100%;
+  max-width: 320px;
+  opacity: 0.6;
+}
+
+.tornWrap .inkSvg {
+  max-width: 280px;
+  opacity: 0.4;
+}
+
+/* === Ink draw: path 初始隐藏, visible 时绘制 === */
+.inkSvg path {
+  stroke-dasharray: var(--path-length, 1000);
+  stroke-dashoffset: var(--path-length, 1000);
+  transition: stroke-dashoffset 0.8s ease-out;
+}
+
+.inkSvg.visible path {
+  stroke-dashoffset: 0;
+}
+
+/* === Mobile === */
+@media (max-width: 767px) {
+  .botanicalWrap,
+  .tornWrap {
+    margin: var(--space-2) 0;
+  }
+  .inkSvg {
+    max-width: 260px;
+  }
+  .tornWrap .inkSvg {
+    max-width: 220px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inkSvg path {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+}

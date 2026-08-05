@@ -50,9 +50,7 @@ describe('llmConfig (v1.3.0 Stage 2 — T01..T02)', () => {
 
     // Assert: 6 个字段全部命中 zod default
     expect(config.provider).toBe('openai');
-    expect(config.proxyUrl).toBe(
-      'http://localhost:8888/.netlify/edge-functions/llm-proxy'
-    );
+    expect(config.proxyUrl).toBe('/api/llm-proxy');
     expect(config.maxTokens).toBe(2048);
     expect(config.temperature).toBe(0.7);
     expect(config.retryAttempts).toBe(3);

@@ -5,10 +5,9 @@
  * 阅读会话开始时 (`loadSession`) 调用 `recordDay()`, 累计 `currentStreak`
  * 并暴露给成就引擎作为 `ctx.streak`。
  *
- * 持久化策略 (与项目其他 store 一致):
- * - 使用自定义 `lib/persistenceMiddleware` (load-only)
- * - 启动时从 localStorage 读取 `wordaydream:streak`
- * - 状态全部为简单原始值, 无需 serialize / deserialize
+ * 持久化策略:
+ * - 使用 Zustand 官方 `persist` 中间件, 无 partialize (全状态持久化)
+ * - 状态全部为简单原始值 (lastStudyDate / currentStreak / longestStreak)
  *
  * 日期算法说明:
  * - `today()` 返回本地时区的 `YYYY-MM-DD`

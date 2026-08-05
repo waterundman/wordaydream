@@ -20,6 +20,13 @@ interface ImportMetaEnv {
   readonly VITE_MINIMAX_API_KEY?: string;
   readonly VITE_MINIMAX_BASE_URL?: string;
   readonly VITE_MINIMAX_MODEL?: string;
+  /**
+   * v0.1.0-harmony Stage 4: 鸿蒙构建模式下, 独立 LLM Proxy URL.
+   *
+   * 仅在 .env.harmony 文件中配置, 由 vite.config.ts 在 harmony mode 下
+   * 静态注入为前端的 VITE_LLM_PROXY_URL. 前端代码不直接读此变量.
+   */
+  readonly VITE_LLM_PROXY_URL_HARMONY?: string;
 }
 
 interface ImportMeta {

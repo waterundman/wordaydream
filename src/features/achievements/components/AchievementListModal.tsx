@@ -8,9 +8,10 @@
  * - 图标全部内联 SVG, 不引入额外资源
  * - 遵守 prefers-reduced-motion: 关闭淡入/上滑动画
  */
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useAchievementStore } from '../store/useAchievementStore';
 import { ALL_ACHIEVEMENTS } from '../services/achievementEngine';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import type { Achievement, AchievementCategory } from '../types';
 import styles from './AchievementListModal.module.css';
 
@@ -120,6 +121,11 @@ const CATEGORY_ORDER: readonly AchievementCategory[] = [
 ] as const;
 
 export function AchievementListModal({ open, onClose }: AchievementListModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap
+  useFocusTrap(modalRef, open);
+
   useEffect(() => {
     if (!open) return;
     const onEsc = (e: KeyboardEvent) => {
@@ -145,13 +151,14 @@ export function AchievementListModal({ open, onClose }: AchievementListModalProp
     <div
       className={styles.overlay}
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="成就列表"
     >
       <div
+        ref={modalRef}
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="成就列表"
       >
         <header className={styles.header}>
           <h2 className={styles.title}>成就</h2>

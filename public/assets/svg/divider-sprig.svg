@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 40" fill="none" stroke="#1b1b19" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Olive sprig divider — hand-drawn botanical line art -->
+  <!-- Center stem -->
+  <path d="M20 20 C 80 18, 140 22, 200 20 C 260 18, 320 22, 380 20 C 420 19, 450 21, 470 20" />
+  <!-- Left branch leaves -->
+  <path d="M60 20 C 50 12, 40 8, 30 6 C 38 14, 48 18, 60 20" fill="none"/>
+  <path d="M60 20 C 50 28, 40 32, 30 34 C 38 26, 48 22, 60 20" fill="none"/>
+  <path d="M110 20 C 100 14, 88 10, 76 8 C 86 16, 98 19, 110 20" fill="none"/>
+  <path d="M110 20 C 100 26, 88 30, 76 32 C 86 24, 98 21, 110 20" fill="none"/>
+  <!-- Center accent leaf (terracotta wash) -->
+  <path d="M200 20 C 190 10, 175 5, 160 3 C 172 12, 188 18, 200 20" fill="#d97757" fill-opacity="0.15" stroke="#d97757" stroke-width="1.5"/>
+  <path d="M200 20 C 190 30, 175 35, 160 37 C 172 28, 188 22, 200 20" fill="#d97757" fill-opacity="0.15" stroke="#d97757" stroke-width="1.5"/>
+  <!-- Right branch leaves -->
+  <path d="M290 20 C 300 12, 312 8, 324 6 C 314 14, 302 18, 290 20" fill="none"/>
+  <path d="M290 20 C 300 28, 312 32, 324 34 C 314 26, 302 22, 290 20" fill="none"/>
+  <path d="M340 20 C 350 14, 362 10, 374 8 C 364 16, 352 19, 340 20" fill="none"/>
+  <path d="M340 20 C 350 26, 362 30, 374 32 C 364 24, 352 21, 340 20" fill="none"/>
+  <!-- Small berries -->
+  <circle cx="155" cy="2" r="2" fill="#d97757" fill-opacity="0.2"/>
+  <circle cx="250" cy="20" r="1.5" fill="#1b1b19" fill-opacity="0.3"/>
+  <circle cx="430" cy="20" r="1.5" fill="#1b1b19" fill-opacity="0.3"/>
+</svg>

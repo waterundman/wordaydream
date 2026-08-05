@@ -97,6 +97,8 @@ export function RemedyPanel({ token, userAnswer, language = 'en' }: Props) {
   // 用户连续答错多个词时, token prop 快速变化, 旧 getGloss 请求可能晚于
   // 新请求返回, 导致 setGloss 用旧 token 的释义覆盖新 token 的释义.
   // v1.5.3 fix V3-P3-003: 传 language 给 getGloss, 避免 detectLanguage 启发式误判.
+  // v2.2.4 Stage 3 (Bug 10): gloss 加载完成后自动显示正确答案,
+  // 用户答错后无需手动点击即可看到核心释义, 降低认知负担.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -105,6 +107,7 @@ export function RemedyPanel({ token, userAnswer, language = 'en' }: Props) {
       if (cancelled) return;
       setGloss(result);
       setIsLoading(false);
+      setShowAnswer(true);
     };
     load();
     return () => { cancelled = true; };

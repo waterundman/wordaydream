@@ -1,0 +1,29 @@
+Wordaydream 鸿蒙版
+
+[应用简介]
+Wordaydream 是一款基于 FSRS 间隔重复算法的智能词汇学习应用, 帮助用户通过阅读真实语境提升词汇量.
+
+[核心功能]
+- 14 个功能模块: 阅读 / 复习 / 语法 / 分析 / 成就 / 课程 / 词表 / 设置 / 词典 / 评估 / 毕业 / 首页 / 连续打卡 / LLM
+- AI 生成阅读材料 + 智能难度评估 + 自动建卡
+- FSRS 间隔重复算法, 科学调度复习时间
+- 桌面服务卡片: 一键查看到期词汇, 快速开始复习
+- 复习提醒推送: 词汇到期时原生通知
+- 三套主题: light / dark / sepia
+- 完整离线模式: 无网络也能学习
+
+[技术特点]
+- 鸿蒙原生 ArkUI 服务卡片
+- 鸿蒙推送通知 (notificationManager)
+- ArkWeb 容器 + JSBridge 双向通信
+- 独立 LLM Proxy 服务 (脱离 Netlify Edge Function)
+
+[隐私]
+- 所有学习数据存储在本地 (IndexedDB / relationalStore)
+- API key 由后端 LLM Proxy 持有, 前端 0 接触
+- 不收集任何用户个人信息
+- 隐私政策: https://wordaydream.example.com/privacy
+
+[支持的设备]
+- HarmonyOS 5.0+ (cann8.0+)
+- 手机 / 平板 / 2in1

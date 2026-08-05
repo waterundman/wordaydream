@@ -1,8 +1,8 @@
 .passage {
-  max-width: var(--reading-max-width);
+  max-width: 680px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
   font-family: var(--font-serif);
+  text-wrap: pretty;
 }
 
 .title {
@@ -16,9 +16,9 @@
 }
 
 .text {
-  font-size: var(--text-lg);
-  line-height: 1.7;
-  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--color-text-body);
   letter-spacing: 0.01em;
 }
 
@@ -129,18 +129,14 @@
 }
 
 @media (max-width: 767px) {
-  .passage {
-    padding: var(--space-4) var(--space-3);
-  }
-
   .title {
     font-size: 1.75rem;
     margin-bottom: var(--space-6);
   }
 
   .text {
-    font-size: var(--text-base);
-    line-height: 1.65;
+    font-size: 15px;
+    line-height: 1.75;
   }
 
   .text p {
@@ -149,10 +145,6 @@
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  .passage {
-    padding: var(--space-6) var(--space-4);
-  }
-
   .title {
     font-size: 2rem;
   }

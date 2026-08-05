@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { usePanelPosition } from '../../../hooks/usePanelPosition';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import styles from './GrammarPanel.module.css';
 import type { GrammarPoint } from '../../../types';
 
@@ -56,43 +57,19 @@ export function GrammarPanel({ grammarPoint, onClose, anchorRef }: Props) {
     ['--panel-offset-x' as string]: `${panelPosition.offsetX}px`,
   };
 
+  // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap, 仅保留 ESC 关闭逻辑.
+  useFocusTrap(panelRef, true);
+
   useEffect(() => {
     const panel = panelRef.current;
     if (!panel) return;
-
-    const focusable = Array.from(
-      panel.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter((el) => el.offsetParent !== null);
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
-        return;
-      }
-      if (e.key === 'Tab') {
-        if (focusable.length === 0) {
-          e.preventDefault();
-          return;
-        }
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
       }
     };
-
     panel.addEventListener('keydown', onKeyDown);
-    first?.focus();
-
     return () => panel.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 

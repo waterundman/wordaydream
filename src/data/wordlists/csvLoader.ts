@@ -9,8 +9,18 @@
  * - generateCsvTemplate 返回合法 CSV 字符串 (含表头 + 2 示例行)
  *
  * 字段顺序: lemma,pos,translation,cefr,priority,topic,semanticConflicts
+ *
+ * v0.4.0-harmony Stage 4 (D4): 新增 parseCsvWordlistAsync, 将 CPU 密集的
+ * papaparse 解析移至 Web Worker (src/workers/csvParser.worker.ts).
+ * - 旧 sync API parseCsvWordlist 保留 (WordlistPage 同步调用, 不能改签名)
+ * - 新 async API 走 Worker, 主线程 0 阻塞
+ * - Worker 不可用 (jsdom / 老浏览器) 时 fallback 到主线程动态 import papaparse
  */
-import Papa from 'papaparse';
+// v0.4.0-harmony Stage 3 (D3): papaparse 改为动态 import (TMA), 不阻塞首屏.
+// papaparse 仅在 CSV 导入时需要, 加载到 data-parsers chunk 中.
+// v0.4.0-harmony Stage 4 (D4): top-level await 保留以兼容 sync API (parseCsvWordlist),
+// Worker 路径独立 import 不与主线程共享 module graph (papaparse 仍属 data-parsers chunk).
+const Papa = (await import('papaparse')).default;
 
 export interface CsvWordlistEntry {
   lemma: string;
@@ -189,4 +199,165 @@ export function generateCsvTemplate(): string {
   const example1 = 'apple,noun,苹果,A1,1,food,pear|orange';
   const example2 = 'run,verb,跑,A2,2,action,walk|jog';
   return `${header}\n${example1}\n${example2}\n`;
+}
+
+// =====================================================================
+// v0.4.0-harmony Stage 4 (D4): Worker-based async API
+// =====================================================================
+
+/**
+ * CSV Worker 通信协议
+ * - 请求: { id, csvText, fileName? }
+ * - 响应: { id, ok, result?, error? }
+ */
+interface CsvWorkerRequest {
+  id: number;
+  csvText: string;
+  fileName?: string;
+}
+
+interface CsvWorkerResponse {
+  id: number;
+  ok: boolean;
+  result?: CsvImportResult;
+  error?: string;
+}
+
+/**
+ * Worker 单例 (惰性创建, 同一进程内复用)
+ *
+ * 注意: `new Worker(new URL('./csvParser.worker.ts', import.meta.url), { type: 'module' })`
+ * 是 Vite 原生 Worker import 语法, 编译时 Vite 把 worker 文件单独打包.
+ * ArkWeb Chromium M114 支持 module worker, 兼容.
+ */
+let _csvWorker: Worker | null = null;
+let _csvWorkerUnsupported: boolean = false;
+let _csvRequestCounter: number = 0;
+const _csvPendingRequests = new Map<number, {
+  resolve: (result: CsvImportResult) => void;
+  reject: (error: Error) => void;
+}>();
+
+/**
+ * 获取 (惰性创建) CSV Worker 单例
+ *
+ * - 首次调用时 new Worker(...)
+ * - Worker 不可用 (typeof Worker === 'undefined') 返回 null
+ * - Worker 创建失败也返回 null (降级到主线程)
+ */
+function getCsvWorker(): Worker | null {
+  if (_csvWorkerUnsupported) return null;
+  if (_csvWorker) return _csvWorker;
+  if (typeof Worker === 'undefined') {
+    _csvWorkerUnsupported = true;
+    return null;
+  }
+  try {
+    // Vite 原生 Worker import 语法: new URL('./xxx.worker.ts', import.meta.url)
+    // 编译时 Vite 把 worker 文件识别为独立 entry, 单独打包.
+    _csvWorker = new Worker(
+      new URL('../../workers/csvParser.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    _csvWorker.onmessage = (ev: MessageEvent) => {
+      const resp = ev.data as CsvWorkerResponse;
+      if (!resp || typeof resp.id !== 'number') return;
+      const pending = _csvPendingRequests.get(resp.id);
+      if (!pending) return;
+      _csvPendingRequests.delete(resp.id);
+      if (resp.ok && resp.result) {
+        pending.resolve(resp.result);
+      } else {
+        pending.reject(new Error(resp.error ?? 'CSV worker failed without error message'));
+      }
+    };
+    _csvWorker.onerror = (err) => {
+      // Worker 整体崩溃, reject 所有 pending 请求
+      console.warn('[csvLoader] Worker error, falling back to main thread:', err);
+      for (const [id, pending] of _csvPendingRequests) {
+        _csvPendingRequests.delete(id);
+        pending.reject(new Error('CSV worker crashed'));
+      }
+      _csvWorker = null;
+      _csvWorkerUnsupported = true;
+    };
+    return _csvWorker;
+  } catch (e) {
+    console.warn('[csvLoader] Worker creation failed, falling back to main thread:', e);
+    _csvWorkerUnsupported = true;
+    return null;
+  }
+}
+
+/**
+ * v0.4.0-harmony Stage 4 (D4): 异步解析 CSV (Worker-based)
+ *
+ * - Worker 可用: 把 csvText postMessage 给 worker, 等待解析结果 (主线程 0 阻塞)
+ * - Worker 不可用: fallback 到主线程, 调用 sync parseCsvWordlist (papaparse 主线程执行)
+ *
+ * 与 sync parseCsvWordlist 的区别:
+ * - 返回 Promise<CsvImportResult>
+ * - CPU 密集的 papaparse 解析在 worker 线程, 不阻塞主线程动画 / 交互
+ * - Worker 内部 dynamic import papaparse, 不与主线程共享 module graph
+ *
+ * @param csvText CSV 文本
+ * @param fileName 文件名 (可选, 默认 'unknown.csv')
+ */
+export async function parseCsvWordlistAsync(
+  csvText: string,
+  fileName?: string,
+): Promise<CsvImportResult> {
+  const worker = getCsvWorker();
+  if (!worker) {
+    // Fallback: 主线程执行 (与 sync API 等价, 但包裹 Promise 以保持接口一致)
+    return parseCsvWordlist(csvText, fileName);
+  }
+
+  const id = ++_csvRequestCounter;
+  const request: CsvWorkerRequest = {
+    id,
+    csvText,
+    fileName: fileName ?? 'unknown.csv',
+  };
+
+  return new Promise<CsvImportResult>((resolve, reject) => {
+    // 超时保护 (30s): 避免 Worker 卡死时主线程永远 pending
+    const timeout = setTimeout(() => {
+      _csvPendingRequests.delete(id);
+      reject(new Error('CSV worker timeout (30s)'));
+    }, 30000);
+
+    _csvPendingRequests.set(id, {
+      resolve: (result) => {
+        clearTimeout(timeout);
+        resolve(result);
+      },
+      reject: (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    });
+
+    try {
+      worker.postMessage(request);
+    } catch (e) {
+      clearTimeout(timeout);
+      _csvPendingRequests.delete(id);
+      reject(e instanceof Error ? e : new Error(String(e)));
+    }
+  });
+}
+
+/**
+ * @internal 测试用: 强制重置 Worker 单例 + unsupported 标志.
+ * 让测试可以在 "Worker 可用 / 不可用" 两种模式间切换.
+ */
+export function _resetCsvWorkerForTesting(): void {
+  if (_csvWorker) {
+    _csvWorker.terminate();
+    _csvWorker = null;
+  }
+  _csvWorkerUnsupported = false;
+  _csvPendingRequests.clear();
+  _csvRequestCounter = 0;
 }

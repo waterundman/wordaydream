@@ -1,0 +1,25 @@
+{
+  "forms": [
+    {
+      "name": "share_review_card",
+      "displayName": "$string:share_card_title",
+      "description": "$string:share_card_desc",
+      "type": "arkts",
+      "supportDimensions": [
+        "2*2",
+        "2*4"
+      ],
+      "defaultDimension": "2*2",
+      "updateEnabled": true,
+      "scheduledUpdateTime": "60",
+      "updateDuration": 1,
+      "isDefault": true,
+      "src": "./ets/widget/ReviewCardWidget.ets"
+    }
+  ],
+  "atomicServiceShare": {
+    "enabled": true,
+    "target": "pages/Index",
+    "query": "action=startReview"
+  }
+}

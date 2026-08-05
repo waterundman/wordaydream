@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>状态结算：成就解锁</title>
+    <style id="theme-vars">
+:root {
+  --primary: #d97757;
+  --primary-foreground: #ffffff;
+  --brand-50: #fdf8f5;
+  --brand-100: #fbe8de;
+  --brand-200: #f6d0b9;
+  --brand-300: #efb088;
+  --brand-400: #e78a57;
+  --brand-500: #d97757;
+  --brand-600: #c25e3e;
+  --brand-700: #a14a30;
+  --brand-800: #823b28;
+  --brand-900: #6b3222;
+  --brand-950: #3b1910;
+  --surface-base: #faf9f5;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f5f4ee;
+  --text-50: #1b1b19;
+  --text-100: #2d2d2a;
+  --text-200: #444440;
+  --text-300: #5c5c57;
+  --text-400: #8a8a82;
+  --text-500: #b8b8ae;
+  --border-600: #e4e2d8;
+  --border-700: #d8d6cd;
+  --border-800: #b7b5a9;
+  --destructive: #c25e3e;
+  --radius: 12px;
+  --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+}
+@theme inline {
+  --color-primary: #d97757;
+  --color-surface-base: #faf9f5;
+  --color-surface-elevated: #ffffff;
+  --color-surface-subtle: #f5f4ee;
+  --color-text-50: #1b1b19;
+  --color-border-700: #d8d6cd;
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @layer base {
+    body { background: var(--surface-base); color: var(--text-50); font-family: var(--font-sans); text-wrap: pretty; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.border-primary { border-color: var(--primary); }
+.bg-surface-base { background-color: var(--surface-base); }
+.text-surface-base { color: var(--surface-base); }
+.bg-surface-elevated { background-color: var(--surface-elevated); }
+.bg-surface-subtle { background-color: var(--surface-subtle); }
+.text-text-50 { color: var(--text-50); }
+.bg-text-50 { background-color: var(--text-50); }
+.text-text-400 { color: var(--text-400); }
+.border-border-700 { border-color: var(--border-700); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+    <style>
+/* ===== Page-specific styles ===== */
+
+/* Base layer: dimmed home context */
+.home-context {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  background: var(--surface-base);
+  padding: 40px 56px;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.home-brand {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-50);
+  letter-spacing: -0.01em;
+}
+
+.home-streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-700);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-100);
+}
+
+.home-streak-pill svg {
+  width: 14px;
+  height: 14px;
+  color: var(--primary);
+}
+
+/* Reading card mock */
+.home-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-700);
+  border-radius: 16px;
+  padding: 24px 28px;
+  max-width: 420px;
+  margin-bottom: 24px;
+}
+
+.home-card-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-400);
+  margin-bottom: 8px;
+}
+
+.home-card-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-50);
+  margin: 0 0 4px;
+}
+
+.home-card-author {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--text-300);
+  margin: 0 0 20px;
+}
+
+.home-card-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--border-600);
+  overflow: hidden;
+}
+
+.home-card-progress-fill {
+  width: 42%;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--primary);
+}
+
+.home-card-progress-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-400);
+  font-family: var(--font-mono);
+}
+
+/* Stats row */
+.home-stats {
+  display: flex;
+  gap: 32px;
+}
+
+.home-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-stat-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text-50);
+  line-height: 1;
+}
+
+.home-stat-label {
+  font-size: 12px;
+  color: var(--text-400);
+  margin-top: 4px;
+}
+
+/* ===== Terracotta overlay ===== */
+.terracotta-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--primary);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+}
+
+.celebration-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 360px;
+  padding: 0 32px;
+  text-align: center;
+}
+
+.ink-splash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  width: 280px;
+  height: auto;
+  opacity: 0;
+  mix-blend-mode: overlay;
+  filter: contrast(1.1) saturate(1.2);
+  z-index: 0;
+}
+
+.badge-flame {
+  position: relative;
+  z-index: 1;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 32px;
+}
+
+.fleuron {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: auto;
+  margin: 0 auto 16px;
+  display: block;
+}
+
+.fleuron circle {
+  opacity: 0;
+}
+
+.achievement-title {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: 44px;
+  color: var(--surface-base);
+  font-weight: 400;
+  margin: 0 0 8px;
+  text-align: center;
+  opacity: 0;
+  letter-spacing: 0.02em;
+}
+
+.achievement-subtitle {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: rgba(250, 249, 245, 0.7);
+  text-align: center;
+  margin: 0;
+  opacity: 0;
+  letter-spacing: 0.08em;
+}
+
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+
+/* ===== Replay button ===== */
+.replay-btn {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 10px 28px;
+  border-radius: 9999px;
+  background: var(--surface-base);
+  color: var(--text-50);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  border: 1px solid var(--border-700);
+  cursor: pointer;
+  transition: border-color 200ms ease-out, color 200ms ease-out;
+}
+
+.replay-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ===== Animation: playing state ===== */
+
+/* Home context: dim at 200ms, hold dimmed (overlay stays visible) */
+.playing .home-context {
+  animation: homeContextSeq 3900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes homeContextSeq {
+  0%      { opacity: 1; }
+  5.13%   { opacity: 0.3; }
+  100%    { opacity: 0.3; }
+}
+
+/* Terracotta overlay: fade+scale in at 200ms, hold visible (no auto-exit) */
+.playing .terracotta-overlay {
+  animation: overlaySeq 3900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: auto;
+}
+@keyframes overlaySeq {
+  0%      { opacity: 0; transform: scale(0.85); }
+  5.13%   { opacity: 0; transform: scale(0.85); }
+  17.95%  { opacity: 1; transform: scale(1); }
+  100%    { opacity: 1; transform: scale(1); }
+}
+
+/* Ink splash: fade in at 400ms over 600ms */
+.playing .ink-splash {
+  animation: inkSplashIn 600ms ease-out 400ms forwards;
+}
+@keyframes inkSplashIn {
+  to { opacity: 0.4; }
+}
+
+/* Badge flame: ink-draw at 600ms over 800ms */
+.playing .badge-flame path {
+  animation: inkDraw 800ms ease-in-out 600ms forwards;
+}
+
+/* Fleuron: ink-draw at 900ms over 500ms */
+.playing .fleuron path {
+  animation: inkDraw 500ms ease-in-out 900ms forwards;
+}
+
+/* Fleuron circle: fade in at 900ms over 500ms */
+.playing .fleuron circle {
+  animation: fadeInElem 500ms ease-out 900ms forwards;
+}
+
+@keyframes inkDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes fadeInElem {
+  to { opacity: 1; }
+}
+
+/* Title: fade in at 1100ms over 400ms */
+.playing .achievement-title {
+  animation: fadeInElem 400ms ease-out 1100ms forwards;
+}
+
+/* Subtitle: fade in at 1300ms over 300ms */
+.playing .achievement-subtitle {
+  animation: fadeInElem 300ms ease-out 1300ms forwards;
+}
+
+/* Grain shimmer: one-shot at 1500ms over 1500ms */
+.playing .grain-overlay {
+  animation: grainShimmer 1500ms ease-out 1500ms forwards;
+}
+@keyframes grainShimmer {
+  0%   { opacity: 0; }
+  50%  { opacity: 0.12; }
+  100% { opacity: 0; }
+}
+
+/* ===== Reduced motion: instant, final celebration state ===== */
+@media (prefers-reduced-motion: reduce) {
+  .playing .home-context,
+  .playing .terracotta-overlay,
+  .playing .ink-splash,
+  .playing .badge-flame path,
+  .playing .fleuron path,
+  .playing .fleuron circle,
+  .playing .achievement-title,
+  .playing .achievement-subtitle,
+  .playing .grain-overlay {
+    animation: none !important;
+  }
+
+  .playing .home-context { opacity: 0.3; }
+  .playing .terracotta-overlay { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .playing .ink-splash { opacity: 0.4; }
+  .playing .badge-flame path { stroke-dashoffset: 0 !important; }
+  .playing .fleuron path { stroke-dashoffset: 0 !important; }
+  .playing .fleuron circle { opacity: 1; }
+  .playing .achievement-title { opacity: 1; }
+  .playing .achievement-subtitle { opacity: 1; }
+  .playing .grain-overlay { opacity: 0; }
+}
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+        <div class="achievement-stage" id="achievementStage">
+
+            <!-- ===== Base layer: dimmed home context ===== -->
+            <div class="home-context" aria-hidden="true">
+                <div class="home-header">
+                    <span class="home-brand">Wordaydream</span>
+                    <span class="home-streak-pill">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                        </svg>
+                        7 天连续
+                    </span>
+                </div>
+
+                <div class="home-card">
+                    <div class="home-card-tag">今日阅读</div>
+                    <h2 class="home-card-title">百年孤独</h2>
+                    <p class="home-card-author">加西亚·马尔克斯</p>
+                    <div class="home-card-progress-track">
+                        <div class="home-card-progress-fill"></div>
+                    </div>
+                    <span class="home-card-progress-text">第 3 章 · 42%</span>
+                </div>
+
+                <div class="home-stats">
+                    <div class="home-stat">
+                        <span class="home-stat-value">7</span>
+                        <span class="home-stat-label">连续天数</span>
+                    </div>
+                    <div class="home-stat">
+                        <span class="home-stat-value">23</span>
+                        <span class="home-stat-label">本周分钟</span>
+                    </div>
+                    <div class="home-stat">
+                        <span class="home-stat-value">156</span>
+                        <span class="home-stat-label">总读页数</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Terracotta overlay: celebration ===== -->
+            <div class="terracotta-overlay">
+                <!-- Ink splash decoration (behind badge) -->
+                <img src="../assets/ink-splash-terracotta.jpg" class="ink-splash" alt="" aria-hidden="true">
+
+                <div class="celebration-content">
+                <!-- Flame badge (ink-draw animation) -->
+                <svg class="badge-flame" viewBox="0 0 64 64" fill="none" stroke="var(--surface-base)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <!-- Flame outline -->
+                    <path d="M32 8 C 28 16, 22 20, 20 28 C 18 36, 22 44, 28 48 C 24 44, 26 36, 30 32 C 28 38, 32 42, 34 38 C 38 32, 36 24, 40 20 C 42 26, 46 30, 44 38 C 46 44, 42 50, 36 52 C 42 50, 48 44, 48 34 C 48 22, 38 14, 32 8 Z"/>
+                    <!-- Inner flame hatching -->
+                    <path d="M30 24 C 28 28, 30 32, 32 30" stroke-opacity="0.3" stroke-width="1"/>
+                    <path d="M34 28 C 36 32, 34 36, 36 34" stroke-opacity="0.3" stroke-width="1"/>
+                    <!-- Base -->
+                    <path d="M24 52 C 28 56, 36 56, 40 52" stroke-opacity="0.5"/>
+                </svg>
+
+                <!-- Fleuron ornament (ink-draw animation, above title) -->
+                <svg class="fleuron" viewBox="0 0 40 40" fill="none" stroke="var(--surface-base)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 4 C 18 10, 14 14, 8 16 C 14 18, 18 22, 20 28 C 22 22, 26 18, 32 16 C 26 14, 22 10, 20 4 Z"/>
+                    <circle cx="20" cy="16" r="1.5" fill="var(--surface-base)" stroke="none"/>
+                    <path d="M10 32 C 14 30, 17 32, 20 34 C 23 32, 26 30, 30 32"/>
+                </svg>
+
+                <!-- Title -->
+                <h1 class="achievement-title">连续 7 天</h1>
+
+                <!-- Subtitle -->
+                <p class="achievement-subtitle">阅读达人</p>
+                </div>
+
+                <!-- Grain shimmer overlay (one-shot) -->
+                <svg class="grain-overlay" viewBox="0 0 100 100" fill="none" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <filter id="grain-achievement">
+                            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+                            <feColorMatrix type="matrix" values="0 0 0 0 0.106
+                                                                   0 0 0 0 0.106
+                                                                   0 0 0 0 0.098
+                                                                   0 0 0 0.04 0"/>
+                        </filter>
+                    </defs>
+                    <rect width="100" height="100" filter="url(#grain-achievement)"/>
+                </svg>
+            </div>
+
+        </div>
+
+        <!-- Replay button -->
+        <button class="replay-btn" id="replayBtn" type="button">重播</button>
+    </main>
+    <script>lucide.createIcons();</script>
+    <script>
+(function() {
+    'use strict';
+
+    var stage = document.getElementById('achievementStage');
+    var replayBtn = document.getElementById('replayBtn');
+
+    var INITIAL_DELAY = 500;
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* Set up SVG ink-draw: calculate path lengths and set dash arrays */
+    function setupInkDraw(svg) {
+        if (!svg) return;
+        var paths = svg.querySelectorAll('path');
+        for (var i = 0; i < paths.length; i++) {
+            try {
+                var length = paths[i].getTotalLength();
+                if (length > 0) {
+                    paths[i].style.strokeDasharray = length;
+                    paths[i].style.strokeDashoffset = length;
+                }
+            } catch (e) {
+                /* getTotalLength may fail for non-path elements */
+            }
+        }
+    }
+
+    /* Initialize all ink-draw paths */
+    setupInkDraw(document.querySelector('.badge-flame'));
+    setupInkDraw(document.querySelector('.fleuron'));
+
+    /* Trigger animation by toggling the playing class */
+    function play() {
+        stage.classList.remove('playing');
+        void stage.offsetWidth; /* force reflow to restart animations */
+        stage.classList.add('playing');
+    }
+
+    /* Auto-play on load, then hold the celebration visible (no auto-exit) */
+    if (prefersReducedMotion) {
+        /* Reduced motion: show celebration statically and hold */
+        setTimeout(function() {
+            stage.classList.add('playing');
+        }, INITIAL_DELAY);
+    } else {
+        setTimeout(function() {
+            play();
+        }, INITIAL_DELAY);
+    }
+
+    /* Replay button: reset all elements to initial state, then play from the beginning */
+    replayBtn.addEventListener('click', function() {
+        play();
+    });
+})();
+    </script>
+</body>
+</html>

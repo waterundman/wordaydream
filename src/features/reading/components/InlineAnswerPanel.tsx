@@ -67,8 +67,17 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
   }, [triggerPulse]);
 
   const handleClose = useCallback(() => {
+    // v2.2.4 Stage 3 (Bug 10): 答题后手动关闭面板时, 如果 token 还没 resolved (timer pending),
+    // 立即 markOccurrenceResolved 推进进度. 未答题直接关闭则不 resolved.
+    // v2.2.4 Stage 3 (Bug 13): 传入当前 evaluation.grade, 区分答对/答错视觉表现.
+    if (resolveTimerRef.current !== null) {
+      clearTimeout(resolveTimerRef.current);
+      resolveTimerRef.current = null;
+      const grade = evaluation?.grade ?? 'wrong';
+      markOccurrenceResolved(token.id, grade);
+    }
     setActiveOccurrence(null);
-  }, [setActiveOccurrence]);
+  }, [setActiveOccurrence, markOccurrenceResolved, token.id, evaluation?.grade]);
 
   const handleRating = useCallback((rating: Rating) => {
     if (token.kind === 'review' && token.cardId) {
@@ -145,18 +154,25 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
         if (passageId) {
           recordEncounter(language, token.lemma, passageId);
         }
-        // v1.5.2 fix P1-4: 用 ref 持有 timer, unmount 时 cleanup 避免跨会话误触发.
+        // v2.2.4 Stage 3 (Bug 10): 答对后延迟 1500ms 再关闭面板, 让用户看到"回答正确"反馈.
+        // 之前 600ms 太短, 用户来不及确认答对, 也感觉不到词汇状态变化.
         resolveTimerRef.current = setTimeout(() => {
           resolveTimerRef.current = null;
-          markOccurrenceResolved(token.id);
-        }, 600);
+          markOccurrenceResolved(token.id, 'correct');
+        }, 1500);
         if (token.kind === 'review' && token.cardId) {
           setShowRating(true);
         }
       } else {
-        // v2.2.1 Stage 2 (Bug 3 门控点): 非 correct (partial/wrong/error) 时立即标记 resolved,
-        // 让进度条推进. 不调用 addCardFromToken (记忆卡片只记录答对的词).
-        markOccurrenceResolved(token.id);
+        // v2.2.4 Stage 3 (Bug 10): 答错/部分对也延迟关闭, 让用户看到反馈和 RemedyPanel.
+        // 之前立即 markOccurrenceResolved 导致面板瞬间卸载, 红色/琥珀色反馈、hint、RemedyPanel
+        // 用户根本看不到. correct 用 1500ms (反馈简单), partial/wrong 用 3500ms (需读补救内容).
+        // v2.2.4 Stage 3 (Bug 13): 传入 grade, 让 markOccurrenceResolved 区分视觉表现.
+        // 答错推进进度但 token 不变绿, 只有答对变绿.
+        resolveTimerRef.current = setTimeout(() => {
+          resolveTimerRef.current = null;
+          markOccurrenceResolved(token.id, result.grade);
+        }, 3500);
       }
     } catch (error) {
       // v1.5.3 fix: 评估错误标注为 'error' 来源, UI 可区分"评估失败"与"学习反馈".

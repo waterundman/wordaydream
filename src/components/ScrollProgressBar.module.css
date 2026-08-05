@@ -23,14 +23,16 @@
 
 .fill {
   height: 100%;
-  width: 0;
+  width: 100%;
   background: linear-gradient(
     90deg,
     var(--color-accent, #2d5a4d) 0%,
     var(--color-flame, #e07a3b) 100%
   );
-  transition: width 80ms linear;
-  will-change: width;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 80ms linear;
+  will-change: transform, opacity;
 }
 
 /* Dark theme: 进度条轨道用低透明度白色微调, 在深色背景上仍可感知 */

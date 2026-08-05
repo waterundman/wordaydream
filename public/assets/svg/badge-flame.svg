@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#1b1b19" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Engraved flame badge — for "连续7天" achievement -->
+  <!-- Flame outline -->
+  <path d="M32 8 C 28 16, 22 20, 20 28 C 18 36, 22 44, 28 48 C 24 44, 26 36, 30 32 C 28 38, 32 42, 34 38 C 38 32, 36 24, 40 20 C 42 26, 46 30, 44 38 C 46 44, 42 50, 36 52 C 42 50, 48 44, 48 34 C 48 22, 38 14, 32 8 Z" fill="#d97757" fill-opacity="0.12" stroke="#d97757" stroke-width="1.5"/>
+  <!-- Inner flame hatching -->
+  <path d="M30 24 C 28 28, 30 32, 32 30" stroke-opacity="0.3" stroke-width="1"/>
+  <path d="M34 28 C 36 32, 34 36, 36 34" stroke-opacity="0.3" stroke-width="1"/>
+  <!-- Base -->
+  <path d="M24 52 C 28 56, 36 56, 40 52" stroke-opacity="0.5"/>
+</svg>

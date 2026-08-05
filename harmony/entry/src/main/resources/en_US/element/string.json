@@ -1,0 +1,11 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "Wordaydream Harmony Edition" },
+    { "name": "EntryAbility_desc", "value": "Wordaydream entry ability" },
+    { "name": "EntryAbility_label", "value": "Wordaydream" },
+    { "name": "app_name", "value": "Wordaydream" },
+    { "name": "share_card_title", "value": "Review Reminder" },
+    { "name": "share_card_desc", "value": "Shows due word count, start review in one tap" },
+    { "name": "share_card_label", "value": "Wordaydream Review Card" }
+  ]
+}

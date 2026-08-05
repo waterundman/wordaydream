@@ -7,6 +7,7 @@ import { create } from 'zustand';
  * - 'reading': 阅读会话页
  * - 'review': 复习会话页 (由 useReviewSessionStore.mode 触发)
  * - 'wordlist': 词表浏览页 (v1.6.0 Stage 2)
+ * - 'course': 课程导航页 (v2.3.0 Stage 4, hash '#/course')
  *
  * v1.7.0 Stage 2: 状态由 useState 提升到 zustand store,
  * 以便 useUrlHashSync 与测试通过 getState() 访问.
@@ -15,8 +16,10 @@ import { create } from 'zustand';
  * v2.1.0 Stage 1 (Contract 61): 增加 previousMode + recordPreviousMode + returnToPrevious.
  * 用于修复 "阅读 → 复习 → 阅读" 闭环断裂 (I1): 复习结束后可回到复习前的模式 (如 reading),
  * 而非强制回 home. previousMode 不入 URL hash (运行时态, useUrlHashSync 仅同步 currentMode).
+ *
+ * v2.3.0 Stage 4: 新增 'course' 模式, 对应 CoursePathPage, hash '#/course'.
  */
-export type AppMode = 'home' | 'reading' | 'review' | 'wordlist';
+export type AppMode = 'home' | 'reading' | 'review' | 'wordlist' | 'course';
 
 /** AppMode 合法值集合 (用于 hash 解析校验) */
 export const VALID_APP_MODES: ReadonlyArray<AppMode> = [
@@ -24,6 +27,7 @@ export const VALID_APP_MODES: ReadonlyArray<AppMode> = [
   'reading',
   'review',
   'wordlist',
+  'course',
 ];
 
 /** 默认 AppMode (初始 / fallback) */

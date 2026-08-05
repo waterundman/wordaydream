@@ -16,36 +16,9 @@
         "interactions": [
           {
             "domId": "close-settings",
-            "targetPageId": "page-home",
+            "targetPageId": "page-home-v3",
             "hideEdge": true,
             "transitionLabel": "关闭设置"
-          }
-        ]
-      }
-    },
-    {
-      "id": "page-home-v2",
-      "title": "首页 v2",
-      "type": "page",
-      "version": 1,
-      "createdAt": 1783697036000,
-      "canvasData": {
-        "x": 0,
-        "y": 240,
-        "group": 1
-      },
-      "devMetadata": {
-        "htmlSrc": "pages/home-v2.html",
-        "interactions": [
-          {
-            "domId": "start-reading",
-            "targetPageId": "page-reading-v2",
-            "transitionLabel": "开始阅读"
-          },
-          {
-            "domId": "open-settings",
-            "targetPageId": "page-settings",
-            "transitionLabel": "打开设置"
           }
         ]
       }
@@ -66,7 +39,7 @@
         "interactions": [
           {
             "domId": "back-home",
-            "targetPageId": "page-home-v2",
+            "targetPageId": "page-home-v3",
             "hideEdge": true,
             "transitionLabel": "返回首页"
           },
@@ -77,6 +50,279 @@
             "transitionLabel": "打开设置"
           }
         ]
+      }
+    },
+    {
+      "id": "page-home-v3",
+      "title": "首页 v3",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 0,
+        "y": 1000,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/home-v3.html",
+        "interactions": [
+          {
+            "domId": "start-reading",
+            "targetPageId": "page-reading-v2",
+            "transitionLabel": "开始阅读"
+          },
+          {
+            "domId": "open-settings",
+            "targetPageId": "page-settings",
+            "transitionLabel": "打开设置"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-transition-ink-wipe",
+      "title": "过渡动画：墨迹擦除",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 0,
+        "y": 2200,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/transition-ink-wipe.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-transition-word-learned",
+      "title": "状态结算：词汇掌握",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 500,
+        "y": 2200,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/transition-word-learned.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-transition-reading-complete",
+      "title": "状态结算：阅读完成",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 1000,
+        "y": 2200,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/transition-reading-complete.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-transition-achievement",
+      "title": "状态结算：成就解锁",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 1500,
+        "y": 2200,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/transition-achievement.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "image-001",
+      "title": "初次阅读徽章",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 0,
+        "y": 1500
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/badge-book.svg"
+      }
+    },
+    {
+      "id": "image-002",
+      "title": "连续7天徽章",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 200,
+        "y": 1500
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/badge-flame.svg"
+      }
+    },
+    {
+      "id": "image-003",
+      "title": "词汇大师徽章",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 400,
+        "y": 1500
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/badge-medal.svg"
+      }
+    },
+    {
+      "id": "image-004",
+      "title": "阅读达人徽章",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 600,
+        "y": 1500
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/badge-quill.svg"
+      }
+    },
+    {
+      "id": "image-005",
+      "title": "植物枝条分隔线",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 0,
+        "y": 1650
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/divider-sprig.svg"
+      }
+    },
+    {
+      "id": "image-006",
+      "title": "撕纸风格分隔线",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 200,
+        "y": 1650
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/divider-torn-paper.svg"
+      }
+    },
+    {
+      "id": "image-007",
+      "title": "纸张纹理叠加层",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 400,
+        "y": 1650
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/grain-overlay.svg"
+      }
+    },
+    {
+      "id": "image-008",
+      "title": "排版花饰装饰",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 600,
+        "y": 1650
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/ornament-fleuron.svg"
+      }
+    },
+    {
+      "id": "image-009",
+      "title": "幼苗插画",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 0,
+        "y": 1800
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/spot-seedling.svg"
+      }
+    },
+    {
+      "id": "image-010",
+      "title": "手绘下划线",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784104985000,
+      "canvasData": {
+        "x": 200,
+        "y": 1800
+      },
+      "devMetadata": {
+        "imageSrc": "assets/svg/underline-handdrawn.svg"
+      }
+    },
+    {
+      "id": "image-011",
+      "title": "暖色纸张纹理",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 0,
+        "y": 2400
+      },
+      "devMetadata": {
+        "imageSrc": "assets/paper-texture-warm.jpg"
+      }
+    },
+    {
+      "id": "image-012",
+      "title": "深色纸张纹理",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 300,
+        "y": 2400
+      },
+      "devMetadata": {
+        "imageSrc": "assets/paper-texture-dark.jpg"
+      }
+    },
+    {
+      "id": "image-013",
+      "title": "赤陶墨迹飞溅",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1784108402000,
+      "canvasData": {
+        "x": 600,
+        "y": 2400
+      },
+      "devMetadata": {
+        "imageSrc": "assets/ink-splash-terracotta.jpg"
       }
     }
   ],
@@ -92,6 +338,7 @@
       "path": "c:\\Users\\wxy\\.trae-cn\\design_libraries\\WC7449._YE0J6L",
       "versionSource": "metadata.json"
     },
-    "showEdge": true
+    "showEdge": true,
+    "visualEditorEnabled": true
   }
 }

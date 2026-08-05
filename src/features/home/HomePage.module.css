@@ -1,18 +1,17 @@
-/* HomePage (Stage 2 Hero-First 重设计)
+/* HomePage (Design v3 — 单列 960px 居中)
  *
- * Stage 2 变更:
- * - .page max-width: 1024px (从 720px)
- * - 移除 .brandTagline (header 紧凑化)
- * - 新增 .split: 桌面 60/40 grid, 移动端 stack
- * - 渐变 .pageBackground 保留 token 暖色
- * - ultrawide (>1440px) max-width: 1200px
+ * 设计稿对齐:
+ * - max-width: 960px (从 1024px 收窄)
+ * - 单列布局, 移除 60/40 split
+ * - brand title 用 Newsreader display 字体
+ * - footer 含 mini divider + wordmark
  */
 
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-  max-width: 1024px;
+  gap: var(--space-6);
+  max-width: 960px;
   margin: 0 auto;
   padding: var(--space-8) var(--space-6);
   min-height: 100vh;
@@ -24,15 +23,21 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+  margin-bottom: var(--space-1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
 }
 
 .brandTitle {
-  font-size: clamp(1.5rem, 5vw, 1.875rem);
-  font-weight: 600;
-  color: var(--color-ink, #1c1917);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-ink);
   margin: 0;
-  letter-spacing: -0.02em;
-  font-family: var(--font-serif, Georgia, serif);
+  letter-spacing: -0.01em;
+  font-family: var(--font-display);
   line-height: 1.2;
 }
 
@@ -53,62 +58,60 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-secondary, #4a4540);
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
 
 .settingsBtn:hover {
-  color: var(--color-ink, #1c1917);
+  color: var(--color-ink);
   border-color: var(--color-border-strong);
 }
 
 .settingsBtn:focus-visible {
-  outline: 2px solid var(--color-flame, #e07a3b);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-/* === Stage 2 main: 60/40 split (Hero | TodayCard+ProgressRing) === */
+/* === Main: 单列 === */
 .main {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
-.split {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: var(--space-8);
-  align-items: stretch;
-}
-
-.splitLeft {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.splitRight {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  min-width: 0;
-}
-
+/* === Footer === */
 .footer {
-  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--color-border);
 }
 
-/* === v1.6.0 Stage 3.5-6: 每日学习目标 (ProgressRing 下方日进度) === */
+.footerDivider {
+  width: 100%;
+  max-width: 200px;
+  opacity: 0.5;
+}
+
+.footerWordmark {
+  font-size: 0.875rem;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+/* === 每日学习目标 === */
 .dailyGoal {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-sm, 0.875rem);
-  color: var(--color-text-tertiary, #6b655b);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
   margin-top: calc(-1 * var(--space-2));
 }
 
@@ -119,131 +122,79 @@
 }
 
 .dailyGoalLabel {
-  font-size: var(--text-xs, 0.75rem);
-  letter-spacing: var(--tracking-wide, 0.02em);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
 }
 
 .dailyGoalValue {
   font-weight: 600;
-  color: var(--color-text-secondary, #4a4540);
+  color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
 .dailyGoalDone {
-  color: var(--color-accent, #2d5a4d);
+  color: var(--color-accent);
 }
 
 .dailyGoalDivider {
-  color: var(--color-border-strong, #d4d1c8);
+  color: var(--color-border-strong);
   user-select: none;
 }
 
-/* === v1.6.0 Stage 3.6-C: 复习编排提示 (ProgressRing 下方, dueCards 积压时显示) === */
-.reviewPrompt {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-accent-soft, #f0f5f3);
-  border: 1px solid var(--color-accent, #2d5a4d);
-  border-radius: var(--radius-md, 0.5rem);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  animation: reviewPromptEnter var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
-}
-
-.reviewPromptText {
-  font-size: var(--text-sm, 0.875rem);
-  font-weight: 500;
-  color: var(--color-ink, #1c1917);
-}
-
-.reviewPromptBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2) var(--space-4);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-sm, 0.875rem);
-  font-weight: 600;
-  color: var(--color-text-inverse, #ffffff);
-  background: var(--color-accent, #2d5a4d);
-  border: 1px solid var(--color-accent, #2d5a4d);
-  border-radius: var(--radius-md, 0.5rem);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
-              border-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
-              transform var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
-}
-
-.reviewPromptBtn:hover {
-  background: var(--color-accent-hover, #234a3f);
-  border-color: var(--color-accent-hover, #234a3f);
-}
-
-.reviewPromptBtn:active {
-  transform: scale(0.97);
-}
-
-.reviewPromptBtn:focus-visible {
-  outline: 2px solid var(--color-flame, #e07a3b);
-  outline-offset: 2px;
-}
-
-@keyframes reviewPromptEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .reviewPrompt {
-    animation: none;
-  }
-}
-
-/* === v1.6.0 Stage 2: 查看词表按钮 === */
+/* === 查看词表按钮 === */
 .wordlistBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-sm, 0.875rem);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--color-text-secondary, #4a4540);
-  background: var(--color-bg-elevated, #ffffff);
-  border: 1px solid var(--color-border, #e8e4dc);
-  border-radius: var(--radius-md, 0.5rem);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s, background-color 0.2s;
   width: 100%;
 }
 
 .wordlistBtn:hover {
-  color: var(--color-ink, #1c1917);
-  border-color: var(--color-accent, #2d5a4d);
-  background: var(--color-accent-soft, #f0f5f3);
+  color: var(--color-ink);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .wordlistBtn:focus-visible {
-  outline: 2px solid var(--color-flame, #e07a3b);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-/* === Tablet (max-width: 1023px): stack 单列 === */
+/* === Seedling 空状态 === */
+.seedling {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 var(--space-2);
+  text-align: center;
+}
+
+.seedling img {
+  opacity: 0.5;
+}
+
+.seedlingText {
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-serif);
+  margin: 0;
+}
+
+/* === Tablet (max-width: 1023px) === */
 @media (max-width: 1023px) {
-  .split {
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-  }
   .page {
     padding: var(--space-8) var(--space-5);
   }
@@ -253,40 +204,31 @@
 @media (max-width: 767px) {
   .page {
     padding: var(--space-6) var(--space-4);
-    gap: var(--space-6);
+    gap: var(--space-5);
   }
   .brandTitle {
-    font-size: clamp(1.25rem, 6vw, 1.5rem);
+    font-size: 1.125rem;
   }
   .header {
     gap: var(--space-3);
   }
-  .split {
-    gap: var(--space-5);
+  .main {
+    gap: var(--space-4);
+  }
+  .footer {
+    padding-top: var(--space-5);
   }
 }
 
-/* === Ultrawide (min-width: 1440px): 加大 max-width === */
-@media (min-width: 1440px) {
-  .page {
-    max-width: 1200px;
-  }
-}
+/* === Ultrawide (min-width: 1440px): 保持 960px 居中 (设计稿一致) === */
 
-/* === Stage 4 滚动揭示 (useScrollReveal Stage 4 增强版)
- *
- * 4 段叙事错峰入场: opacity 0->1 + translateY(16px)->0, 350ms ease-out-quart
- * 初始态: .reveal (opacity 0 + translateY)
- * 进入视口 + delayMs 后: .reveal.revealVisible (opacity 1 + translateY 0)
- * prefers-reduced-motion: 立即 visible, 0 transform, 0 transition
- * 0 layout shift: will-change: opacity, transform
- */
+/* === Stage 4 滚动揭示 (useScrollReveal) === */
 .reveal {
   opacity: 0;
   transform: translateY(16px);
   transition:
-    opacity var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
-    transform var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+    opacity var(--duration-normal) var(--ease-out-quart),
+    transform var(--duration-normal) var(--ease-out-quart);
   will-change: opacity, transform;
 }
 

@@ -628,8 +628,8 @@ describe('useWordlistStore — 复习编排 (v1.6.0 Stage 3.6-C)', () => {
     expect(goal.reviewsDone).toBe(2);
     expect(goal.newWordsDone).toBe(3);
     expect(goal.date).toBe('2020-01-01');
-    // schemaVersion 升级到 4
-    expect(useWordlistStore.getState().schemaVersion).toBe(4);
+    // schemaVersion 升级到 5 (v2.3.0 Stage 6: 迁移链 v3→v4→v5)
+    expect(useWordlistStore.getState().schemaVersion).toBe(5);
   });
 });
 

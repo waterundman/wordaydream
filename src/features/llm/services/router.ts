@@ -43,12 +43,13 @@ import type { LLMResponse, LLMSettings } from '../../../types';
 import { MockLLMProvider } from './mockProvider';
 import {
   parseLLMResponse,
+  parseLLMResponseAsync,
+  type WorkerSchemaName,
   PassagePayloadSchema,
   EvaluationPayloadSchema,
   DifficultyPayloadSchema,
   GlossPayloadSchema,
 } from './jsonParser';
-import { z } from 'zod';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useToastStore } from '../../../store/useToastStore';
 // v1.4.0 Stage 1: factory 内部 routeDeepSeek 已切到 deepseekGenerate 函数
@@ -56,6 +57,12 @@ import { getProvider as getFactoryProvider, getProviderName, resetProviderCache 
 import { getLLMConfig } from '../config/llmConfig';
 // v1.4.1 Stage 2: 离线模式 store (auto-fallback on navigator.onLine === false)
 import { useOfflineModeStore } from '../store/offlineMode';
+// v0.4.0-harmony Stage 3 (D3): zod 改为动态 import (TMA), 不阻塞首屏.
+// zod 仅在 getSchemaForExpectJson('generic') 路径需要, 加载到 data-parsers chunk 中.
+// import type 仅提供 z 命名空间 (zType.ZodType), 编译时完全擦除, 不影响 bundle.
+// zType 别名避免与运行时 const { z } 冲突 (TS2440).
+import type { z as zType } from 'zod';
+const { z } = await import('zod');
 
 /**
  * v2.2.4 Stage 2 (D2-2): 安全派发持久通知.
@@ -115,7 +122,7 @@ function log(level: 'info' | 'warn' | 'error', message: string) {
 function getSchemaForExpectJson(
   expectJson: ExpectJson | undefined
 // eslint-disable-next-line typescript/no-explicit-any -- ZodType<Input> 逆变
-): z.ZodType<any> | undefined {
+): zType.ZodType<any> | undefined {
   switch (expectJson) {
     case true:
     case 'passage':
@@ -129,6 +136,40 @@ function getSchemaForExpectJson(
     case 'generic':
       // 宽松校验: 接受任意 JSON object, 不强制字段
       return z.object({}).passthrough();
+    case false:
+    case undefined:
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * v0.4.0-harmony Stage 4 (D4): ExpectJson -> WorkerSchemaName 映射
+ *
+ * 用于 parseLLMResponseAsync 调用. 与 getSchemaForExpectJson 平行:
+ * - true / 'passage' -> 'passage'
+ * - 'evaluation' -> 'evaluation'
+ * - 'difficulty' -> 'difficulty'
+ * - 'gloss' -> 'gloss'
+ * - 'generic' -> 'generic'
+ * - false / undefined -> undefined (不走 JSON 解析路径)
+ */
+function getWorkerSchemaNameForExpectJson(
+  expectJson: ExpectJson | undefined
+): WorkerSchemaName | undefined {
+  switch (expectJson) {
+    case true:
+    case 'passage':
+      return 'passage';
+    case 'evaluation':
+      return 'evaluation';
+    case 'difficulty':
+      return 'difficulty';
+    case 'gloss':
+      return 'gloss';
+    case 'generic':
+      return 'generic';
     case false:
     case undefined:
       return undefined;
@@ -354,6 +395,12 @@ async function generateWithJsonRetry(
   // 均走 JSON 解析路径, 但使用不同的 zod schema 校验.
   const schema = getSchemaForExpectJson(options.expectJson);
 
+  // v0.4.0-harmony Stage 4 (D4): 取 Worker schema name (与 schema 平行).
+  // Worker 可用时走 parseLLMResponseAsync (CPU 密集校验在 worker 线程),
+  // Worker 不可用时 fallback 到 sync parseLLMResponse (主线程执行).
+  // schema 仍保留用于 getSchemaForExpectJson 的副作用 (确保 zod 已加载), 以及 fallback 路径.
+  const workerSchemaName = getWorkerSchemaNameForExpectJson(options.expectJson) ?? 'passage';
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const isRetry = attempt > 0;
     const currentOptions: GenerateOptions = isRetry
@@ -372,12 +419,15 @@ async function generateWithJsonRetry(
       }
 
       lastRawText = result.text;
-      // v2.1.1 Stage 2: 传 schema 到 parseLLMResponse, 而非硬编码 PassagePayloadSchema.
-      // schema 为 undefined 时 (不应发生, 调用前已检查 expectJson), 回退到默认 PassagePayloadSchema.
-      const parseResult = parseLLMResponse(result.text, {
-        schema: schema ?? PassagePayloadSchema,
+      // v0.4.0-harmony Stage 4 (D4): 改用 parseLLMResponseAsync (Worker-based + fallback).
+      // - Worker 可用: jsonrepair + zod safeParse 在 worker 线程执行, 主线程 0 阻塞
+      // - Worker 不可用 (jsdom / 老浏览器): 自动 fallback 到 sync parseLLMResponse
+      // schemaName 默认 'passage' (与 schema ?? PassagePayloadSchema 等价).
+      const parseResult = await parseLLMResponseAsync(
+        result.text,
+        workerSchemaName,
         expectedLanguage,
-      });
+      );
       if (parseResult.ok && parseResult.data) {
         log(
           'info',

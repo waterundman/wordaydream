@@ -15,7 +15,6 @@ import type { DifficultyEvaluation, DifficultyLevel, Language } from '../../../t
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { generateWithFallback } from './router';
 import {
-  DIFFICULTY_ANCHORS,
   getCrossLanguageAnchorsByLevel,
 } from '../config/difficultyAnchors';
 import { LRUCache } from '../../dictionary/services/cache';
@@ -51,7 +50,7 @@ const WEIGHT_FREQUENCY = 0.40;
  *
  * 分段: 0-20 -> 1, 20-40 -> 2, 40-60 -> 3, 60-80 -> 4, 80-100 -> 5
  */
-export function normalizeScore(rawScore: number): DifficultyLevel {
+function normalizeScore(rawScore: number): DifficultyLevel {
   if (rawScore < 0) rawScore = 0;
   if (rawScore > 100) rawScore = 100;
   if (rawScore < 20) return 1;
@@ -87,14 +86,6 @@ function clamp1to100(v: number): number {
   if (v < 1) return 1;
   if (v > 100) return 100;
   return v;
-}
-
-function clampPercentileToLevel(percentile: number): DifficultyLevel {
-  if (percentile <= 15) return 1;
-  if (percentile <= 35) return 2;
-  if (percentile <= 60) return 3;
-  if (percentile <= 80) return 4;
-  return 5;
 }
 
 /**
@@ -347,26 +338,6 @@ Score this lemma. Return JSON only.`;
   return fallback;
 }
 
-/**
- * 同步 mock 评估 (不调 LLM), 适用于不阻塞主流程的预判场景
- */
-export function evaluateDifficultySync(
-  lemma: string,
-  language: Language
-): DifficultyEvaluation {
-  return mockEvaluateDifficulty(lemma, language);
-}
-
-/**
- * 把 DifficultyLevel 反推为频率百分位参考点 (用于 UI 展示)
- */
-export function levelToFrequencyGuide(level: DifficultyLevel): number {
-  return clampPercentileToLevel(level * 20);
-}
-
-/**
- * 暴露给 UI: 列出所有锚点 (调试/校准面板)
- */
-export function listAllAnchors() {
-  return DIFFICULTY_ANCHORS;
-}
+// v2.2.4 Round 2: 删除 3 个无引用的死导出 (evaluateDifficultySync /
+// levelToFrequencyGuide / listAllAnchors). 真正的难度评估走 evaluateDifficulty
+// (async) + mockEvaluateDifficulty (sync fallback), 不需要这几个 helper.

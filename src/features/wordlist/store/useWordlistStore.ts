@@ -17,7 +17,7 @@
  * 持久化:
  * - progress: Record<string, WordProgress>, key = `${language}:${lemma.toLowerCase()}`
  * - linearMode: 闯关模式 (默认 true) vs 自由模式
- * - schemaVersion: 2
+ * - schemaVersion: 5 (v2.3.0 Stage 6: 课程模式迁移, Plan 3 仅升级版本号)
  */
 
 import { create } from 'zustand';
@@ -146,12 +146,44 @@ interface WordlistStore {
  * syncFromMemoryCards 方法体内联调用 domain 层 syncFromMemoryCards 纯函数.
  */
 
+/**
+ * v2.3.0 Stage 6 — useWordlistStore v4 → v5 迁移函数 (Plan 3: 仅升级 schemaVersion)
+ *
+ * 设计决策 (Plan 3 — 最简安全方案):
+ * - 仅升级 schemaVersion 到 5, 不把 progress 分配到 useCourseStore.lessonProgress
+ * - 旧用户 progress 保留在本 store (不丢失), useCourseStore 从空状态初始化
+ * - 符合 SPEC: "迁移后旧用户打开应用: currentCourseId=null, 引导选课"
+ *
+ * 选择 Plan 3 而非 Plan 1/2 (跨 store 数据分配) 的理由:
+ * - 跨 store 数据分配需在迁移时遍历 courses 静态定义 + 查找 lemma 归属, 逻辑复杂且易错
+ * - 旧数据不丢失 (仍在 progress 中), 用户选课后从头开始课程进度, 体验可接受
+ * - 幂等性天然满足 (只设置 schemaVersion, 不修改其他字段)
+ *
+ * STAGE CONTRACT:
+ * - 迁移幂等 (重复运行不破坏数据)
+ * - 迁移函数不抛错 (容错处理未知 lemma / 损坏数据)
+ *
+ * @param state - persisted state (可能含旧 progress, dailyGoal 等)
+ * @returns state with schemaVersion=5
+ */
+export function migrateWordlistToCourse(
+  state: Record<string, unknown>
+): Record<string, unknown> {
+  const base = (state ?? {}) as Record<string, unknown>;
+  // Plan 3: 仅升级 schemaVersion, 保留所有现有字段 (progress 不动, 不分配到 useCourseStore)
+  // 容错: 不遍历 progress 内容, 任意损坏数据 / 未知 lemma 都不影响迁移.
+  return {
+    ...base,
+    schemaVersion: 5,
+  };
+}
+
 export const useWordlistStore = create<WordlistStore>()(
   persist(
     (set, get) => ({
       progress: {},
       linearMode: true,
-      schemaVersion: 4,
+      schemaVersion: 5,
       dailyGoal: makeFreshDailyGoal(getTodayString()),
 
       // === 同步派生查询 ===
@@ -391,7 +423,7 @@ export const useWordlistStore = create<WordlistStore>()(
     }),
     {
       name: 'wordaydream:wordlist',
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         progress: state.progress,
@@ -442,7 +474,12 @@ export const useWordlistStore = create<WordlistStore>()(
             reviewsTarget: (dg.reviewsTarget as number | undefined) ?? 0,
           };
         }
-        base.schemaVersion = 4;
+        // v4 → v5: 课程模式迁移 (Plan 3: 仅升级 schemaVersion; 详见 migrateWordlistToCourse)
+        // 旧 progress 保留在本 store, useCourseStore 从空状态初始化 (currentCourseId=null → 引导选课).
+        if (fromVersion < 5) {
+          Object.assign(base, migrateWordlistToCourse(base));
+        }
+        base.schemaVersion = 5;
         return base as Partial<WordlistStore>;
       },
     }

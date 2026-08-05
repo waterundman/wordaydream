@@ -58,6 +58,16 @@ export interface TokenOccurrence {
    * 仅当 alignmentStatus 为 'corrected' / 'fallback' 时有值, 其它为 0.
    */
   originalOffset?: number;
+  /**
+   * v2.2.4 Stage 3 (Bug 13): 该 token 被解决时的答题结果.
+   * - 'correct': 答对, token 变绿色 + 揭开动画
+   * - 'partial' / 'wrong': 答错, 推进进度但不变绿
+   * - undefined: 尚未作答或旧数据兼容
+   *
+   * 解耦 isResolved (推进进度) 与视觉表现 (变绿):
+   * isResolved=true 表示"已处理"(进度条前进), resolvedGrade 决定视觉反馈.
+   */
+  resolvedGrade?: 'correct' | 'partial' | 'wrong';
 }
 
 /**
@@ -372,6 +382,12 @@ export interface ReadingSession {
    * false/undefined = 正常新会话 (loadSession), resolved token 正常建卡.
    */
   isReplay?: boolean;
+  /**
+   * v2.3.0 Stage 3: 关联的课时 ID (课程化模式).
+   * loadSession 传入 lessonId 时写入; 旧数据无此字段不报错 (可选).
+   * 用于 recordEncounter 关联课时进度.
+   */
+  lessonId?: string;
 }
 
 /**

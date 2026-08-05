@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { evaluateAnswer as mockEvaluate } from '../../evaluation/services/evaluateAnswer';
 import { generateWithFallback } from './router';
@@ -378,55 +377,9 @@ function validateAndAlignPassagePayloadInternal(
   };
 }
 
-export function useLLMGenerator<TInput, TOutput>(
-  buildPrompt: (input: TInput) => { system?: string; prompt: string; expectJson?: boolean },
-  fallback: (input: TInput) => TOutput
-) {
-  const llm = useSettingsStore((s) => s.llm);
-  const [lastResult, setLastResult] = useState<TOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+// v2.2.4 Round 2: 删除未使用的 useLLMGenerator<TInput, TOutput> hook.
+// 该 hook 自 v1.5.3 引入后无任何调用方, 且 expectJson=false 分支存在
+// `result.text as unknown as TOutput` 泛型类型洞 (string 强转 TOutput).
+// 真正的 LLM 调用走 evaluateAnswerViaLLM / evaluateDifficultyViaLLM /
+// generatePassageViaLLM 等具名函数, 不需要 generic hook.
 
-  // v1.5.3 fix V3-P3-002: config 变化时同时重置 isLoading, 避免旧请求进行中改配置后 loading 卡住.
-  useEffect(() => {
-    setLastResult(null);
-    setIsLoading(false);
-  }, [llm.provider, llm.model]);
-
-  const run = async (input: TInput): Promise<TOutput> => {
-    if (llm.provider === 'mock' || !llm.enabled) {
-      const result = fallback(input);
-      setLastResult(result);
-      return result;
-    }
-
-    setIsLoading(true);
-    try {
-      const opts = buildPrompt(input);
-      const result = await generateWithFallback(llm, { ...opts, temperature: llm.temperature });
-      if (result.fallbackToMock || !result.text) {
-        const fb = fallback(input);
-        setLastResult(fb);
-        return fb;
-      }
-      const parsed = opts.expectJson
-        ? safeJson(result.text)
-        : (result.text as unknown as TOutput);
-      setLastResult(parsed as TOutput);
-      return parsed as TOutput;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return { run, isLoading, lastResult };
-}
-
-function safeJson(text: string): unknown {
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) return undefined;
-  try {
-    return JSON.parse(match[0]);
-  } catch {
-    return undefined;
-  }
-}

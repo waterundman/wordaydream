@@ -19,6 +19,7 @@ import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
+import { useCourseStore } from '../../course/store/useCourseStore';
 import * as passageGenModule from '../services/passageGenerator';
 import type { MemoryCard, Passage, TokenOccurrence, Language } from '../../../types';
 
@@ -336,5 +337,130 @@ describe('v2.2.2 Stage 2 (Bug 7): loadSession 过滤 new/learning 卡片', () =>
     expect(dueCardsArg.every((c) => c.status === 'review' || c.status === 'relearning')).toBe(true);
     expect(dueCardsArg.some((c) => c.status === 'new')).toBe(false);
     expect(dueCardsArg.some((c) => c.status === 'learning')).toBe(false);
+  });
+});
+
+/**
+ * v2.3.0 Stage 3: loadSession lessonId 关联课时 + recordEncounter
+ *
+ * 覆盖 test_spec:
+ * - T04 [critical]: lessonId 非空时 session.lessonId = lessonId
+ * - T05 [critical]: passage 生成后对每个 token 调用 useCourseStore.recordEncounter(lessonId, lemma)
+ * - T06 [critical]: lessonId 为空时不调用 recordEncounter (向后兼容)
+ */
+function makeMockPassageWithTokens(lemmas: string[]): Passage {
+  const tokens: TokenOccurrence[] = lemmas.map((lemma, i) => ({
+    id: `tok-${i}`,
+    lexemeGroupId: `grp-${lemma}`,
+    surfaceForm: lemma,
+    lemma,
+    objectiveDifficulty: 2,
+    startIndex: i * 10,
+    endIndex: i * 10 + lemma.length,
+    isResolved: false,
+    isActive: false,
+    kind: 'normal' as const,
+    isCompound: false,
+    alignmentStatus: 'perfect',
+    originalOffset: 0,
+  }));
+  return {
+    id: 'test-passage-lesson',
+    language: 'en',
+    difficulty: 2,
+    text: lemmas.join(' '),
+    tokens,
+    lexemeGroups: [],
+    grammarPoints: [],
+  };
+}
+
+describe('v2.3.0 Stage 3: loadSession lessonId 关联课时 + recordEncounter', () => {
+  beforeEach(() => {
+    useMemoryStore.setState({ cards: new Map() });
+    useReadingHistoryStore.setState({ history: [], maxHistory: 50 });
+    useStreakStore.setState({ currentStreak: 0, lastStudyDate: null });
+    useReadingSessionStore.setState({
+      session: null,
+      activeOccurrenceId: null,
+      hoveredGroupId: null,
+      activeGrammarPointId: null,
+      hoveredGrammarTypeId: null,
+      isLoading: false,
+      lastConfig: null,
+      currentHistoryId: null,
+    });
+    useCourseStore.getState().resetProgress();
+    vi.restoreAllMocks();
+  });
+
+  it('T04 [critical]: lessonId 非空时 session.lessonId = lessonId', async () => {
+    const mockPassage = makeMockPassageWithTokens(['cat', 'dog']);
+    vi.spyOn(passageGenModule, 'generatePassage').mockResolvedValue(mockPassage);
+    // mock 成就引擎避免副作用
+    vi.spyOn(useAchievementStore, 'getState').mockReturnValue({
+      ...useAchievementStore.getState(),
+      checkAndUnlock: vi.fn(),
+    });
+    // mock useCourseStore 避免真实 recordEncounter 副作用
+    vi.spyOn(useCourseStore, 'getState').mockReturnValue({
+      ...useCourseStore.getState(),
+      recordEncounter: vi.fn(),
+    });
+
+    await useReadingSessionStore.getState().loadSession('en', 2, 'lesson-abc');
+
+    const session = useReadingSessionStore.getState().session;
+    expect(session).not.toBeNull();
+    expect(session!.lessonId).toBe('lesson-abc');
+  });
+
+  it('T05 [critical]: passage 生成后对每个 token 调用 useCourseStore.recordEncounter(lessonId, lemma)', async () => {
+    // tokens 含重复 lemma 'cat' (去重后应只调一次), 共 2 个唯一 lemma: cat, dog
+    const mockPassage = makeMockPassageWithTokens(['cat', 'dog', 'cat']);
+    vi.spyOn(passageGenModule, 'generatePassage').mockResolvedValue(mockPassage);
+    vi.spyOn(useAchievementStore, 'getState').mockReturnValue({
+      ...useAchievementStore.getState(),
+      checkAndUnlock: vi.fn(),
+    });
+    const recordSpy = vi.fn();
+    vi.spyOn(useCourseStore, 'getState').mockReturnValue({
+      ...useCourseStore.getState(),
+      recordEncounter: recordSpy,
+    });
+
+    await useReadingSessionStore.getState().loadSession('en', 2, 'lesson-1');
+
+    // recordEncounter 用 lemma (去重后), 不是 surface form
+    expect(recordSpy).toHaveBeenCalledWith('lesson-1', 'cat');
+    expect(recordSpy).toHaveBeenCalledWith('lesson-1', 'dog');
+    // 'cat' 在 tokens 中出现两次但去重后只调一次
+    const catCalls = recordSpy.mock.calls.filter((c) => c[1] === 'cat');
+    expect(catCalls).toHaveLength(1);
+    // 总调用数 = 唯一 lemma 数 = 2
+    expect(recordSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('T06 [critical]: lessonId 为空时不调用 recordEncounter (向后兼容)', async () => {
+    const mockPassage = makeMockPassageWithTokens(['cat', 'dog']);
+    vi.spyOn(passageGenModule, 'generatePassage').mockResolvedValue(mockPassage);
+    vi.spyOn(useAchievementStore, 'getState').mockReturnValue({
+      ...useAchievementStore.getState(),
+      checkAndUnlock: vi.fn(),
+    });
+    const recordSpy = vi.fn();
+    vi.spyOn(useCourseStore, 'getState').mockReturnValue({
+      ...useCourseStore.getState(),
+      recordEncounter: recordSpy,
+    });
+
+    // 不传 lessonId (向后兼容, 旧调用方式)
+    await useReadingSessionStore.getState().loadSession('en', 2);
+
+    expect(recordSpy).not.toHaveBeenCalled();
+    // session.lessonId 为 undefined (旧数据无此字段不报错)
+    const session = useReadingSessionStore.getState().session;
+    expect(session).not.toBeNull();
+    expect(session!.lessonId).toBeUndefined();
   });
 });

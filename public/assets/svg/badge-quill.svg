@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#1b1b19" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Engraved quill badge — for "阅读达人" achievement -->
+  <!-- Quill body -->
+  <path d="M48 10 C 40 14, 28 22, 20 34 C 16 40, 14 46, 14 50 C 18 48, 24 44, 30 38 C 40 28, 46 18, 48 10 Z" fill="#d97757" fill-opacity="0.1" stroke="#d97757" stroke-width="1.5"/>
+  <!-- Feather hatching -->
+  <path d="M42 16 C 38 18, 34 20, 30 24" stroke-opacity="0.3" stroke-width="1"/>
+  <path d="M44 20 C 40 22, 36 24, 32 28" stroke-opacity="0.3" stroke-width="1"/>
+  <path d="M40 22 C 36 24, 32 26, 28 30" stroke-opacity="0.3" stroke-width="1"/>
+  <!-- Nib -->
+  <path d="M14 50 L 10 54 L 16 52 Z" fill="#1b1b19" fill-opacity="0.15"/>
+  <!-- Ink drop -->
+  <circle cx="10" cy="56" r="1.5" fill="#d97757" fill-opacity="0.3"/>
+</svg>

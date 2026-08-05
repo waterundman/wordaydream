@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "deveco": {
+      "command": "node",
+      "args": ["W:\\项目仓库\\dev studio mcp\\dist\\index.js"],
+      "env": {
+        "DEVECO_SDK_HOME": "D:\\DevEco Studio\\sdk",
+        "NODE_HOME": "D:\\DevEco Studio\\tools\\node",
+        "DEVECO_PROJECT_ROOT": "w:\\wordaydream\\harmony"
+      }
+    }
+  }
+}

@@ -13,6 +13,7 @@
  * - learning: 半圆 (accent-orange)
  * - unseen: 空心圆 (muted)
  */
+import { memo } from 'react';
 import type { Language } from '../../../types';
 import type { WordStatus } from '../store/useWordlistStore';
 import styles from '../WordlistPage.module.css';
@@ -23,7 +24,11 @@ interface WordlistRowProps {
   translation?: string;
   status: WordStatus;
   isExpanded: boolean;
-  onToggle: () => void;
+  /**
+   * v0.4.0-harmony Stage 1 D1: 接收 lemma 参数, 让父组件传入稳定的 useCallback handler.
+   * 避免每次渲染创建新的内联函数 `() => handleToggle(lemma)` 导致 React.memo 失效.
+   */
+  onToggle: (lemma: string) => void;
   language: Language;
 }
 
@@ -99,7 +104,7 @@ function statusLabel(status: WordStatus): string {
   return '未学';
 }
 
-export function WordlistRow({
+function WordlistRowBase({
   lemma,
   pos,
   translation,
@@ -110,7 +115,7 @@ export function WordlistRow({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onToggle();
+      onToggle(lemma);
     }
   };
 
@@ -124,7 +129,7 @@ export function WordlistRow({
   return (
     <div
       className={`${styles.row} ${isExpanded ? styles.rowExpanded : ''}`}
-      onClick={onToggle}
+      onClick={() => onToggle(lemma)}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
@@ -146,3 +151,10 @@ export function WordlistRow({
     </div>
   );
 }
+
+/**
+ * v0.4.0-harmony Stage 1 D1: React.memo 包裹, 默认浅比较 props.
+ * - 评分点击仅修改 progress[key].status, 其他行的 props (lemma/status/isExpanded) 不变 → 跳过重渲染.
+ * - onToggle 必须是 useCallback 稳定的函数引用, 否则 memo 失效.
+ */
+export const WordlistRow = memo(WordlistRowBase);

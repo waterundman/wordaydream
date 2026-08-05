@@ -12,7 +12,8 @@
  * - ESC 关闭 + 点击 overlay 关闭
  * - 0 emoji
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import type { DifficultyLevel } from '../../../types';
 import styles from './GraduationModal.module.css';
 
@@ -43,6 +44,11 @@ export function GraduationModal({
   onEnterNext,
   onStay,
 }: GraduationModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap
+  useFocusTrap(modalRef, open);
+
   useEffect(() => {
     if (!open) return;
     const onEsc = (e: KeyboardEvent) => {
@@ -64,13 +70,14 @@ export function GraduationModal({
       <div
         className={styles.overlay}
         onClick={onStay}
-        role="dialog"
-        aria-modal="true"
-        aria-label="课程毕业"
       >
         <div
+          ref={modalRef}
           className={styles.modal}
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label="课程毕业"
         >
           <div className={styles.body}>
             <h2 className={styles.title}>恭喜完成全部课程!</h2>
@@ -107,13 +114,14 @@ export function GraduationModal({
     <div
       className={styles.overlay}
       onClick={onStay}
-      role="dialog"
-      aria-modal="true"
-      aria-label="等级毕业"
     >
       <div
+        ref={modalRef}
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="等级毕业"
       >
         <div className={styles.body}>
           <h2 className={styles.title}>恭喜完成 {currentCEFR}!</h2>

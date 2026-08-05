@@ -163,11 +163,3 @@ export function getCrossLanguageAnchorsByLevel(level: DifficultyLevel): {
     de: getAnchorsByLevel('de', level),
   };
 }
-
-/**
- * 所有锚点 (扁平数组), 主要用于调试/UI 展示
- */
-export const DIFFICULTY_ANCHORS: DifficultyAnchor[] = [
-  ...ENGLISH_ANCHORS,
-  ...GERMAN_ANCHORS,
-];

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#1b1b19" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Engraved medal badge — for "词汇大师" achievement -->
+  <!-- Medal circle -->
+  <circle cx="32" cy="26" r="16" fill="#d97757" fill-opacity="0.1" stroke="#d97757" stroke-width="1.5"/>
+  <!-- Engraved rays -->
+  <path d="M32 14 L 32 10" stroke-opacity="0.4"/>
+  <path d="M32 38 L 32 42" stroke-opacity="0.4"/>
+  <path d="M20 26 L 16 26" stroke-opacity="0.4"/>
+  <path d="M44 26 L 48 26" stroke-opacity="0.4"/>
+  <path d="M23.5 17.5 L 20.5 14.5" stroke-opacity="0.3" stroke-width="1"/>
+  <path d="M40.5 17.5 L 43.5 14.5" stroke-opacity="0.3" stroke-width="1"/>
+  <path d="M23.5 34.5 L 20.5 37.5" stroke-opacity="0.3" stroke-width="1"/>
+  <path d="M40.5 34.5 L 43.5 37.5" stroke-opacity="0.3" stroke-width="1"/>
+  <!-- Star center -->
+  <path d="M32 20 L 34 24 L 38 24 L 35 27 L 36 31 L 32 29 L 28 31 L 29 27 L 26 24 L 30 24 Z" fill="#d97757" fill-opacity="0.2" stroke="#d97757" stroke-width="1"/>
+  <!-- Ribbon -->
+  <path d="M24 40 L 22 56 L 28 52 L 32 56 L 36 52 L 42 56 L 40 40" fill="none" stroke="#1b1b19" stroke-width="1.5"/>
+</svg>

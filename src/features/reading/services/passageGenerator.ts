@@ -17,8 +17,10 @@
 
 import type {
   DifficultyLevel,
+  GrammarPoint,
   Language,
   LexemeGroup,
+  LLMSettings,
   MemoryCard,
   Passage,
   TokenOccurrence,
@@ -29,12 +31,14 @@ import { getWordlistState, getMemoryState } from '../../../domain/storeAccessors
 import { getCachedWordlist } from '../../../data/wordlists';
 import { buildPassagePrompt } from '../../llm/config/prompts';
 import { generateWithFallback } from '../../llm/services/router';
+import { streamingGenerate } from '../../llm/services/streamingProvider';
 import { extractPassageJson, safeJsonParse, type PassageJsonPayload } from '../../llm/services/jsonParser';
 import {
   normalizePassagePayload,
   validateAndAlignPassagePayloadWithResults,
 } from '../../llm/services/llmAdapter';
 import type { AlignmentResult } from '../../llm/utils/alignmentValidator';
+import { validateToken } from '../../llm/utils/alignmentValidator';
 import {
   evaluateDifficulty,
   mockEvaluateDifficulty,
@@ -128,6 +132,48 @@ export function clearRecentTitles(): void {
 }
 
 /**
+ * v2.3.0 Stage 3: 把 targetLemmas 的 MUST INCLUDE 指令注入到 prompt 中
+ * (插入到 "MANDATORY self-check" 之前, 与 wordlistConstraint 注入点一致).
+ *
+ * 指令要求 LLM 必须在 passage 中自然融入这些课程目标词, 并在 tokens 中标注.
+ */
+function injectTargetLemmasSection(prompt: string, targetLemmas: string[]): string {
+  const wordList = targetLemmas.join(', ');
+  const section = `Target vocabulary (v2.3.0 — course lesson target words):
+MUST INCLUDE the following target vocabulary words in the passage: ${wordList}
+These words MUST be woven naturally into the text and appear in the "tokens" array with correct startIndex/endIndex and lemma matching.`;
+  const marker = 'MANDATORY self-check';
+  const idx = prompt.indexOf(marker);
+  if (idx < 0) {
+    return `${prompt}\n\n${section}`;
+  }
+  return `${prompt.slice(0, idx)}${section}\n\n${prompt.slice(idx)}`;
+}
+
+/**
+ * v2.3.0 Stage 3: 校验 targetLemmas 在最终 passage tokens 中的命中率.
+ *
+ * 命中率 = targetLemmas 中出现在 passage tokens 的 lemma 数 / targetLemmas.length.
+ * 命中率 < 60% 时 console.warn 但不抛错 (LLM 可能未完全遵循 MUST INCLUDE 指令,
+ * 完成判定用比率而非绝对数, 不阻塞流程).
+ */
+function checkTargetLemmasHitRate(passage: Passage, targetLemmas: string[]): void {
+  const passageLemmas = new Set(
+    passage.tokens.map((t) => t.lemma.toLowerCase())
+  );
+  const hitCount = targetLemmas.filter((l) =>
+    passageLemmas.has(l.toLowerCase())
+  ).length;
+  const hitRate = hitCount / targetLemmas.length;
+  if (hitRate < 0.6) {
+    console.warn(
+      '[passageGenerator] targetLemmas hit rate < 60%:',
+      hitRate
+    );
+  }
+}
+
+/**
  * v1.5.3 fix V3-P3-005: 返回新数组而非原地修改, 避免副作用隐患.
  * 把 LLM 输出的 passage + 真实 difficulty 评估合并为最终 Passage.
  */
@@ -174,7 +220,10 @@ export function buildPassageFromLLM(
     endIndex: number;
     partOfSpeech: string;
   }>,
-  alignedTokens?: AlignmentResult[]
+  alignedTokens?: AlignmentResult[],
+  // v2.2.4 Stage 3 (Bug 8): 透传 LLM passage 阶段已对齐的 grammarPoints.
+  // 之前硬编码 grammarPoints: [], 即使 alignedPayload.grammarPoints 已对齐也被丢弃.
+  grammarPoints?: GrammarPoint[]
 ): Passage {
   const id = `passage-${language}-${Date.now().toString(36)}`;
 
@@ -247,7 +296,8 @@ export function buildPassageFromLLM(
     title: llmTitle,
     tokens,
     lexemeGroups,
-    grammarPoints: [],
+    // v2.2.4 Stage 3 (Bug 8): 透传已对齐的 grammarPoints, 不再硬编码空数组.
+    grammarPoints: grammarPoints ?? [],
   };
 }
 
@@ -298,6 +348,86 @@ function applyDifficulties(
 }
 
 /**
+ * v2.2.4 Stage 2 (流式): 用 streamingGenerate 收集完整文本
+ *
+ * - 调 streamingGenerate, 每收到一个 chunk 调 onChunk(delta) 推给 UI
+ * - 完成后返回 { text } 给后续 JSON 解析流程
+ * - 流式失败 (网络错误 / provider 不支持 / abort) 时 fallback 到 generateWithFallback
+ *
+ * 设计权衡:
+ * - streamingGenerate 返回 StreamAbortHandle (同步), 内部 fire-and-forget
+ * - 这里用 Promise 包装, 让调用方可以 await 完整文本
+ * - abort 时 reject 'Aborted', 与 generateWithFallback 行为一致
+ */
+async function generatePassageViaStream(
+  llm: LLMSettings,
+  options: {
+    system: string;
+    prompt: string;
+    temperature: number;
+    maxTokens: number;
+    expectJson: boolean;
+    expectedLanguage: Language;
+    signal?: AbortSignal;
+  },
+  onChunk: (delta: string) => void
+): Promise<{ text: string; fallbackToMock?: boolean }> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    const settle = (result: { text: string; fallbackToMock?: boolean }) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(result);
+    };
+
+    streamingGenerate(llm.provider as 'openai' | 'deepseek', {
+      system: options.system,
+      prompt: options.prompt,
+      temperature: options.temperature,
+      maxTokens: options.maxTokens,
+      expectJson: options.expectJson,
+      expectedLanguage: options.expectedLanguage,
+      signal: options.signal,
+      onChunk: (delta) => {
+        try {
+          onChunk(delta);
+        } catch {
+          // onChunk 异常不应中断流 (调用方 UI bug 不应影响生成)
+        }
+      },
+      onComplete: (fullText) => {
+        settle({ text: fullText });
+      },
+      onError: async (err) => {
+        // 流式失败 → fallback 到非流式 generateWithFallback
+        if (options.signal?.aborted) {
+          settle({ text: '', fallbackToMock: true });
+          return;
+        }
+        console.warn(
+          '[passageGenerator] stream failed, falling back to non-stream:',
+          err.message
+        );
+        try {
+          const fallback = await generateWithFallback(llm, {
+            system: options.system,
+            prompt: options.prompt,
+            temperature: options.temperature,
+            maxTokens: options.maxTokens,
+            expectJson: options.expectJson,
+            expectedLanguage: options.expectedLanguage,
+            signal: options.signal,
+          });
+          settle({ text: fallback.text, fallbackToMock: fallback.fallbackToMock });
+        } catch {
+          settle({ text: '', fallbackToMock: true });
+        }
+      },
+    });
+  });
+}
+
+/**
  * 主入口: 生成 Passage
  *
  * - LLM enabled → 调真实 LLM
@@ -312,7 +442,13 @@ export async function generatePassage(
   signal?: AbortSignal,
   // v2.2.1 Stage 1 (Bug 1): 强制跳过缓存读取, 供 loadSession 每次生成新 passage.
   // 缓存写入逻辑保持不变 (forceRefresh 时仍写入缓存, 供页面刷新等场景命中).
-  forceRefresh?: boolean
+  forceRefresh?: boolean,
+  // v2.2.4 Stage 2 (流式): 流式生成时, 每收到一个 chunk 调用一次.
+  // 传入此参数 + llm.streaming=true 时走流式分支, 前端 UI 可渐进显示 LLM 输出.
+  onChunk?: (delta: string) => void,
+  // v2.3.0 Stage 3: 课程课时目标词元, 非空时注入 LLM prompt 强制包含, 并校验命中率.
+  // 向后兼容: 未提供或空数组时走原逻辑, 完全不变.
+  targetLemmas?: string[]
 ): Promise<Passage> {
   const { llm } = useSettingsStore.getState();
   const hasDueCards = dueCards.length > 0;
@@ -387,7 +523,7 @@ export async function generatePassage(
         ? { targetWords, optionalWords }
         : undefined;
 
-      const { system, prompt } = buildPassagePrompt(
+      const { system, prompt: basePrompt } = buildPassagePrompt(
         language,
         difficulty,
         dueCards,
@@ -395,21 +531,44 @@ export async function generatePassage(
         // v2.2.2 Stage 2 (Bug 5): 注入最近标题黑名单, 避免连续生成相同标题
         getRecentTitles()
       );
+      // v2.3.0 Stage 3: targetLemmas 非空时注入 MUST INCLUDE 指令到 prompt,
+      // 强制 LLM 在 passage 中自然融入课程目标词. 空或未提供时走原逻辑.
+      const prompt = targetLemmas && targetLemmas.length > 0
+        ? injectTargetLemmasSection(basePrompt, targetLemmas)
+        : basePrompt;
       // v2.2.2 Stage 2 (Bug 5): passage 生成使用更高 temperature 增加多样性,
       // 不影响评估 (evaluateAnswer 用单独的调用, temperature 由其自身控制).
       const passageTemperature = Math.max(llm.temperature, 0.85);
-      const result = await generateWithFallback(llm, {
-        system,
-        prompt,
-        temperature: passageTemperature,
-        maxTokens: 1500,
-        expectJson: true,
-        // v1.2.0 hotfix-3 (Stage 4 P1 最后加固): 透传 expectedLanguage
-        // 供 router → parseLLMResponse 做 language compliance check.
-        expectedLanguage: language,
-        // v1.5.3 fix V3-P3-006: 透传 signal 取消 LLM fetch.
-        signal,
-      });
+
+      // v2.2.4 Stage 2 (流式): 当 llm.streaming 开启且 onChunk 回调存在时,
+      // 走流式分支 — 用 streamingGenerate 增量推送 LLM 输出给 UI,
+      // 完成后用累积文本走原有 JSON 解析 + alignment 流程.
+      // 流式失败 / provider=anthropic (后端不支持) 时自动 fallback 到非流式.
+      let result: { text: string; fallbackToMock?: boolean };
+      if (llm.streaming && onChunk && (llm.provider === 'deepseek' || llm.provider === 'openai')) {
+        result = await generatePassageViaStream(llm, {
+          system,
+          prompt,
+          temperature: passageTemperature,
+          maxTokens: 1500,
+          expectJson: true,
+          expectedLanguage: language,
+          signal,
+        }, onChunk);
+      } else {
+        result = await generateWithFallback(llm, {
+          system,
+          prompt,
+          temperature: passageTemperature,
+          maxTokens: 1500,
+          expectJson: true,
+          // v1.2.0 hotfix-3 (Stage 4 P1 最后加固): 透传 expectedLanguage
+          // 供 router → parseLLMResponse 做 language compliance check.
+          expectedLanguage: language,
+          // v1.5.3 fix V3-P3-006: 透传 signal 取消 LLM fetch.
+          signal,
+        });
+      }
 
       // v2.1.0 hotfix: extractPassageJson 的严格 slice 校验 (rawText.substring(start, end) !== surfaceForm)
       // 会过滤掉所有 offset 不准确的 tokens, 导致 payload 为 null, fallback 到 mock.
@@ -489,10 +648,34 @@ export async function generatePassage(
         const enriched = applyDifficulties(basePassage, difficultyMap);
 
         // 3. 检测语法点
-        const grammarPoints = await detectGrammarPoints(enriched.text, language);
+        // v2.2.4 Stage 3 (Bug 8): 传入 difficulty 让 LLM 选合适难度的语法点.
+        // detectGrammarPoints 已改用 buildGrammarDetectionPrompt 强约束 prompt:
+        //   - 明确要求 text 是原文连续子串 (case-sensitive)
+        //   - 有 few-shot 示例 + self-check
+        //   - mock 路径也修复了 text 为原文子串 (不再用描述性文本)
+        const rawGrammarPoints = await detectGrammarPoints(enriched.text, language, enriched.difficulty);
         // v1.5.3 fix V4-P3-005: 语法检测后检查 abort.
         if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-        enriched.grammarPoints = grammarPoints;
+        // v2.2.4 Stage 3 (Bug 8): 对 grammarPoints 跑 validateToken 6 步对齐协议,
+        // 与 token 走同一对齐流水线, 修复 offset 不准问题.
+        // - 用 gp.text 作为 surfaceForm, 在 enriched.text 中查找真实位置
+        // - 过滤 dropped (找不到匹配的语法点)
+        // - 用校正后的 start/end 覆写 startIndex/endIndex, text 更新为切片
+        enriched.grammarPoints = rawGrammarPoints
+          .map((gp) => {
+            const result = validateToken(
+              { startIndex: gp.startIndex, endIndex: gp.endIndex, surfaceForm: gp.text },
+              enriched.text
+            );
+            if (result.status === 'dropped') return null;
+            return {
+              ...gp,
+              startIndex: result.start,
+              endIndex: result.end,
+              text: result.surfaceForm,
+            };
+          })
+          .filter((gp): gp is NonNullable<typeof gp> => gp !== null);
 
         // 4. 检测复合词 (德语)
         // v1.5.3 fix V3-P3-005: 用返回值替代原地修改, 避免副作用.
@@ -556,8 +739,19 @@ export async function generatePassage(
         // 下次生成时通过 avoidTitles 注入 prompt, 避免连续重复.
         pushRecentTitle(enriched.title ?? '');
 
-        if (!hasDueCards) putIntoCache(cacheKey, enriched);
-        return enriched;
+        // v2.2.4 Stage 3 (Bug 11): 基于难度+文章长度的动态划线密度筛选.
+        // 在生成完成后对 tokens/grammarPoints 做密度控制, 确保划线数量与
+        // 文章难度/长度匹配, 避免划线过多或过少.
+        const densityAdjusted = selectHighlightsByDensity(enriched);
+
+        // v2.3.0 Stage 3: targetLemmas 命中率校验 (alignment 对齐 + 密度筛选后).
+        // 命中率 < 60% 时 console.warn 但不阻塞 (LLM 可能未完全遵循 MUST INCLUDE 指令).
+        if (targetLemmas && targetLemmas.length > 0) {
+          checkTargetLemmasHitRate(densityAdjusted, targetLemmas);
+        }
+
+        if (!hasDueCards) putIntoCache(cacheKey, densityAdjusted);
+        return densityAdjusted;
       }
       // 解析失败, 落到 mock
     } catch (error) {
@@ -571,5 +765,94 @@ export async function generatePassage(
   }
 
   // 3. fallback 到 mock 文本
-  return getMockPassage(language, difficulty);
+  // v2.2.4 Stage 3 (Bug 11): mock 路径也走密度筛选, 保持一致的划线体验.
+  return selectHighlightsByDensity(getMockPassage(language, difficulty));
+}
+
+/**
+ * v2.2.4 Stage 3 (Bug 11): 基于难度和文章长度的动态划线密度策略.
+ *
+ * 设计目标:
+ * - 短文章少划线 (避免视觉过载), 长文章多划线 (确保覆盖)
+ * - 低难度少划线 (降低认知负担), 高难度多划线 (密集学习)
+ * - token 按难度优先排序 (高难度词优先保留), grammar 按startIndex 均匀分布
+ *
+ * 密度公式:
+ * - 基础密度 = 难度系数 (1→12%, 2→15%, 3→18%, 4→20%, 5→22%)
+ * - 文章长度调整: <100词 → ×0.7, 100-200词 → ×1.0, >200词 → ×1.2
+ * - 目标 token 数 = clamp(词数 × 密度, 6, 20)
+ * - 目标 grammar 数 = clamp(段落数, 2, 5)
+ *
+ * @param passage 已生成的 passage (含 tokens + grammarPoints)
+ * @returns 调整后的 passage (tokens/grammarPoints 可能被筛选)
+ */
+function selectHighlightsByDensity(passage: Passage): Passage {
+  const text = passage.text;
+  const difficulty = passage.difficulty;
+
+  // 1. 估算词数 (按空格分词, 粗略)
+  const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
+
+  // 2. 估算段落数 (按 \n\n 分词)
+  const paragraphCount = text.split(/\n\n+/).filter((p) => p.trim().length > 0).length;
+
+  // 3. 基础密度 (难度系数)
+  const baseDensity: Record<number, number> = {
+    1: 0.12,
+    2: 0.15,
+    3: 0.18,
+    4: 0.20,
+    5: 0.22,
+  };
+  const base = baseDensity[difficulty] ?? 0.15;
+
+  // 4. 文章长度调整系数
+  let lengthFactor: number;
+  if (wordCount < 100) {
+    lengthFactor = 0.7;
+  } else if (wordCount <= 200) {
+    lengthFactor = 1.0;
+  } else {
+    lengthFactor = 1.2;
+  }
+
+  // 5. 目标 token 数
+  // 最小 8 与 wordlist 补偿的 MIN_TOKENS 一致, 避免补偿后被密度筛选再降低.
+  const targetTokenCount = Math.max(8, Math.min(20, Math.round(wordCount * base * lengthFactor)));
+
+  // 6. 目标 grammar 数
+  const targetGrammarCount = Math.max(2, Math.min(5, paragraphCount));
+
+  // 7. 筛选 tokens — 按难度优先排序 (高难度词优先保留)
+  const sortedByDifficulty = [...passage.tokens].sort(
+    (a, b) => b.objectiveDifficulty - a.objectiveDifficulty
+  );
+  const selectedTokens = sortedByDifficulty.slice(0, targetTokenCount);
+  // 恢复按 startIndex 排序 (渲染需要)
+  selectedTokens.sort((a, b) => a.startIndex - b.startIndex);
+
+  // 8. 筛选 grammarPoints — 按 startIndex 均匀分布
+  let selectedGrammarPoints = passage.grammarPoints;
+  if (passage.grammarPoints.length > targetGrammarCount) {
+    // 均匀采样: 每隔 Math.floor(total/target) 取一个
+    const step = Math.floor(passage.grammarPoints.length / targetGrammarCount);
+    selectedGrammarPoints = passage.grammarPoints.filter((_, i) => i % step === 0).slice(0, targetGrammarCount);
+  }
+
+  console.info(
+    `[Highlights] words=${wordCount}, paragraphs=${paragraphCount}, ` +
+    `difficulty=${difficulty}, targetTokens=${targetTokenCount}/${passage.tokens.length}, ` +
+    `targetGrammar=${targetGrammarCount}/${passage.grammarPoints.length}`
+  );
+
+  return {
+    ...passage,
+    tokens: selectedTokens,
+    lexemeGroups: selectedTokens.length < passage.tokens.length
+      ? passage.lexemeGroups.filter((lg) =>
+          selectedTokens.some((t) => t.lexemeGroupId === lg.id)
+        )
+      : passage.lexemeGroups,
+    grammarPoints: selectedGrammarPoints,
+  };
 }

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#1b1b19" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Engraved book badge — for "初次阅读" achievement -->
+  <!-- Book outline -->
+  <path d="M12 14 L 32 10 L 52 14 L 52 50 L 32 46 L 12 50 Z"/>
+  <!-- Spine -->
+  <path d="M32 10 L 32 46"/>
+  <!-- Pages (hatching) -->
+  <path d="M16 18 L 28 16" stroke-opacity="0.4"/>
+  <path d="M16 22 L 28 20" stroke-opacity="0.4"/>
+  <path d="M16 26 L 28 24" stroke-opacity="0.4"/>
+  <path d="M36 16 L 48 18" stroke-opacity="0.4"/>
+  <path d="M36 20 L 48 22" stroke-opacity="0.4"/>
+  <path d="M36 24 L 48 26" stroke-opacity="0.4"/>
+  <!-- Terracotta wash on cover -->
+  <path d="M12 14 L 32 10 L 52 14 L 52 50 L 32 46 L 12 50 Z" fill="#d97757" fill-opacity="0.1"/>
+  <!-- Ribbon bookmark -->
+  <path d="M44 14 L 44 28 L 40 25 L 36 28 L 36 16" fill="#d97757" fill-opacity="0.15" stroke="#d97757" stroke-width="1.25"/>
+</svg>

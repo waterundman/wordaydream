@@ -1,0 +1,244 @@
+/* CurrentLessonCard (v2.3.0 Stage 5)
+ *
+ * 首页当前课时卡片.
+ *
+ * 两种状态:
+ * - 有 currentLesson: 展示 lesson.title + Module.title + 进度环 + 继续学习/查看课程按钮
+ * - 无 currentLesson: 展示 '选择课程' CTA + 浏览课程按钮
+ *
+ * 设计约束:
+ * - 配色用 tokens.css 变量 (warm white #faf8f5 + dark ink #1c1917)
+ * - 无 emoji
+ * - 进度环用 CSS conic-gradient 实现
+ * - prefers-reduced-motion 降级
+ */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-bg-elevated, #ffffff);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-lg, 0.75rem);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+  font-family: var(--font-sans, system-ui, sans-serif);
+  color: var(--color-ink, #1c1917);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-tertiary, #6b655b);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+.lessonTitle {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  font-family: var(--font-serif, Georgia, serif);
+  line-height: 1.3;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.moduleTitle {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-secondary, #4a4540);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* === 主体: 进度环 + 按钮区 === */
+.body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* === 进度环 (CSS conic-gradient) === */
+.progressRing {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-accent, #2d5a4d) calc(var(--progress, 0) * 360deg),
+    var(--color-border, #e8e4dc) 0deg
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--duration-normal, 350ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.progressInner {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--color-bg-elevated, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progressPct {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === 按钮区 === */
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-accent, #2d5a4d);
+  border: 1px solid var(--color-accent, #2d5a4d);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: var(--touch-min-size, 44px);
+  transition:
+    background-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    border-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    transform var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.primaryBtn:hover {
+  background: var(--color-accent-hover, #234a3f);
+  border-color: var(--color-accent-hover, #234a3f);
+}
+
+.primaryBtn:active {
+  transform: scale(0.97);
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 500;
+  color: var(--color-text-secondary, #4a4540);
+  background: transparent;
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    border-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    background-color var(--duration-fast, 200ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.secondaryBtn:hover {
+  color: var(--color-ink, #1c1917);
+  border-color: var(--color-accent, #2d5a4d);
+  background: var(--color-accent-soft, #f0f5f3);
+}
+
+.secondaryBtn:focus-visible {
+  outline: 2px solid var(--color-flame, #e07a3b);
+  outline-offset: 2px;
+}
+
+/* === 无 currentLesson: 选择课程 CTA === */
+.emptyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.emptyTitle {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  font-family: var(--font-serif, Georgia, serif);
+  line-height: 1.3;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.emptyCopy {
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-secondary, #4a4540);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.emptyActions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* === Mobile === */
+@media (max-width: 767px) {
+  .card {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-4);
+  }
+
+  .actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .primaryBtn {
+    flex: 1;
+  }
+}
+
+/* === Reduced motion: 关闭过渡 === */
+@media (prefers-reduced-motion: reduce) {
+  .progressRing {
+    transition: none;
+  }
+
+  .primaryBtn,
+  .primaryBtn:hover,
+  .primaryBtn:active,
+  .secondaryBtn,
+  .secondaryBtn:hover {
+    transition: none;
+    transform: none;
+  }
+}

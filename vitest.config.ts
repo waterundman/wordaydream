@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 /**
@@ -10,13 +10,38 @@ import react from '@vitejs/plugin-react';
  * - globals: false (显式 import { describe, it, expect } from 'vitest')
  * - include glob: 覆盖 `src/**\/*.{test,spec}.{ts,tsx}` 全文件类型, 自动包含
  *   - `src/__tests__/`
- *   - `src/__integration__/` (v1.2.0 新增, 跨 stage 集成测试)
+ *   - `src/__integration__` (v1.2.0 新增, 跨 stage 集成测试)
  *   - `src/features/**\/__tests__/`
  *   - `src/features/**\/*.{test,spec}.{ts,tsx}` (单元 / 组件测试)
  * - 与 vite.config.ts 平行, 不复用 plugins 之外的字段
+ *
+ * v0.1.0-harmony Stage 2: 新增 pwaRegisterStubPlugin.
+ * vitest 配置不加载 vite-plugin-pwa, 但 src/platform/swRegistration.ts 内的
+ * `import('virtual:pwa-register')` 会被 Vite import-analysis 静态扫描.
+ * 提供一个 no-op stub 让静态解析通过; 测试内 vi.mock 仍可覆盖为 spy.
+ * 镜像 vite.config.ts 的 harmonyPwaStubPlugin 模式.
  */
+function pwaRegisterStubPlugin(): Plugin {
+  const virtualModuleId = 'virtual:pwa-register';
+  const resolvedId = `\0${virtualModuleId}`;
+  return {
+    name: 'pwa-register-stub',
+    enforce: 'pre',
+    resolveId(id) {
+      if (id === virtualModuleId) return resolvedId;
+      return null;
+    },
+    load(id) {
+      if (id === resolvedId) {
+        return 'export function registerSW() { return () => {} }';
+      }
+      return null;
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), pwaRegisterStubPlugin()],
   test: {
     environment: 'jsdom',
     globals: false,

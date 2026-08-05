@@ -1,30 +1,25 @@
-/* HeroSection (Stage 2 方案 A: Hero-First)
+/* HeroSection (Design v3 — Hero Card)
  *
- * 渐变背景 + 大字号 serif 标题 + 大 CTA 56px
- * 入场: fade-in + slide-up 8px, 200ms ease-out-quart
- * 响应式: 3 档 (mobile / tablet / desktop)
- * prefers-reduced-motion: transform: none, 0.01ms
+ * 纯色奶油面板 (surface-elevated) + 1px border + 微阴影
+ * 居中 fleuron + flex-row (文本 | 进度环)
+ * 入场: fleuron/heading/underline/dropcap/cta 错峰 fadeUp
  */
 
 .hero {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  padding: 48px 32px;
-  background: var(--color-bg-subtle);
+  padding: 32px;
+  background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
   width: 100%;
-  /* 入场动画: 初始隐藏, 等待 useScrollReveal 翻为 visible */
   opacity: 0;
   transform: translateY(8px);
   transition:
-    opacity var(--duration-fast) var(--ease-out-quart),
-    transform var(--duration-fast) var(--ease-out-quart);
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
   will-change: opacity, transform;
 }
 
@@ -33,83 +28,90 @@
   transform: translateY(0);
 }
 
-/* 顶部小标签 */
-.eyebrow {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-family: var(--font-sans);
-  font-weight: 500;
-  margin-bottom: 12px;
+/* === Fleuron 居中装饰 === */
+.fleuronWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 
-/* 主标题 (serif, 大字号 clamp) */
-.title {
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  font-weight: 600;
+.fleuron {
+  display: block;
+}
+
+/* === Body: 文本 | 进度环 === */
+.body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.textContent {
+  flex: 1;
+  min-width: 0;
+}
+
+/* === 标题 (Newsreader display) === */
+.heading {
+  font-size: 1.875rem;
+  font-weight: 500;
   color: var(--color-ink);
-  font-family: var(--font-serif);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  line-height: 1.2;
+  margin: 0 0 8px 0;
+  text-wrap: balance;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  letter-spacing: -0.01em;
+}
+
+/* === 手绘下划线 === */
+.underline {
+  display: block;
   margin: 0 0 16px 0;
-  max-width: 18ch;
+  max-width: 200px;
+  width: 100%;
+  height: 6px;
 }
 
-/* 副标题 (serif, 中字号) */
-.tagline {
-  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
-  font-weight: 500;
-  color: var(--color-ink-soft);
-  font-family: var(--font-serif);
-  line-height: 1.4;
-  margin: 0 0 24px 0;
-  max-width: 24ch;
-}
-
-/* 描述 (sans body) */
-.copy {
+/* === 首字下沉段落 (Lora serif) === */
+.dropcap {
   font-size: 1rem;
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-  margin: 0 0 16px 0;
-  font-family: var(--font-sans);
-  max-width: 38ch;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-serif);
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  text-wrap: pretty;
 }
 
-/* v1.5.2 Stage 2 (Contract 28 NEW / D-2): 今日阅读时长提示
- * 位于 copy 与 CTA 之间, 用 accent 绿 (--color-accent) 着色
- * 强化阅读进度但不抢占 CTA 焦点
- * 0 emoji, 0 动画, 适配 prefers-reduced-motion
- */
-.readingTime {
-  font-size: 0.875rem;
+.dropcap::first-letter {
+  font-size: 3em;
+  line-height: 0.8;
+  float: left;
+  margin-right: 4px;
+  margin-top: 4px;
   color: var(--color-accent);
-  font-family: var(--font-sans);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  margin: 0 0 24px 0;
-  padding: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
 }
 
-/* 大 CTA 按钮 (min-height 56px) */
+/* === CTA pill 按钮 === */
 .cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 56px;
-  padding: 16px 32px;
+  padding: 12px 24px;
   background: var(--color-ink);
-  color: var(--color-paper);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: var(--radius-md);
-  font-size: 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
   font-weight: 500;
   font-family: var(--font-sans);
   cursor: pointer;
-  transition:
-    transform 0.2s var(--ease-out-quart),
-    background 0.2s var(--ease-out-quart);
+  transition: background 0.2s ease-out, transform 0.2s ease-out;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -119,70 +121,96 @@
 }
 
 .cta:active {
-  background: var(--color-ink-soft);
+  transform: scale(0.97);
 }
 
 .cta:focus-visible {
-  outline: 2px solid var(--color-flame);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-.ctaArrow {
-  display: block;
+/* === 进度环容器 === */
+.ringWrap {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === 入场动画: 子元素错峰 fadeUp (gated by .heroVisible) === */
+.fleuron,
+.heading,
+.underline,
+.dropcap,
+.cta {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.4s ease-out,
+    transform 0.4s ease-out;
+  will-change: opacity, transform;
+}
+
+.heroVisible .fleuron { transition-delay: 0ms; }
+.heroVisible .heading { transition-delay: 100ms; }
+.heroVisible .underline { transition-delay: 150ms; }
+.heroVisible .dropcap { transition-delay: 200ms; }
+.heroVisible .cta { transition-delay: 300ms; }
+
+.heroVisible .fleuron,
+.heroVisible .heading,
+.heroVisible .underline,
+.heroVisible .dropcap,
+.heroVisible .cta {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* === Tablet (max-width: 1023px) === */
 @media (max-width: 1023px) {
   .hero {
-    padding: 48px 24px;
+    padding: 28px 24px;
   }
-  .title {
-    font-size: clamp(2.25rem, 5.5vw, 3rem);
-  }
-  .cta {
-    padding: 14px 28px;
-    min-height: 52px;
+  .heading {
+    font-size: 1.625rem;
   }
 }
 
 /* === Mobile (max-width: 767px) === */
 @media (max-width: 767px) {
   .hero {
-    padding: 32px 16px;
+    padding: 20px;
     border-radius: var(--radius-lg);
   }
-  .title {
-    font-size: 2rem;
+  .body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
   }
-  .tagline {
-    font-size: 1.0625rem;
-    margin-bottom: 16px;
+  .ringWrap {
+    align-self: center;
   }
-  .copy {
-    margin-bottom: 24px;
+  .heading {
+    font-size: 1.5rem;
   }
   .cta {
     width: 100%;
     justify-content: center;
-    padding: 16px 24px;
   }
 }
 
-/* === Reduced motion: 跳过 slide-up 动画, 立即显示 === */
 @media (prefers-reduced-motion: reduce) {
-  .hero {
-    transform: none;
-    opacity: 1;
-    transition: opacity 0.01ms;
-  }
-  .heroVisible {
-    transform: none;
-  }
+  .hero,
+  .heroVisible,
+  .fleuron,
+  .heading,
+  .underline,
+  .dropcap,
   .cta {
-    transition: background 0.01ms;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
-  .cta:hover,
   .cta:active {
     transform: none;
   }

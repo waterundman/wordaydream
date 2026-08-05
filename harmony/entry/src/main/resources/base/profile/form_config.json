@@ -1,0 +1,21 @@
+{
+  "forms": [
+    {
+      "name": "review_card",
+      "displayName": "$string:share_card_title",
+      "description": "$string:share_card_desc",
+      "src": "./ets/widget/ReviewCardWidget.ets",
+      "window": {
+        "designWidth": 720
+      },
+      "isDefault": true,
+      "type": "arkts",
+      "colorMode": "auto",
+      "supportDimensions": ["2*2", "2*4"],
+      "defaultDimension": "2*2",
+      "updateEnabled": true,
+      "scheduledUpdateTime": "10:30",
+      "updateDuration": 1
+    }
+  ]
+}

@@ -1,11 +1,15 @@
 .highlight {
   position: relative;
   cursor: pointer;
-  transition:
-    background-color var(--transition-fast),
-    opacity var(--transition-slow);
   text-decoration: none;
   display: inline;
+  border-radius: 3px;
+  padding: 0 1px;
+  background: linear-gradient(to top, var(--color-accent-light) 0%, var(--color-accent-light) 100%);
+  background-size: 100% 0%;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  transition: background-size 0.2s ease-out, opacity var(--transition-slow);
 }
 
 .highlight::after {
@@ -14,27 +18,21 @@
   bottom: -1px;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 2.5px;
   background-color: var(--color-underline);
-  transition: background-color var(--transition-fast);
+  transform: scaleY(0.6);
+  transform-origin: bottom center;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  will-change: transform, opacity;
 }
 
 .highlight:hover {
-  background-color: var(--color-accent-soft);
-  animation: highlightBreath 1.5s ease-in-out infinite;
+  background-size: 100% 100%;
 }
 
 .highlight:hover::after {
   background-color: var(--color-underline-hover);
-}
-
-@keyframes highlightBreath {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(45, 90, 77, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(45, 90, 77, 0.1);
-  }
+  transform: scaleY(1);
 }
 
 .active {
@@ -59,36 +57,31 @@
   );
 }
 
+/* v2.2.4 Stage 3 (Bug 10): 已答对 token 变绿色 + 下划线消失.
+ * v2.2.4 Stage 3 (Bug 13): 只有 resolvedGrade==='correct' 才变绿,
+ * 答错用 .resolvedWrong (灰色 + 删除线). */
 .resolved {
   cursor: default;
-  opacity: 1;
-  animation: dissolveOut var(--transition-slow) var(--ease-out-expo) forwards;
+  color: var(--color-correct);
 }
 
 .resolved::after {
-  animation: dissolveOutUnderline var(--transition-slow) var(--ease-out-expo) forwards;
+  background-color: transparent;
 }
 
-@keyframes dissolveOut {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0.7;
-    transform: translateY(-2px);
-  }
+/* v2.2.4 Stage 3 (Bug 13): 答错的 token — 灰色 + 删除线, 明确反馈"未掌握".
+ * 不用红色 (过强, 会让用户焦虑), 用柔和灰色 + 删除线表示"已处理但未掌握". */
+.resolvedWrong {
+  cursor: default;
+  color: var(--color-text-muted, #999);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-text-muted, #999);
+  text-decoration-thickness: 1px;
+  opacity: 0.7;
 }
 
-@keyframes dissolveOutUnderline {
-  0% {
-    opacity: 1;
-    background-color: var(--color-underline);
-  }
-  100% {
-    opacity: 0;
-    background-color: transparent;
-  }
+.resolvedWrong::after {
+  background-color: transparent;
 }
 
 .word {
@@ -176,8 +169,10 @@
     transition: none;
   }
   .resolved {
-    animation: none;
-    border-bottom-color: transparent;
+    color: var(--color-correct);
+  }
+  .resolvedWrong {
+    color: var(--color-text-muted, #999);
     opacity: 0.7;
   }
 }

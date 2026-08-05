@@ -7,6 +7,7 @@ import { RatingBar } from './RatingBar';
 import { EmptyState } from '../../../components/EmptyState';
 import { useGlobalShortcuts } from '../../reading/hooks/useGlobalShortcuts';
 import { useAppModeStore } from '../../../hooks/useAppModeStore';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import styles from './ReviewSessionPage.module.css';
 import cardStyles from './ReviewCard.module.css';
 import type { Rating, Language } from '../../../types';
@@ -386,9 +387,38 @@ function ReviewCard({
 }
 
 function ReviewPausedView({ onResume, onExit }: { onResume: () => void; onExit: () => void }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap
+  useFocusTrap(cardRef, true);
+
+  // v2.2.4 Round 3 (R3-P1-001): 暂停态 ESC 应恢复复习, 而非退出整个会话.
+  // 父级 useGlobalShortcuts 在 mode==='reviewing' 时监听 ESC -> exitReview(),
+  // 会绕过暂停态的"恢复"语义. 这里用 capture 阶段优先拦截 + stopPropagation,
+  // 让 ESC 触发 onResume 而不冒泡到 window.
+  // v2.2.4 Round 4 (R4-P2-001): 仅当焦点在 pausedOverlay 内时才拦截,
+  // 避免堆叠模态 (如 KeyboardShortcutsHelp) 打开时 ESC 被错误吞掉.
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      const overlay = cardRef.current;
+      if (overlay && overlay.contains(document.activeElement)) {
+        e.stopPropagation();
+        onResume();
+      }
+    };
+    document.addEventListener('keydown', onEsc, true);
+    return () => document.removeEventListener('keydown', onEsc, true);
+  }, [onResume]);
+
   return (
-    <div className={styles.pausedOverlay} role="dialog" aria-label="复习已暂停">
-      <div className={styles.pausedCard}>
+    <div className={styles.pausedOverlay}>
+      <div
+        ref={cardRef}
+        className={styles.pausedCard}
+        role="dialog"
+        aria-modal="true"
+        aria-label="复习已暂停"
+      >
         <p className={styles.pausedTitle}>已暂停</p>
         <p className={styles.pausedHint}>按 Esc 或点击"继续"恢复复习</p>
         <div className={styles.pausedActions}>

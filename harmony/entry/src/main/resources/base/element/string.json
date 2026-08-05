@@ -1,0 +1,11 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "Wordaydream HarmonyOS shell module" },
+    { "name": "EntryAbility_desc", "value": "Wordaydream entry ability" },
+    { "name": "EntryAbility_label", "value": "Wordaydream" },
+    { "name": "app_name", "value": "Wordaydream" },
+    { "name": "share_card_title", "value": "复习提醒" },
+    { "name": "share_card_desc", "value": "展示到期词汇数, 一键开始复习" },
+    { "name": "share_card_label", "value": "Wordaydream 复习卡片" }
+  ]
+}

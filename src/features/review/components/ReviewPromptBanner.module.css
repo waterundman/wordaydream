@@ -90,13 +90,15 @@
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
   cursor: pointer;
-  transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast);
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .btn:hover:not(:disabled) {
   background: var(--color-accent-hover);
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .btn:active:not(:disabled) {

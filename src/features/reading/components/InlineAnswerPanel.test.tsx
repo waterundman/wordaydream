@@ -131,21 +131,22 @@ describe('v2.2.1 Stage 2 Bug 3 — InlineAnswerPanel handleSubmit 门控点 (T09
     };
     vi.mocked(evaluateAnswer).mockResolvedValue(partialEvaluation);
 
+    // v2.2.4 Stage 3: partial 时 markOccurrenceResolved 延迟 3500ms, 用 fake timers 快进
+    vi.useFakeTimers();
     render(<InlineAnswerPanel token={token} language="en" />);
 
     // 输入答案并提交
     const input = screen.getByLabelText('释义输入') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '革命' } });
-    const submitBtn = screen.getByText('确认');
-    fireEvent.click(submitBtn);
+    fireEvent.click(screen.getByText('确认'));
 
-    // 等待异步 evaluateAnswer 完成
-    await waitFor(() => {
-      expect(evaluateAnswer).toHaveBeenCalledTimes(1);
-    });
+    // 快进 3500ms 触发 markOccurrenceResolved (flush microtasks + timers)
+    await vi.advanceTimersByTimeAsync(3500);
+    vi.useRealTimers();
 
     // v2.2.1 Bug 3 修复: partial 时也标记 resolved (之前仅 correct 时标记)
-    expect(markOccurrenceResolvedSpy).toHaveBeenCalledWith(token.id);
+    // v2.2.4 Stage 3 (Bug 13): markOccurrenceResolved 现在接受 grade 参数
+    expect(markOccurrenceResolvedSpy).toHaveBeenCalledWith(token.id, 'partial');
     // partial 时不建记忆卡片
     expect(addCardFromTokenSpy).not.toHaveBeenCalled();
   });
@@ -187,22 +188,23 @@ describe('v2.2.1 Stage 2 Bug 3 — InlineAnswerPanel handleSubmit 门控点 (T09
     };
     vi.mocked(evaluateAnswer).mockResolvedValue(partialEvaluation);
 
+    // v2.2.4 Stage 3: partial 时 markOccurrenceResolved 延迟 3500ms, 用 fake timers 快进
+    vi.useFakeTimers();
     render(<InlineAnswerPanel token={token} language="en" />);
 
     // 输入答案并提交
     const input = screen.getByLabelText('释义输入') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '变革' } });
-    const submitBtn = screen.getByText('确认');
-    fireEvent.click(submitBtn);
+    fireEvent.click(screen.getByText('确认'));
 
-    // 等待异步 evaluateAnswer 完成
-    await waitFor(() => {
-      expect(evaluateAnswer).toHaveBeenCalledTimes(1);
-    });
+    // 快进 3500ms 触发 markOccurrenceResolved
+    await vi.advanceTimersByTimeAsync(3500);
+    vi.useRealTimers();
 
     // partial 时不建立记忆卡片 (记忆卡片只记录答对的词)
     expect(addCardFromTokenSpy).not.toHaveBeenCalled();
     // 但 markOccurrenceResolved 被调用 (Bug 3 修复: 进度条推进)
-    expect(markOccurrenceResolvedSpy).toHaveBeenCalledWith(token.id);
+    // v2.2.4 Stage 3 (Bug 13): markOccurrenceResolved 现在接受 grade 参数
+    expect(markOccurrenceResolvedSpy).toHaveBeenCalledWith(token.id, 'partial');
   });
 });

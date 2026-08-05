@@ -1,7 +1,11 @@
 .container {
   position: relative;
   display: inline-block;
-  overflow: hidden;
+  /* v2.2.4 Stage 3 (Bug 12): 用 clip-path 代替 overflow: hidden.
+   * overflow: hidden 会让 inline-block 的基线变为 margin-box 底部,
+   * 导致答对后文字向上偏移. clip-path 同样裁剪溢出内容但不改变基线行为. */
+  clip-path: inset(0);
+  vertical-align: baseline;
 }
 
 .content {

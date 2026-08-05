@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>状态结算：阅读完成</title>
+    <style id="theme-vars">
+:root {
+  --primary: #d97757;
+  --primary-foreground: #ffffff;
+  --brand-50: #fdf8f5;
+  --brand-100: #fbe8de;
+  --brand-200: #f6d0b9;
+  --brand-300: #efb088;
+  --brand-400: #e78a57;
+  --brand-500: #d97757;
+  --brand-600: #c25e3e;
+  --brand-700: #a14a30;
+  --brand-800: #823b28;
+  --brand-900: #6b3222;
+  --brand-950: #3b1910;
+  --surface-base: #faf9f5;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f5f4ee;
+  --text-50: #1b1b19;
+  --text-100: #2d2d2a;
+  --text-200: #444440;
+  --text-300: #5c5c57;
+  --text-400: #8a8a82;
+  --text-500: #b8b8ae;
+  --border-600: #e4e2d8;
+  --border-700: #d8d6cd;
+  --border-800: #b7b5a9;
+  --destructive: #c25e3e;
+  --radius: 12px;
+  --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+}
+@theme inline {
+  --color-primary: #d97757;
+  --color-surface-base: #faf9f5;
+  --color-surface-elevated: #ffffff;
+  --color-surface-subtle: #f5f4ee;
+  --color-text-50: #1b1b19;
+  --color-border-700: #d8d6cd;
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+}
+    </style>
+    <style id="semantic-token-fallback">
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.border-primary { border-color: var(--primary); }
+.bg-surface-base { background-color: var(--surface-base); }
+.text-surface-base { color: var(--surface-base); }
+.bg-surface-elevated { background-color: var(--surface-elevated); }
+.bg-surface-subtle { background-color: var(--surface-subtle); }
+.text-text-50 { color: var(--text-50); }
+.bg-text-50 { background-color: var(--text-50); }
+.text-text-400 { color: var(--text-400); }
+.border-border-700 { border-color: var(--border-700); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+      @layer base {
+        body { background: var(--surface-base); color: var(--text-50); font-family: var(--font-sans); text-wrap: pretty; }
+      }
+    </style>
+    <style>
+        /* ===== Base layer: dimmed reading content ===== */
+        #base-layer {
+            position: absolute;
+            inset: 0;
+            background: var(--surface-base);
+            opacity: 0.2;
+            transition: opacity 600ms ease-in;
+            overflow: auto;
+        }
+        #base-layer.revealed { opacity: 1; }
+
+        .reading-wrap {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 36px 24px 96px;
+        }
+        .reading-topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 44px;
+        }
+        .reading-back {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            border: 1px solid var(--border-700);
+            background: var(--surface-elevated);
+            color: var(--text-200);
+            cursor: pointer;
+            transition: border-color 0.2s ease-out, color 0.2s ease-out;
+        }
+        .reading-back:hover { border-color: var(--border-800); color: var(--text-50); }
+        .reading-progress-track {
+            flex: 1;
+            height: 4px;
+            border-radius: 9999px;
+            background: var(--border-700);
+            overflow: hidden;
+        }
+        .reading-progress-fill {
+            height: 100%;
+            width: 100%;
+            border-radius: 9999px;
+            background: var(--primary);
+        }
+        .reading-progress-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-400);
+            white-space: nowrap;
+        }
+        .reading-kicker {
+            display: block;
+            font-family: var(--font-sans);
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 14px;
+        }
+        .reading-title {
+            font-family: var(--font-display);
+            font-size: 34px;
+            font-weight: 500;
+            color: var(--text-50);
+            margin-bottom: 28px;
+            line-height: 1.2;
+        }
+        .reading-article p {
+            font-family: var(--font-serif);
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--text-200);
+            margin-bottom: 20px;
+        }
+        .reading-article p:last-child { margin-bottom: 0; }
+
+        /* ===== Dark overlay ===== */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--text-50);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            overflow: hidden;
+            transition: opacity 500ms ease-out 200ms;
+        }
+        #overlay.playing { opacity: 1; }
+
+        .paper-texture {
+            position: absolute;
+            inset: 0;
+            background-image: url('../assets/paper-texture-dark.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .celebration-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 440px;
+            padding: 0 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ===== Progress ring ===== */
+        .ring-wrap { margin-bottom: 40px; }
+        #ring-progress {
+            transition: stroke-dashoffset 1000ms ease-in-out;
+        }
+        #overlay.playing #ring-progress {
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1000ms ease-in-out 500ms;
+        }
+
+        /* ===== Fleuron (ink-draw) ===== */
+        #fleuron {
+            width: 48px;
+            height: auto;
+            margin: 0 auto 20px;
+            display: block;
+        }
+        .fleuron-path {
+            transition: stroke-dashoffset 500ms ease-in-out;
+        }
+        #overlay.playing .fleuron-path {
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 500ms ease-in-out 800ms;
+        }
+
+        /* ===== Title & subtitle ===== */
+        #title {
+            font-family: var(--font-display);
+            font-size: 44px;
+            color: var(--surface-base);
+            font-weight: 400;
+            margin-bottom: 8px;
+            line-height: 1.2;
+            opacity: 0;
+            transition: opacity 400ms ease-out;
+        }
+        #overlay.playing #title {
+            opacity: 1;
+            transition: opacity 400ms ease-out 1200ms;
+        }
+        #subtitle {
+            font-family: var(--font-sans);
+            font-size: 15px;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+            color: var(--text-400);
+            margin-bottom: 32px;
+            opacity: 0;
+            transition: opacity 300ms ease-out;
+        }
+        #overlay.playing #subtitle {
+            opacity: 1;
+            transition: opacity 300ms ease-out 1400ms;
+        }
+
+        /* ===== Sprig divider (ink-draw) ===== */
+        #sprig {
+            width: 180px;
+            height: auto;
+            margin: 24px auto;
+            display: block;
+        }
+        .sprig-path {
+            transition: stroke-dashoffset 600ms ease-in-out;
+        }
+        #overlay.playing .sprig-path {
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 600ms ease-in-out 1000ms;
+        }
+
+        /* ===== Replay button ===== */
+        #replay-btn {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            padding: 10px 28px;
+            border-radius: 9999px;
+            background: var(--surface-base);
+            color: var(--text-50);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 400ms ease-out, border-color 0.2s ease-out;
+        }
+        #replay-btn.shown { opacity: 1; pointer-events: auto; }
+        #replay-btn:hover { border-color: var(--primary); }
+
+        /* ===== Reset helper (snaps elements back without transition) ===== */
+        body.resetting #overlay,
+        body.resetting #base-layer,
+        body.resetting #replay-btn,
+        body.resetting .ink-path,
+        body.resetting #ring-progress,
+        body.resetting #title,
+        body.resetting #subtitle {
+            transition: none !important;
+        }
+
+        /* ===== Focus visible ===== */
+        *:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        /* ===== Reduced motion: instant, final state ===== */
+        @media (prefers-reduced-motion: reduce) {
+            #overlay, #base-layer, #replay-btn,
+            .ink-path, #ring-progress, #title, #subtitle {
+                transition-duration: 0.01ms !important;
+                transition-delay: 0ms !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased">
+
+    <!-- ===== Base layer: dimmed reading content (revealed at full opacity on settle) ===== -->
+    <div id="base-layer">
+        <div class="reading-wrap">
+            <div class="reading-topbar">
+                <button class="reading-back" type="button" aria-label="返回">
+                    <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+                </button>
+                <div class="reading-progress-track" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="阅读进度">
+                    <div class="reading-progress-fill"></div>
+                </div>
+                <span class="reading-progress-label">100%</span>
+            </div>
+            <article class="reading-article">
+                <span class="reading-kicker">英语 · L2 · 慢读</span>
+                <h1 class="reading-title">慢阅读的力量</h1>
+                <p>在一个崇尚速度的时代，慢下来读完一篇文章，似乎成了一种奢侈。我们把段落匆匆滑过，把词汇囫囵吞下，却很少让文字真正在心里停留。</p>
+                <p>然而词汇的生长，恰恰需要时间的沉淀。一个词在语境里被遇见、被回味、被再次遇见，它才真正属于你。慢阅读不是低效，而是让每一次相遇都有重量。</p>
+                <p>今天，你让三个故事在心里停了十五分钟。这就够了。明天，我们再继续。</p>
+            </article>
+        </div>
+    </div>
+
+    <!-- ===== Dark overlay (celebration) ===== -->
+    <div id="overlay">
+        <div class="paper-texture" aria-hidden="true"></div>
+        <div class="celebration-content">
+
+            <!-- Progress ring -->
+            <div class="ring-wrap">
+                <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="阅读进度 100%">
+                    <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+                    <circle id="ring-progress" cx="90" cy="90" r="82" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round" transform="rotate(-90 90 90)"/>
+                </svg>
+            </div>
+
+            <!-- Fleuron ornament (ink-draw) -->
+            <svg id="fleuron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="var(--surface-base)" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+                <path class="ink-path fleuron-path" d="M20 4 C 18 10, 14 14, 8 16 C 14 18, 18 22, 20 28 C 22 22, 26 18, 32 16 C 26 14, 22 10, 20 4 Z"/>
+                <circle class="ink-path fleuron-path" cx="20" cy="16" r="1.5"/>
+                <path class="ink-path fleuron-path" d="M10 32 C 14 30, 17 32, 20 34 C 23 32, 26 30, 30 32"/>
+            </svg>
+
+            <!-- Title -->
+            <h1 id="title">阅读完成</h1>
+
+            <!-- Subtitle -->
+            <p id="subtitle">今日阅读 15 分钟 · 3 篇文章</p>
+
+            <!-- Sprig divider (ink-draw) -->
+            <svg id="sprig" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 40" fill="none" stroke="var(--surface-base)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <!-- Center stem -->
+                <path class="ink-path sprig-path" d="M20 20 C 80 18, 140 22, 200 20 C 260 18, 320 22, 380 20 C 420 19, 450 21, 470 20"/>
+                <!-- Left branch leaves -->
+                <path class="ink-path sprig-path" d="M60 20 C 50 12, 40 8, 30 6 C 38 14, 48 18, 60 20"/>
+                <path class="ink-path sprig-path" d="M60 20 C 50 28, 40 32, 30 34 C 38 26, 48 22, 60 20"/>
+                <path class="ink-path sprig-path" d="M110 20 C 100 14, 88 10, 76 8 C 86 16, 98 19, 110 20"/>
+                <path class="ink-path sprig-path" d="M110 20 C 100 26, 88 30, 76 32 C 86 24, 98 21, 110 20"/>
+                <!-- Center accent leaves -->
+                <path class="ink-path sprig-path" d="M200 20 C 190 10, 175 5, 160 3 C 172 12, 188 18, 200 20"/>
+                <path class="ink-path sprig-path" d="M200 20 C 190 30, 175 35, 160 37 C 172 28, 188 22, 200 20"/>
+                <!-- Right branch leaves -->
+                <path class="ink-path sprig-path" d="M290 20 C 300 12, 312 8, 324 6 C 314 14, 302 18, 290 20"/>
+                <path class="ink-path sprig-path" d="M290 20 C 300 28, 312 32, 324 34 C 314 26, 302 22, 290 20"/>
+                <path class="ink-path sprig-path" d="M340 20 C 350 14, 362 10, 374 8 C 364 16, 352 19, 340 20"/>
+                <path class="ink-path sprig-path" d="M340 20 C 350 26, 362 30, 374 32 C 364 24, 352 21, 340 20"/>
+                <!-- Berries -->
+                <circle class="ink-path sprig-path" cx="155" cy="2" r="2"/>
+                <circle class="ink-path sprig-path" cx="250" cy="20" r="1.5"/>
+                <circle class="ink-path sprig-path" cx="430" cy="20" r="1.5"/>
+            </svg>
+
+        </div>
+    </div>
+
+    <!-- ===== Replay button ===== -->
+    <button id="replay-btn" type="button">重播</button>
+
+    <!-- ===== Animation controller ===== -->
+    <script>
+        (function () {
+            const overlay = document.getElementById('overlay');
+            const baseLayer = document.getElementById('base-layer');
+            const replayBtn = document.getElementById('replay-btn');
+            const ringProgress = document.getElementById('ring-progress');
+            const title = document.getElementById('title');
+            const subtitle = document.getElementById('subtitle');
+            const fleuronPaths = document.querySelectorAll('.fleuron-path');
+            const sprigPaths = document.querySelectorAll('.sprig-path');
+
+            const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            // Progress ring: circumference = 2 * PI * r = 2 * PI * 82 ≈ 515.22
+            const RING_CIRCUMFERENCE = 2 * Math.PI * 82;
+            ringProgress.style.strokeDasharray = RING_CIRCUMFERENCE;
+            ringProgress.style.strokeDashoffset = RING_CIRCUMFERENCE;
+
+            // Ink-draw: capture each path's total length for stroke-dasharray / dashoffset
+            function initInkPaths(paths) {
+                paths.forEach(function (p) {
+                    let len = 1000;
+                    try {
+                        if (p.getTotalLength) len = p.getTotalLength();
+                    } catch (e) { len = 1000; }
+                    p.__len = len;
+                    p.style.strokeDasharray = len;
+                    p.style.strokeDashoffset = len;
+                });
+            }
+            initInkPaths(fleuronPaths);
+            initInkPaths(sprigPaths);
+
+            let revealTimer = null;
+            let replayShowTimer = null;
+
+            // Snap every animated element back to its initial state (no transition)
+            function reset() {
+                overlay.classList.remove('playing', 'revealing');
+                baseLayer.classList.remove('revealed');
+                replayBtn.classList.remove('shown');
+
+                document.body.classList.add('resetting');
+                ringProgress.style.strokeDashoffset = RING_CIRCUMFERENCE;
+                fleuronPaths.forEach(function (p) { p.style.strokeDashoffset = p.__len; });
+                sprigPaths.forEach(function (p) { p.style.strokeDashoffset = p.__len; });
+                // Force reflow so the reset values commit before transitions re-enable
+                void overlay.offsetWidth;
+                document.body.classList.remove('resetting');
+            }
+
+            function play() {
+                reset();
+                // Wait two frames so the reset state is painted, then trigger transitions
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        overlay.classList.add('playing');
+                    });
+                });
+
+                clearTimeout(revealTimer);
+                clearTimeout(replayShowTimer);
+                // Hold the overlay visible after the animation completes — no auto-exit.
+                // 3000ms: replay button fades in; celebration stays on screen indefinitely.
+                replayShowTimer = setTimeout(function () {
+                    replayBtn.classList.add('shown');
+                }, 3000);
+            }
+
+            replayBtn.addEventListener('click', function () {
+                play();
+            });
+
+            if (prefersReduced) {
+                // Reduced motion: show the celebration in its final state instantly, hold it.
+                overlay.classList.add('playing');
+                replayBtn.classList.add('shown');
+            } else {
+                // Auto-play on load after 500ms
+                setTimeout(play, 500);
+            }
+        })();
+    </script>
+
+    <!-- Lucide init -->
+    <script>lucide.createIcons();</script>
+</body>
+</html>

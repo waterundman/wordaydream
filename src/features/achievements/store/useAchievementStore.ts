@@ -5,20 +5,21 @@
  * - `achievements`: 全部 13 个成就的当前快照 (含 unlocked / unlockedAt)
  * - `newUnlocks`: 本次会话内新解锁的成就队列, 用于 toast 提示
  *
- * 持久化策略 (与项目现有 useMemoryStore / useSettingsStore 保持一致):
- * - 使用自定义 `lib/persistenceMiddleware` (load-only):
- *   - 启动时从 localStorage 读取 `wordaydream:achievements`
- *   - `serialize` 仅写入 `achievements`; `newUnlocks` 不写入
- *   - 页面刷新后 `newUnlocks` 自动清空 (符合"新解锁 toast 不跨会话"语义)
- *   - 持久化的 achievements 为空数组时, 自动注入 `ALL_ACHIEVEMENTS` 默认列表
+ * 持久化策略:
+ * - 使用 Zustand 官方 `persist` 中间件 + `partialize` 仅持久化 `achievements`
+ * - `newUnlocks` 不持久化, 页面刷新后自动清空 (符合"新解锁 toast 不跨会话"语义)
+ * - `onRehydrateStorage`: 持久化的 achievements 为空数组时自动注入 `ALL_ACHIEVEMENTS` 默认列表
  *
- * 注意: 该 middleware 不支持官方 Zustand 的 `partialize` / `onRehydrateStorage`,
- * 本 store 已用 `serialize` / `deserialize` 实现等价的字段筛选与首次注入行为。
+ * v0.4.0-harmony Stage 4 (D4): checkAndUnlock 内部 evaluate + set 包装到
+ * scheduleIdleTask, 让成就评估在浏览器空闲时段执行, 不阻塞用户交互主线.
+ * - 函数签名保持 (ctx) => void 不变, 调用方无感知
+ * - 测试需要 await setTimeout(0) 让 idle task 落地后再断言副作用
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Achievement, AchievementContext, AchievementUnlock } from '../types';
 import { ALL_ACHIEVEMENTS, evaluate } from '../services/achievementEngine';
+import { scheduleIdleTask } from '../../../platform/scheduleIdleTask';
 
 interface AchievementState {
   achievements: Achievement[];
@@ -57,17 +58,24 @@ export const useAchievementStore = create<AchievementState>()(
       newUnlocks: [],
 
       checkAndUnlock: (ctx: AchievementContext) => {
-        const unlocks = evaluate(ctx, get().achievements);
-        if (unlocks.length === 0) return;
-        const unlockedIds = new Set(unlocks.map((u) => u.achievement.id));
-        set((state) => ({
-          achievements: state.achievements.map((a) =>
-            unlockedIds.has(a.id)
-              ? { ...a, unlocked: true, unlockedAt: Date.now() }
-              : a,
-          ),
-          newUnlocks: [...state.newUnlocks, ...unlocks],
-        }));
+        // v0.4.0-harmony Stage 4 (D4): evaluate + set 整体调度到 idle 时段执行,
+        // 避免成就引擎在用户操作 (loadSession / nextCard / recordReview) 的关键路径
+        // 上同步阻塞主线程. 函数签名保持 (ctx) => void 不变, 调用方无感知.
+        // 副作用 (achievements 更新 / newUnlocks 入队 / persist 落盘) 在 idle
+        // 回调内同步完成, 不存在部分写入的中间态.
+        scheduleIdleTask(() => {
+          const unlocks = evaluate(ctx, get().achievements);
+          if (unlocks.length === 0) return;
+          const unlockedIds = new Set(unlocks.map((u) => u.achievement.id));
+          set((state) => ({
+            achievements: state.achievements.map((a) =>
+              unlockedIds.has(a.id)
+                ? { ...a, unlocked: true, unlockedAt: Date.now() }
+                : a,
+            ),
+            newUnlocks: [...state.newUnlocks, ...unlocks],
+          }));
+        });
       },
 
       dismissToast: (id: string) => {

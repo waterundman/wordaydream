@@ -1,0 +1,222 @@
+/* LessonCard (v2.3.0 Stage 4)
+ *
+ * 单个课时卡片: title + theme 文字标签 + 进度条 + status badge.
+ * 状态变体: locked / available / inProgress / completed.
+ *
+ * 设计约束:
+ * - 配色用 tokens.css 变量 (warm white #faf8f5 + dark ink #1c1917)
+ * - 无 emoji
+ * - prefers-reduced-motion 降级
+ * - 进度条用 CSS transition 动画
+ */
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration-fast) var(--ease-out-quart);
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.card:active {
+  transform: scale(0.99);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-flame);
+  outline-offset: 2px;
+}
+
+/* === Locked: 灰色, 不可点击 === */
+.locked {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.locked:hover {
+  border-color: var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.locked:active {
+  transform: none;
+}
+
+/* === In-progress: 高亮 === */
+.inProgress {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.inProgress:hover {
+  background: var(--color-accent-light);
+}
+
+/* === Completed: 绿色边框 === */
+.completed {
+  border-color: var(--color-accent);
+  background: var(--color-bg-elevated);
+}
+
+.completed:hover {
+  background: var(--color-accent-soft);
+}
+
+/* === 左侧信息: title + theme === */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.locked .title {
+  color: var(--color-text-tertiary);
+}
+
+.theme {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.locked .theme {
+  color: var(--color-text-tertiary);
+}
+
+/* === 右侧 meta: 进度条 + status badge === */
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* === 进度条 (CSS 实现, 无第三方库) === */
+.progressTrack {
+  width: 80px;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  width: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-normal) var(--ease-out-quart);
+  will-change: transform, opacity;
+}
+
+.completed .progressFill {
+  background: var(--color-accent);
+}
+
+/* === Status badge (文字, 无 emoji) === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.badgeAvailable {
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.badgeInProgress {
+  color: var(--color-text-inverse);
+  background: var(--color-accent);
+}
+
+.badgeCompleted {
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent);
+}
+
+.badgeLocked {
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+}
+
+/* === 进度文本 (wordsEncountered/targetLemmas.length) === */
+.progressLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+/* === Mobile === */
+@media (max-width: 767px) {
+  .card {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .progressTrack {
+    width: 60px;
+  }
+
+  .title {
+    font-size: var(--text-sm);
+  }
+}
+
+/* === Reduced motion: 关闭所有动画/过渡 === */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover,
+  .card:active,
+  .progressFill {
+    transition: none;
+    transform: none;
+  }
+}

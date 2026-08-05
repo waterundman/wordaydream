@@ -32,6 +32,7 @@ debug_*
 debug_shots*/
 __pycache__/
 *.log
+temp_*
 
 # 服务器日志
 server/logs/
@@ -39,12 +40,12 @@ server/logs/
 # Local Netlify folder
 .netlify
 
-# 临时诊断脚本和截图 (v2.2.0/v2.2.1 端到端测试产物)
-scripts/diag*.py
-scripts/e2e_screenshots/
-scripts/e2e_screenshots_v221/
+# E2E 测试截图产物
+e2e/screenshots/
 .trae-html-share-packages/
 deno.lock
 lemmas_all.json
 minirobot-market-analysis/
 pnpm-lock.yaml
+
+.iga/

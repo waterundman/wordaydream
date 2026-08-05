@@ -70,7 +70,10 @@ export function ScrollProgressBar() {
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <div className={styles.fill} style={{ width: `${progress}%` }} />
+      <div
+        className={styles.fill}
+        style={{ transform: `scaleX(${progress / 100})` }}
+      />
     </div>
   );
 }

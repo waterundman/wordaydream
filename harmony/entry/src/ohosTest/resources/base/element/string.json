@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_test_desc",
+      "value": "Wordaydream entry test module"
+    },
+    {
+      "name": "TestAbility_desc",
+      "value": "the test ability for Wordaydream"
+    },
+    {
+      "name": "TestAbility_label",
+      "value": "Wordaydream Test"
+    }
+  ]
+}

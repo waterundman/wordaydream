@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import styles from './KeyboardShortcutsHelp.module.css';
 
 interface ShortcutItem {
@@ -62,6 +63,10 @@ function KeyCombo({ keys }: { keys: string }) {
 
 export function KeyboardShortcutsHelp() {
   const [visible, setVisible] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap
+  useFocusTrap(modalRef, visible);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -82,11 +87,15 @@ export function KeyboardShortcutsHelp() {
     <div
       className={styles.overlay}
       onClick={() => setVisible(false)}
-      role="dialog"
-      aria-modal="true"
-      aria-label="键盘快捷键帮助"
     >
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="键盘快捷键帮助"
+      >
         <button
           className={styles.closeBtn}
           onClick={() => setVisible(false)}

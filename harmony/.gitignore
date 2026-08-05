@@ -1,0 +1,41 @@
+# HarmonyOS DevEco Studio build artifacts
+/build/
+/build-profile.json5.bak
+/.hvigor/
+/.idea/
+/.cxx/
+/.test/
+local.properties
+
+# Signing materials - never commit
+/signature/*.p12
+/signature/*.p7b
+/signature/*.cer
+/signature/*.jks
+/signature/*.keystore
+/signature/*.csr
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.iml
+
+# Node artifacts (rawfile node_modules shouldn't exist; Vite outputs to rawfile/dist)
+node_modules/
+
+# HarmonyOS dependency dirs (managed by ohpm, never commit)
+oh_modules/
+.ohpm/
+
+# HarmonyOS build/test artifacts (may live under module dirs like entry/)
+**/build/
+**/.test/
+**/.preview/
+**/build-profile.json5.bak
+
+# Vite build output (`harmony/entry/src/main/resources/rawfile/dist/`) is ignored
+# by the root .gitignore `dist` pattern. Developers must run `npm run build:harmony`
+# locally to populate it before opening DevEco Studio. See README §4 step 1.
+# To force-track the bundle (NOT recommended for normal workflow), add to root .gitignore:
+#   !harmony/entry/src/main/resources/rawfile/dist/
+#   !harmony/entry/src/main/resources/rawfile/dist/**

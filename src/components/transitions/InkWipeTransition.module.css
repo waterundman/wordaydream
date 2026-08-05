@@ -1,0 +1,108 @@
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+/* overlay 基础态: 隐藏 (transform scaleX(0)) */
+.overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--color-ink);
+  z-index: var(--z-overlay);
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  opacity: 1;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* 阶段 1: cover — 从左向右覆盖全屏 */
+.overlay.covering {
+  transform: scaleX(1);
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 阶段 2: reveal — 从左向右揭开 (transform scaleX(1)→0), 同时 sprig 绘制 + 浆果淡入 */
+.overlay.revealing {
+  transform: scaleX(0);
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1) 500ms;
+}
+
+.texture {
+  position: absolute;
+  inset: 0;
+  background-image: url('/assets/img/paper-texture-dark.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.sprig {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: auto;
+  opacity: 0.92;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.sprig path {
+  stroke: var(--color-paper);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: var(--sprig-length, 500);
+  stroke-dashoffset: var(--sprig-length, 500);
+  transition: stroke-dashoffset 800ms ease-in-out 700ms;
+}
+
+/* revealing 阶段触发 sprig 绘制 (CSS delay 控制时序) */
+.overlay.revealing .sprig path {
+  stroke-dashoffset: 0;
+}
+
+.sprigBerry {
+  opacity: 0;
+}
+
+.overlay.revealing .sprigBerry {
+  opacity: 1;
+  transition: opacity 400ms ease-out 1450ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .overlay.covering,
+  .overlay.revealing {
+    transform: scaleX(0) !important;
+    transition: none !important;
+  }
+
+  .sprig path,
+  .overlay.revealing .sprig path {
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+  }
+
+  .sprigBerry,
+  .overlay.revealing .sprigBerry {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}

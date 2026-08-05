@@ -1,0 +1,3 @@
+# Placeholder so the rawfile directory is committed to git.
+# Vite build:harmony outputs the Web bundle to ./dist under this directory.
+# Run `npm run build:harmony` from the project root before opening DevEco Studio.

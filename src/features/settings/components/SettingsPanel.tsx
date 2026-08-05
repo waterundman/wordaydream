@@ -7,6 +7,7 @@ import styles from './SettingsPanel.module.css';
 import type { LLMProvider } from '../../../types';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useToastStore } from '../../../store/useToastStore';
+import { detectPlatform } from '../../../platform/detect';
 import {
   isOptimizationAvailable,
   optimizeFsrsWeights,
@@ -537,6 +538,130 @@ export function GlossCacheSection() {
   );
 }
 
+/**
+ * v0.1.0-harmony Stage 7: 复习提醒通知设置区域.
+ *
+ * 功能:
+ * - 仅在 detectPlatform().supportsNotifications()=true (鸿蒙端) 时渲染, Web 端返回 null
+ * - "Enable review reminders" 开关 (.toggle)
+ * - "Start time" / "End time" 小时选择器 (0-23, .select)
+ * - 时间窗校验: startHour < endHour, 不满足时显示 warning
+ * - 通过 setNotifications 更新 store, 同时 writePreferences 持久化到鸿蒙端 (fire-and-forget)
+ *
+ * UI: 复用 .section / .sectionTitle / .toggleRow / .toggle / .field / .label / .select / .hint.
+ */
+export function NotificationsSection() {
+  // supportsNotifications 在 Web 端 false (渲染 null), 鸿蒙端 true (渲染开关 + 时间窗).
+  // 在 hooks 之后 early return, 避免 hooks 顺序不一致.
+  const supportsNotifications = detectPlatform().supportsNotifications();
+  const notifications = useSettingsStore((s) => s.notifications);
+  const setNotifications = useSettingsStore((s) => s.setNotifications);
+
+  if (!supportsNotifications) {
+    return null;
+  }
+
+  const handleToggle = () => {
+    const next = { enabled: !notifications.enabled };
+    setNotifications(next);
+    persistNotifications({ ...notifications, ...next });
+  };
+
+  const handleStartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const startHour = Number(e.target.value);
+    setNotifications({ startHour });
+    persistNotifications({ ...notifications, startHour });
+  };
+
+  const handleEndChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const endHour = Number(e.target.value);
+    setNotifications({ endHour });
+    persistNotifications({ ...notifications, endHour });
+  };
+
+  const hourOptions = Array.from({ length: 24 }, (_, h) => h);
+  const formatHour = (h: number) => `${h.toString().padStart(2, '0')}:00`;
+  const invalidWindow = notifications.startHour >= notifications.endHour;
+
+  return (
+    <div className={styles.section} data-testid="notifications-section">
+      <div className={styles.sectionTitle}>复习提醒</div>
+      <div className={styles.toggleRow}>
+        <div>
+          <div className={styles.toggleLabel}>Enable review reminders</div>
+          <p className={styles.hint}>词汇到期时发送本地通知提醒复习.</p>
+        </div>
+        <button
+          type="button"
+          className={`${styles.toggle} ${notifications.enabled ? styles.on : ''}`}
+          onClick={handleToggle}
+          aria-label="Enable review reminders"
+          role="switch"
+          aria-checked={notifications.enabled}
+        />
+      </div>
+
+      <div className={styles.row}>
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="notifications-start-hour">Start time</label>
+          <select
+            id="notifications-start-hour"
+            className={styles.select}
+            value={notifications.startHour}
+            onChange={handleStartChange}
+            disabled={!notifications.enabled}
+          >
+            {hourOptions.map((h) => (
+              <option key={h} value={h}>{formatHour(h)}</option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="notifications-end-hour">End time</label>
+          <select
+            id="notifications-end-hour"
+            className={styles.select}
+            value={notifications.endHour}
+            onChange={handleEndChange}
+            disabled={!notifications.enabled}
+          >
+            {hourOptions.map((h) => (
+              <option key={h} value={h}>{formatHour(h)}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {invalidWindow && (
+        <div
+          className={styles.hint}
+          style={{ color: 'var(--color-danger, #c0392b)' }}
+          data-testid="notifications-window-warning"
+        >
+          开始时间必须早于结束时间.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Stage 7: 将通知配置同步到鸿蒙端 preferences (fire-and-forget, 失败静默). */
+function persistNotifications(notifications: {
+  enabled: boolean;
+  startHour: number;
+  endHour: number;
+}): void {
+  try {
+    void window.harmonyBridge
+      ?.writePreferences('notifications_config', JSON.stringify(notifications))
+      ?.catch(() => {
+        // silent skip — JSBridge 异步失败不阻塞 UI
+      });
+  } catch {
+    // silent skip — Web 端无 harmonyBridge
+  }
+}
+
 export function SettingsPanel() {
   const {
     llm,
@@ -631,9 +756,13 @@ export function SettingsPanel() {
           <button
             className={styles.closeBtn}
             onClick={() => useSettingsStore.getState().closeSettings()}
-            aria-label="关闭"
+            aria-label="关闭设置"
+            type="button"
           >
-            ×
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
           </button>
         </div>
 
@@ -781,6 +910,9 @@ export function SettingsPanel() {
           </div>
         </div>
 
+        {/* v0.1.0-harmony Stage 7: 复习提醒通知 (仅鸿蒙端渲染, Web 端 NotificationsSection 返回 null) */}
+        <NotificationsSection />
+
         {/* v1.6.0: 课程模式 (闯关 / 自由) */}
         <div className={styles.section}>
           <div className={styles.sectionTitle}>课程模式</div>
@@ -866,18 +998,6 @@ export function SettingsPanel() {
           )}
         </div>
 
-        <div className={styles.actions}>
-          <button className={styles.resetBtn} onClick={resetAll}>
-            恢复默认
-          </button>
-          <button
-            className={styles.saveBtn}
-            onClick={() => useSettingsStore.getState().closeSettings()}
-          >
-            完成
-          </button>
-        </div>
-
         <div className={styles.section}>
           <div className={styles.sectionTitle}>外观主题</div>
           <p className={styles.hint} style={{ marginBottom: 'var(--space-3)' }}>
@@ -893,6 +1013,18 @@ export function SettingsPanel() {
             将 Wordaydream 安装到设备主屏幕, 离线时仍可使用。
           </div>
           <InstallPromptButton />
+        </div>
+
+        <div className={styles.actions}>
+          <button className={styles.resetBtn} onClick={resetAll}>
+            恢复默认
+          </button>
+          <button
+            className={styles.saveBtn}
+            onClick={() => useSettingsStore.getState().closeSettings()}
+          >
+            完成
+          </button>
         </div>
       </div>
     </div>

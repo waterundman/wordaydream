@@ -1,30 +1,51 @@
 :root {
-  --color-paper: #faf8f5;
-  --color-paper-warm: #f5f2ed;
-  --color-ink: #1c1917;
-  --color-ink-soft: #4a4540;
-  --color-ink-faint: #6b655b;
+  /* === Design v3: warm cream + terracotta system === */
+  --color-paper: #faf9f5;
+  --color-paper-warm: #f5f4ee;
+  --color-ink: #1b1b19;
+  --color-ink-soft: #2c2c2b;
+  --color-ink-faint: #6e6d68;
 
-  --color-accent: #2d5a4d;
-  --color-accent-muted: #4a7a6a;
-  --color-accent-light: #e8f0ec;
+  /* Brand accent: terracotta (was green #2d5a4d) */
+  --color-accent: #d97757;
+  --color-accent-hover: #c25e3e;
+  --color-accent-muted: #e78a57;
+  --color-accent-light: #fbe8de;
+  --color-accent-soft: #fdf8f5;
+
+  /* Surface tokens (design-aligned aliases) */
+  --color-surface-base: var(--color-paper);
+  --color-surface-elevated: #ffffff;
+  --color-surface-subtle: var(--color-paper-warm);
+  --color-surface-sidebar: var(--color-paper-warm);
+  --color-surface-inset: #f1f1ef;
+  --color-surface-dark: var(--color-ink);
+  --color-surface-card: #ffffff;
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: #faf9f5;
+
+  /* Text shades (design-aligned) */
+  --color-text-strong: var(--color-ink);
+  --color-text-body: var(--color-ink-soft);
+  --color-text-muted: var(--color-ink-faint);
+  --color-text-faint: #908e84;
+
+  /* Divider tokens */
+  --color-border-divider: #e9e6dc;
 
   --color-bg: var(--color-paper);
   --color-bg-elevated: #ffffff;
   --color-bg-subtle: var(--color-paper-warm);
-  --color-bg-hover: #f5f2ed;
+  --color-bg-hover: #f5f4ee;
   --color-bg-primary: var(--color-paper);
-  --color-margin: #e8e4dc;
-  --color-border: var(--color-margin);
-  --color-border-strong: #d4d1c8;
+  --color-margin: #d8d6cd;
+  --color-border: #d8d6cd;
+  --color-border-strong: #b7b5a9;
 
   --color-text-primary: var(--color-ink);
   --color-text-secondary: var(--color-ink-soft);
   --color-text-tertiary: var(--color-ink-faint);
-  --color-text-inverse: #ffffff;
-
-  --color-accent-hover: #234a3f;
-  --color-accent-soft: #f0f5f3;
+  --color-text-inverse: #faf9f5;
 
   --color-correct: var(--color-accent);
   --color-correct-bg: var(--color-accent-light);
@@ -37,16 +58,17 @@
   --color-underline-hover: var(--color-accent-muted);
   --color-underline-resolved: transparent;
 
-  --color-grammar: #3f756d;
-  --color-grammar-light: #e8f4f2;
+  --color-grammar: #c25e3e;
+  --color-grammar-light: #fbe8de;
 
   --color-compound: #7a6245;
   --color-compound-light: #f5f0e8;
 
-  --color-analytics: #4a4540;
-  --color-analytics-accent: #2d5a4d;
+  --color-analytics: #2c2c2b;
+  --color-analytics-accent: var(--color-accent);
 
-  --font-serif: "Newsreader", "Lora", Georgia, "Songti SC", "SimSun", serif;
+  --font-display: "Newsreader", Georgia, ui-serif, serif;
+  --font-serif: "Lora", Georgia, ui-serif, serif;
   --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -81,10 +103,11 @@
   --space-16: 4rem;
   --space-20: 5rem;
 
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
@@ -109,8 +132,8 @@
   --z-modal: 1000;
 
   --reading-max-width: 42rem;
-  --sidebar-width: 16rem;
-  --sidebar-width-tablet: 14rem;
+  --sidebar-width: 21.25rem;
+  --sidebar-width-tablet: 18rem;
   --sidebar-width-mobile: 3.5rem;
 
   /* Breakpoints */
@@ -174,13 +197,14 @@
 
 html, body {
   height: 100%;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--color-text-primary);
   background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-wrap: pretty;
 }
 
 @media (max-width: 767px) {
@@ -218,11 +242,16 @@ input {
   color: var(--color-accent);
 }
 
+/* v2.2.4 Round 3 (R3-P2-001): 集中 prefers-reduced-motion 通用重置.
+   各 CSS 模块不再重复此块, 仅保留模块特有的 animation: none 规则. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -247,9 +276,14 @@ input {
   --color-margin: #44403c;
   --color-border: #44403c;
   --color-border-strong: #57534e;
-  --color-accent-light: #2d3d36;
-  --color-accent-soft: #1f2a26;
-  --color-flame-soft: rgba(224, 122, 59, 0.18);
+  --color-surface-inset: #3a3633;
+  --color-surface-card: #292524;
+  --color-surface-dark: #faf8f5;
+  --color-text-faint: #78716c;
+  --color-border-divider: #3a3633;
+  --color-accent-light: #4a2818;
+  --color-accent-soft: #2a1810;
+  --color-flame-soft: rgba(217, 119, 87, 0.18);
   --color-achievement-locked: #44403c;
   --color-achievement-unlocked-soft: rgba(212, 165, 116, 0.2);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -290,9 +324,14 @@ input {
   --color-margin: #d4c4a8;
   --color-border: #d4c4a8;
   --color-border-strong: #b8a787;
-  --color-accent-light: #d8e4df;
-  --color-accent-soft: #e8ede9;
-  --color-flame-soft: rgba(224, 122, 59, 0.14);
+  --color-surface-inset: #e3d8b8;
+  --color-surface-card: #faf3e0;
+  --color-surface-dark: #5b4636;
+  --color-text-faint: #a89888;
+  --color-border-divider: #d4c4a8;
+  --color-accent-light: #fbe8de;
+  --color-accent-soft: #fdf8f5;
+  --color-flame-soft: rgba(217, 119, 87, 0.14);
   --color-achievement-locked: #d4c4a8;
   --color-achievement-unlocked-soft: rgba(212, 165, 116, 0.2);
   --shadow-sm: 0 1px 2px rgba(91, 70, 54, 0.08);

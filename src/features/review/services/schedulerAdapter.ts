@@ -178,6 +178,62 @@ export function scheduleNextReview(
 }
 
 /**
+ * v0.4.0-harmony Stage 1 D1: 批量预览 4 个 rating 的复习结果.
+ *
+ * 优化前: getRatingPreviews 调用 scheduleNextReview 4 次, 每次内部调用 f.repeat(),
+ *         导致 FSRS 计算 4 次 (冗余).
+ * 优化后: 本函数内部只调用 f.repeat() 1 次, 复用返回的 IPreview (含 4 个 rating 的结果)
+ *         逐一转换为 ReviewUpdate. FSRS 计算次数从 4 降到 1.
+ *
+ * @param card 当前卡片
+ * @param now 评分时间, 默认 new Date()
+ * @returns Record<Rating, ReviewUpdate> — 4 个 rating 的预览结果
+ */
+export function scheduleNextReviewBatch(
+  card: MemoryCard,
+  now: Date = new Date()
+): Record<Rating, ReviewUpdate> {
+  const fsrsCard: Card = {
+    due: new Date(card.due),
+    stability: card.stability,
+    difficulty: card.difficulty,
+    elapsed_days: card.elapsedDays,
+    scheduled_days: card.scheduledDays,
+    reps: card.reps,
+    lapses: card.lapses,
+    state: card.status === 'new' ? State.New : card.status === 'learning' ? State.Learning : card.status === 'review' ? State.Review : State.Relearning,
+    last_review: new Date(card.lastReviewAt ?? card.firstLearnedAt),
+    learning_steps: card.learningSteps ?? 1,
+  };
+
+  // 只调用 1 次 f.repeat(), 复用 4 个 rating 的结果.
+  const result = f.repeat(fsrsCard, now);
+  const nowMs = now.getTime();
+
+  const ratings: Rating[] = ['again', 'hard', 'good', 'easy'];
+  const previews = {} as Record<Rating, ReviewUpdate>;
+  for (const rating of ratings) {
+    const fsrsRating = ratingToFsrsRating(rating);
+    const recordLog = result[fsrsRating];
+    const nextCard = recordLog.card;
+    previews[rating] = {
+      card: fsrsCardToMemoryCard(
+        nextCard,
+        card.id,
+        card.lexemeGroupId,
+        card.lemma,
+        card.objectiveDifficulty,
+        card.firstLearnedAt,
+        nowMs,
+        card.language
+      ),
+      nextReviewAt: nextCard.due.getTime(),
+    };
+  }
+  return previews;
+}
+
+/**
  * v1.6.1 Stage 1: 获取 MemoryCard 的当前 retrievability (回忆概率).
  * 用 ts-fsrs 原生 get_retrievability 计算, 替代 v1.6.0 的 30 天窗口硬编码.
  * @param card MemoryCard (项目内部格式)

@@ -1,0 +1,48 @@
+/* === v0.4.0-harmony Stage 5 (D5): CSS 动画合成层优化 ===
+ *
+ * 本文件提供 useBreathingEffect 的 CSS @keyframes 替代实现.
+ * useBreathingEffect.ts 的 rAF 逻辑由 Stage 4 删除, 本 Stage 仅准备 CSS.
+ *
+ * 设计参数 (与 useBreathingEffect.ts 保持等价):
+ * - intensity: 0.02 → scale(1.02) / opacity 0.96
+ * - duration: 4000ms
+ * - ease-in-out (sin 曲线 CSS 近似)
+ * - 延迟: 每个 [data-breathing] 元素 index * 200ms 递增 (通过 --breathing-delay CSS 变量由父组件设置)
+ *
+ * 合成层友好性: 仅使用 transform / opacity, 不触发 layout / paint.
+ * 60fps 稳定动画由浏览器 compositor 直接驱动.
+ */
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.96;
+  }
+}
+
+/* === .breathing-effect: 应用 @keyframes breathe 的 utility class ===
+ *
+ * 用法:
+ *   <div className="breathing-effect" style={{ '--breathing-delay': '200ms' }}>
+ *
+ * 默认无延迟; 通过 --breathing-delay CSS 变量支持错位呼吸 (200ms 递增).
+ * prefers-reduced-motion 时禁用动画 (与 tokens.css 全局规则一致, 这里显式声明以便组件在不继承全局规则时仍降级).
+ */
+.breathing-effect,
+[data-breathing] {
+  animation: breathe 4000ms ease-in-out infinite;
+  animation-delay: var(--breathing-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathing-effect,
+  [data-breathing] {
+    animation: none;
+  }
+}

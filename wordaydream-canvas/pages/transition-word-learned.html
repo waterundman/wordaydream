@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>状态结算：词汇掌握</title>
+    <style id="theme-vars">
+:root {
+  --primary: #d97757;
+  --primary-foreground: #ffffff;
+  --brand-50: #fdf8f5;
+  --brand-100: #fbe8de;
+  --brand-200: #f6d0b9;
+  --brand-300: #efb088;
+  --brand-400: #e78a57;
+  --brand-500: #d97757;
+  --brand-600: #c25e3e;
+  --brand-700: #a14a30;
+  --brand-800: #823b28;
+  --brand-900: #6b3222;
+  --brand-950: #3b1910;
+  --surface-base: #faf9f5;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f5f4ee;
+  --text-50: #1b1b19;
+  --text-100: #2d2d2a;
+  --text-200: #444440;
+  --text-300: #5c5c57;
+  --text-400: #8a8a82;
+  --text-500: #b8b8ae;
+  --border-600: #e4e2d8;
+  --border-700: #d8d6cd;
+  --border-800: #b7b5a9;
+  --destructive: #c25e3e;
+  --radius: 12px;
+  --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+}
+@theme inline {
+  --color-primary: #d97757;
+  --color-surface-base: #faf9f5;
+  --color-surface-elevated: #ffffff;
+  --color-surface-subtle: #f5f4ee;
+  --color-text-50: #1b1b19;
+  --color-border-700: #d8d6cd;
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+}
+    </style>
+    <style id="semantic-token-fallback">
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.border-primary { border-color: var(--primary); }
+.bg-surface-base { background-color: var(--surface-base); }
+.text-surface-base { color: var(--surface-base); }
+.bg-surface-elevated { background-color: var(--surface-elevated); }
+.bg-surface-subtle { background-color: var(--surface-subtle); }
+.text-text-50 { color: var(--text-50); }
+.bg-text-50 { background-color: var(--text-50); }
+.text-text-400 { color: var(--text-400); }
+.border-border-700 { border-color: var(--border-700); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @layer base {
+    body { background: var(--surface-base); color: var(--text-50); font-family: var(--font-sans); text-wrap: pretty; }
+  }
+    </style>
+    <style>
+        /* === Page layout === */
+        body {
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* === Base layer: dimmed reading context === */
+        .reading-context {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.3;
+            overflow-y: auto;
+            padding: 48px 24px 80px;
+            background: var(--surface-base);
+            transition: opacity 400ms ease-out;
+        }
+        .reading-context.restored {
+            opacity: 1;
+        }
+        .reading-bar {
+            max-width: 640px;
+            margin: 0 auto 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .reading-bar__track {
+            flex: 1;
+            height: 3px;
+            border-radius: 9999px;
+            background: var(--border-700);
+            overflow: hidden;
+        }
+        .reading-bar__fill {
+            height: 100%;
+            border-radius: 9999px;
+            background: var(--primary);
+        }
+        .reading-bar__label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-400);
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+        .reading-article {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .reading-article h1 {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--text-50);
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+        .reading-article p {
+            font-family: var(--font-serif);
+            font-size: 16px;
+            line-height: 1.75;
+            color: var(--text-200);
+            margin-bottom: 16px;
+        }
+        .reading-article em {
+            font-style: italic;
+            color: var(--primary);
+        }
+
+        /* === Celebration stage (flex centering, slight upward bias) === */
+        .celebration-stage {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10vh 20px 20vh;
+            box-sizing: border-box;
+        }
+
+        /* === Overlay block === */
+        .overlay-block {
+            position: relative;
+            max-width: 480px;
+            width: 90%;
+            max-height: 80vh;
+            padding: 56px 48px;
+            text-align: center;
+            background: var(--surface-base);
+            border: 1px solid var(--border-700);
+            border-radius: 24px;
+            box-shadow: 0 4px 24px rgba(27, 27, 25, 0.05);
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms cubic-bezier(0.22, 1, 0.36, 1);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .overlay-block.playing {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* === Paper texture overlay === */
+        .paper-texture {
+            position: absolute;
+            inset: 0;
+            background-image: url('../assets/paper-texture-warm.jpg');
+            background-size: cover;
+            opacity: 0.15;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* === Content wrapper (above texture) === */
+        .overlay-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* === Accent bar (decorative terracotta divider above badge) === */
+        .accent-bar {
+            width: 2px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 1px;
+            margin: 0 auto 24px;
+            opacity: 0;
+            transition: opacity 300ms ease-out 200ms;
+        }
+        .playing .accent-bar {
+            opacity: 1;
+        }
+
+        /* === Badge === */
+        .badge-wrap {
+            width: 76px;
+            height: 76px;
+            margin: 0 auto 28px;
+        }
+        .badge-svg {
+            width: 76px;
+            height: 76px;
+            display: block;
+        }
+        .badge-svg .ink-draw {
+            transition: stroke-dashoffset 600ms ease-in-out 300ms;
+        }
+        .badge-fill {
+            opacity: 0;
+            transition: opacity 600ms ease-out 300ms;
+        }
+        .playing .badge-fill {
+            opacity: 1;
+        }
+
+        /* === Word === */
+        .word {
+            font-family: var(--font-display);
+            font-size: 54px;
+            font-weight: 400;
+            color: var(--primary);
+            line-height: 1.2;
+            margin-bottom: 8px;
+            opacity: 0;
+            transition: opacity 400ms ease-out 500ms;
+        }
+        .playing .word {
+            opacity: 1;
+        }
+
+        /* === Underline === */
+        .underline-wrap {
+            width: 100%;
+            max-width: 240px;
+            margin: 0 auto 16px;
+        }
+        .underline-svg {
+            width: 100%;
+            display: block;
+        }
+        .underline-svg .ink-draw {
+            transition: stroke-dashoffset 500ms ease-in-out 700ms;
+        }
+
+        /* === Label === */
+        .label {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            color: var(--text-400);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin: 20px 0 0;
+            opacity: 0;
+            transition: opacity 300ms ease-out 800ms;
+        }
+        .playing .label {
+            opacity: 1;
+        }
+
+        /* === SVG ink-draw base === */
+        .ink-draw {
+            stroke-dasharray: var(--path-length, 1000);
+            stroke-dashoffset: var(--path-length, 1000);
+        }
+        .playing .badge-svg .ink-draw,
+        .playing .underline-svg .ink-draw {
+            stroke-dashoffset: 0;
+        }
+
+        /* === No-transition reset === */
+        .no-transition,
+        .no-transition * {
+            transition: none !important;
+        }
+
+        /* === Replay button === */
+        .replay-btn {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 28px;
+            border-radius: 9999px;
+            background: var(--text-50);
+            color: var(--surface-base);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid var(--text-50);
+            cursor: pointer;
+            z-index: 100;
+            transition: background-color 200ms ease-out, border-color 200ms ease-out;
+        }
+        .replay-btn:hover {
+            background: var(--text-100);
+            border-color: var(--text-100);
+        }
+        .replay-btn:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* === Reduced motion === */
+        @media (prefers-reduced-motion: reduce) {
+            .overlay-block,
+            .overlay-block.playing {
+                transform: none !important;
+                opacity: 1 !important;
+                transition: none !important;
+            }
+            .ink-draw {
+                stroke-dashoffset: 0 !important;
+                transition: none !important;
+            }
+            .word, .label, .badge-fill, .accent-bar {
+                opacity: 1 !important;
+                transition: none !important;
+            }
+            .reading-context {
+                opacity: 0.3 !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+    <!-- Base layer: dimmed reading context -->
+    <div class="reading-context" id="baseLayer">
+        <div class="reading-bar">
+            <div class="reading-bar__track">
+                <div class="reading-bar__fill" style="width: 68%;"></div>
+            </div>
+            <span class="reading-bar__label">第 3 章 · 68%</span>
+        </div>
+        <article class="reading-article">
+            <h1>The Art of Serendipity</h1>
+            <p>It was pure serendipity that led her to the old bookshop on that rainy afternoon. She had been wandering the narrow streets of the old town, seeking shelter from the sudden downpour, when she noticed the faded sign swinging gently above a half-open door.</p>
+            <p>Inside, the air was thick with the scent of aged paper and dust. Shelves lined every wall, stacked high with volumes whose spines had long since lost their gold lettering.</p>
+            <p>She ran her fingers along the worn covers, pausing at a slim volume bound in deep terracotta leather. The title, embossed in faint letters, read simply: "A Field Guide to Forgotten Words."</p>
+            <p>Opening it at random, she found an entry circled in faded ink — <em>serendipity</em>, n.: the faculty of making happy discoveries by accident.</p>
+            <p>She smiled, thinking of the winding path that had brought her here — the missed bus, the forgotten umbrella, the wrong turn down a cobblestone lane. Each small mishap had been a quiet conspirator in this moment of discovery.</p>
+            <p>Perhaps that was the true lesson of the field guide: that the most meaningful finds are rarely the ones we set out to seek. They arrive, instead, in the gaps between our plans — unbidden, unannounced, and quietly luminous.</p>
+        </article>
+    </div>
+
+    <!-- Overlay layer: celebration block -->
+    <div class="celebration-stage">
+        <div class="overlay-block" id="overlay">
+            <!-- Paper texture overlay -->
+            <div class="paper-texture" aria-hidden="true"></div>
+
+            <!-- Content -->
+            <div class="overlay-content">
+                <!-- Terracotta accent divider -->
+                <div class="accent-bar" aria-hidden="true"></div>
+                <!-- Badge: engraved book (ink-draw) -->
+                <div class="badge-wrap">
+                    <svg class="badge-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="var(--text-200)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <!-- Book outline -->
+                        <path class="ink-draw" d="M12 14 L 32 10 L 52 14 L 52 50 L 32 46 L 12 50 Z"/>
+                        <!-- Spine -->
+                        <path class="ink-draw" d="M32 10 L 32 46"/>
+                        <!-- Pages (hatching) -->
+                        <path class="ink-draw" d="M16 18 L 28 16" stroke-opacity="0.4"/>
+                        <path class="ink-draw" d="M16 22 L 28 20" stroke-opacity="0.4"/>
+                        <path class="ink-draw" d="M16 26 L 28 24" stroke-opacity="0.4"/>
+                        <path class="ink-draw" d="M36 16 L 48 18" stroke-opacity="0.4"/>
+                        <path class="ink-draw" d="M36 20 L 48 22" stroke-opacity="0.4"/>
+                        <path class="ink-draw" d="M36 24 L 48 26" stroke-opacity="0.4"/>
+                        <!-- Terracotta wash on cover -->
+                        <path class="badge-fill" d="M12 14 L 32 10 L 52 14 L 52 50 L 32 46 L 12 50 Z" fill="var(--primary)" fill-opacity="0.1" stroke="none"/>
+                        <!-- Ribbon bookmark -->
+                        <path class="ink-draw" d="M44 14 L 44 28 L 40 25 L 36 28 L 36 16" fill="var(--primary)" fill-opacity="0.15" stroke="var(--primary)" stroke-width="1.25"/>
+                    </svg>
+                </div>
+
+                <!-- Word -->
+                <h2 class="word">serendipity</h2>
+
+                <!-- Hand-drawn underline (ink-draw) -->
+                <div class="underline-wrap">
+                    <svg class="underline-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 6" fill="none" aria-hidden="true">
+                        <path class="ink-draw" d="M2 3 C 10 1, 20 5, 30 2 C 40 4, 50 1, 60 3 C 70 5, 80 2, 90 4 C 100 1, 110 5, 120 2 C 130 4, 140 1, 150 3 C 160 5, 170 2, 180 4 C 188 3, 194 3, 198 3" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+                    </svg>
+                </div>
+
+                <!-- Label -->
+                <p class="label">已掌握</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replay button -->
+    <button class="replay-btn" id="replayBtn" type="button">重播</button>
+
+    <script>
+        (function () {
+            'use strict';
+
+            var overlay = document.getElementById('overlay');
+            var baseLayer = document.getElementById('baseLayer');
+            var replayBtn = document.getElementById('replayBtn');
+            var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            var exitTimer = null;
+            var replayTimer = null;
+
+            // --- SVG ink-draw: calculate path lengths ---
+            var inkPaths = document.querySelectorAll('.ink-draw');
+            inkPaths.forEach(function (path) {
+                var len;
+                try {
+                    len = path.getTotalLength();
+                } catch (e) {
+                    len = 1000;
+                }
+                // Round to avoid sub-pixel rendering issues
+                len = Math.ceil(len);
+                path.style.setProperty('--path-length', len);
+            });
+
+            // --- Animation state machine ---
+            function reset() {
+                overlay.classList.add('no-transition');
+                overlay.classList.remove('playing', 'exiting');
+                baseLayer.classList.remove('restored');
+                // Force reflow so the reset takes effect instantly
+                void overlay.offsetWidth;
+                overlay.classList.remove('no-transition');
+            }
+
+            function play() {
+                if (prefersReducedMotion) return;
+
+                clearTimeout(exitTimer);
+                clearTimeout(replayTimer);
+
+                // Reset to initial state without transitions
+                reset();
+
+                // Start playing on the next frame
+                requestAnimationFrame(function () {
+                    overlay.classList.add('playing');
+                });
+
+                // Hold the celebration visible — no auto-exit.
+                // The overlay stays showing the full celebration until the
+                // replay button is pressed, which restarts from the beginning.
+            }
+
+            // --- Auto-play on load after 500ms ---
+            window.addEventListener('load', function () {
+                setTimeout(play, 500);
+            });
+
+            // --- Replay button ---
+            replayBtn.addEventListener('click', function () {
+                if (prefersReducedMotion) return;
+                play();
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -61,6 +61,16 @@ function LinkedOccurrenceHighlightImpl({
     isPassiveHighlight ? styles.passive : '',
     isReview ? styles.review : '',
     isCompound ? styles.compound : '',
+    // v2.2.4 Stage 3 (Bug 13): 只有答对 (resolvedGrade==='correct') 才变绿色.
+    // 答错 (partial/wrong) 推进进度但保持原色, 让用户区分哪些词已掌握、哪些还需复习.
+    // 旧数据无 resolvedGrade 时兼容视为 'correct' (保持旧行为).
+    token.isResolved && (token.resolvedGrade ?? 'correct') === 'correct'
+      ? styles.resolved
+      : '',
+    // v2.2.4 Stage 3 (Bug 13): 答错的 token 用柔和的灰色 + 删除线, 明确反馈"未掌握".
+    token.isResolved && token.resolvedGrade && token.resolvedGrade !== 'correct'
+      ? styles.resolvedWrong
+      : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -76,8 +86,12 @@ function LinkedOccurrenceHighlightImpl({
     return <span className={styles.word}>{children}</span>;
   };
 
+  // v2.2.4 Stage 3 (Bug 13): 揭开动画和下划线动画只在答对时播放.
+  // 答错的 token 不应有"揭示庆祝"效果, 保持朴素即可.
+  const isCorrectlyResolved = token.isResolved && (token.resolvedGrade ?? 'correct') === 'correct';
+
   return (
-    <ResolvedUnderlineMotion isResolved={token.isResolved} className={baseClassName}>
+    <ResolvedUnderlineMotion isResolved={isCorrectlyResolved} className={baseClassName}>
       <span
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
@@ -90,7 +104,7 @@ function LinkedOccurrenceHighlightImpl({
         data-testid="token-trigger"
       >
         {isReview && <span className={styles.reviewDot} aria-hidden="true" />}
-        <WordUnveilAnimation isResolved={token.isResolved}>
+        <WordUnveilAnimation isResolved={isCorrectlyResolved}>
           {renderContent()}
         </WordUnveilAnimation>
       </span>

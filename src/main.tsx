@@ -2,9 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { TooltipProvider } from '@radix-ui/react-tooltip'
 import './index.css'
+import './styles/animations.css'
 import App from './App.tsx'
 // v1.4.1 Stage 2: 离线模式 store (init / beforeinstallprompt 监听)
 import { useOfflineModeStore } from './features/llm/store/offlineMode'
+// v0.1.0-harmony Stage 2: SW 注册抽出到 platform 模块, 内部处理鸿蒙 ArkWeb 降级
+import { registerServiceWorker } from './platform/swRegistration'
 
 // 启动 window 'online' / 'offline' 事件监听, 镜像 navigator.onLine 到 store.
 // 在 main.tsx module 顶层调用, 整个应用生命周期都生效.
@@ -26,18 +29,10 @@ if (typeof window !== 'undefined') {
   })
 }
 
-// v1.4.1 Stage 2: 触发 SW 注册 (autoUpdate 模式由 vite-plugin-pwa 处理, 0 额外代码).
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  // vite-plugin-pwa 在 production 自动注入 registerSW.js,
-  // 这里用 dynamic import 走其 virtual module, 避免在 dev 模式报 SW 警告.
-  import('virtual:pwa-register')
-    .then(({ registerSW }) => {
-      registerSW({ immediate: true })
-    })
-    .catch(() => {
-      // virtual:pwa-register 在 dev / 沙箱不可用, 静默忽略
-    })
-}
+// v1.4.1 Stage 2: 触发 SW 注册 (autoUpdate 模式由 vite-plugin-pwa 处理).
+// v0.1.0-harmony Stage 2: 鸿蒙 ArkWeb 不支持 SW, 由 registerServiceWorker 内部
+// 通过 detectPlatform().supportsServiceWorker() 降级为纯网络模式.
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

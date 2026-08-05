@@ -1,11 +1,16 @@
 /**
  * v2.2.0 Stage 4 (D3): LLM 改写 gloss 缓存持久化层
+ * v0.3.0-harmony Stage 4 (D3): IndexedDB 索引优化 (by_timestamp 索引 + 游标删除)
  *
  * 设计目标:
  * - 把 LLM 改写结果持久化到 IndexedDB, 二次访问 < 50ms, 减少 LLM quota 消耗.
  * - TTL 30 天 + LRU 5000 条上限, 避免无限增长.
  * - sourceHash 校验: 字典原文变化时缓存自动失效, 重写一次.
  * - IndexedDB 不可用时 (隐私模式/SSR/老浏览器) 降级到内存 Map, 不抛错.
+ *
+ * v0.3.0 Stage 4 优化:
+ * - DB_VERSION 1 → 2, 新增 by_timestamp 索引
+ * - evictIndexedDbIfNeeded 用 idx.openCursor(null, 'next') + cursor.delete() 替代 getAll + sort + 逐条 delete
  *
  * 设计参考: Stage 2 csvStorage.ts (原生 IndexedDB API, 不引入新依赖).
  *
@@ -18,7 +23,8 @@ import type { Language } from '../../../types';
 
 const DB_NAME = 'wordaydream-gloss-cache';
 const STORE_NAME = 'glosses';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+const INDEX_BY_TIMESTAMP = 'by_timestamp';
 const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 天
 const MAX_ENTRIES = 5000;
 
@@ -52,6 +58,10 @@ let indexedDbUnavailable = false;
 
 /**
  * 打开 IndexedDB. 不可用时抛错 (由调用方 catch 降级到内存).
+ *
+ * onupgradeneeded 升级路径 (R-IDB-1 缓解: 保留已有 store, 仅 createIndex):
+ * - v1 (oldVersion < 1): 创建 objectStore 'glosses' (keyPath='key')
+ * - v2 (oldVersion < 2): 创建 by_timestamp 索引 (不删除已有 store/数据)
  */
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -64,8 +74,20 @@ function openDb(): Promise<IDBDatabase> {
     request.onsuccess = () => resolve(request.result);
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
+      const oldVersion = event.oldVersion;
+      // v1: 创建 store (保留现有逻辑, 兼容 oldVersion < 1 + 防御性检查)
+      if (oldVersion < 1 || !db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+      }
+      // v2: 创建 by_timestamp 索引 (R-IDB-1 缓解: 不删除已有 store)
+      if (oldVersion < 2) {
+        const tx = (event.target as IDBOpenDBRequest).transaction;
+        if (tx !== null) {
+          const store = tx.objectStore(STORE_NAME);
+          if (!store.indexNames.contains(INDEX_BY_TIMESTAMP)) {
+            store.createIndex(INDEX_BY_TIMESTAMP, 'timestamp', { unique: false });
+          }
+        }
       }
     };
   });
@@ -310,25 +332,33 @@ async function evictMemoryIfNeeded(): Promise<void> {
 }
 
 /**
- * LRU 淘汰: IndexedDB 超 MAX_ENTRIES 时删 timestamp 最旧的 (逐条删到上限以内).
+ * LRU 淘汰: IndexedDB 超 MAX_ENTRIES 时用索引游标删除最旧 entry.
+ *
+ * v0.3.0 Stage 4 优化: 用 idx.openCursor(null, 'next') 升序遍历 by_timestamp 索引,
+ * cursor.delete() + counter 增量, 直到 deleted >= toDelete.
+ * 替代 getAll + sort + 逐条 delete (减少大数据量内存开销).
  */
 async function evictIndexedDbIfNeeded(): Promise<void> {
   try {
     const count = await getCachedGlossCount();
     if (count <= MAX_ENTRIES) return;
+    const toDelete = count - MAX_ENTRIES;
     const db = await openDb();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.getAll();
+      const idx = store.index(INDEX_BY_TIMESTAMP);
+      let deleted = 0;
+      // 'next' 方向: 按 timestamp 升序 (最旧在前)
+      const req = idx.openCursor(null, 'next');
       req.onsuccess = () => {
-        const all = (req.result as CachedGloss[]) ?? [];
-        // 按 timestamp 升序, 删除最旧的 (count - MAX_ENTRIES) 条
-        all.sort((a, b) => a.timestamp - b.timestamp);
-        const toDelete = all.slice(0, Math.max(0, all.length - MAX_ENTRIES));
-        for (const entry of toDelete) {
-          store.delete(entry.key);
+        const cursor = req.result;
+        if (cursor && deleted < toDelete) {
+          cursor.delete();
+          deleted++;
+          cursor.continue();
         }
+        // 完成或达到删除上限时, 等待 tx.oncomplete
       };
       tx.oncomplete = () => {
         db.close();

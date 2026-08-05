@@ -56,12 +56,62 @@
   --radius-xl: var(--radius-xl);
 }
     </style>
+    <style id="semantic-token-fallback">
+      .bg-primary { background-color: var(--primary); }
+      .text-primary { color: var(--primary); }
+      .border-primary { border-color: var(--primary); }
+      .ring-primary { --tw-ring-color: var(--primary); }
+      .bg-primary-foreground { background-color: var(--primary-foreground); }
+      .text-primary-foreground { color: var(--primary-foreground); }
+      .border-primary-foreground { border-color: var(--primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--primary-foreground); }
+      .bg-destructive { background-color: var(--destructive); }
+      .text-destructive { color: var(--destructive); }
+      .border-destructive { border-color: var(--destructive); }
+      .ring-destructive { --tw-ring-color: var(--destructive); }
+      .bg-background { background-color: var(--surface-base); }
+      .text-background { color: var(--surface-base); }
+      .border-background { border-color: var(--surface-base); }
+      .ring-background { --tw-ring-color: var(--surface-base); }
+      .bg-foreground { background-color: var(--text-50); }
+      .text-foreground { color: var(--text-50); }
+      .border-foreground { border-color: var(--text-50); }
+      .ring-foreground { --tw-ring-color: var(--text-50); }
+      .bg-card { background-color: var(--surface-elevated); }
+      .text-card { color: var(--surface-elevated); }
+      .border-card { border-color: var(--surface-elevated); }
+      .ring-card { --tw-ring-color: var(--surface-elevated); }
+      .bg-card-foreground { background-color: var(--text-50); }
+      .text-card-foreground { color: var(--text-50); }
+      .border-card-foreground { border-color: var(--text-50); }
+      .ring-card-foreground { --tw-ring-color: var(--text-50); }
+      .bg-muted { background-color: var(--surface-subtle); }
+      .text-muted { color: var(--surface-subtle); }
+      .border-muted { border-color: var(--surface-subtle); }
+      .ring-muted { --tw-ring-color: var(--surface-subtle); }
+      .bg-muted-foreground { background-color: var(--text-400); }
+      .text-muted-foreground { color: var(--text-400); }
+      .border-muted-foreground { border-color: var(--text-400); }
+      .ring-muted-foreground { --tw-ring-color: var(--text-400); }
+      .bg-border { background-color: var(--border-700); }
+      .text-border { color: var(--border-700); }
+      .border-border { border-color: var(--border-700); }
+      .ring-border { --tw-ring-color: var(--border-700); }
+      .bg-input { background-color: var(--border-700); }
+      .text-input { color: var(--border-700); }
+      .border-input { border-color: var(--border-700); }
+      .ring-input { --tw-ring-color: var(--border-700); }
+      .bg-ring { background-color: var(--brand-500); }
+      .text-ring { color: var(--brand-500); }
+      .border-ring { border-color: var(--brand-500); }
+      .ring-ring { --tw-ring-color: var(--brand-500); }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
     <style type="text/tailwindcss">
   
   @layer base {
-    body { background: #ffffff; color: #0f172a; }
+    body { background: var(--surface-base); color: var(--text-50); font-family: var(--font-sans); }
     td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
     th { @apply whitespace-nowrap; }
   }

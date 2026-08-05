@@ -1,0 +1,29 @@
+Wordaydream for HarmonyOS
+
+[App Introduction]
+Wordaydream is a smart vocabulary learning app based on the FSRS spaced repetition algorithm, helping users expand their vocabulary through reading in authentic contexts.
+
+[Core Features]
+- 14 feature modules: Reading / Review / Grammar / Analytics / Achievements / Courses / Word Lists / Settings / Dictionary / Assessment / Graduation / Home / Streak / LLM
+- AI-generated reading materials + intelligent difficulty assessment + automatic card creation
+- FSRS spaced repetition algorithm for scientifically scheduled review timing
+- Desktop service widget: check due words at a glance, start a review in one tap
+- Review reminder push notifications: native notifications when words are due
+- Three themes: light / dark / sepia
+- Full offline mode: learn without a network connection
+
+[Technical Highlights]
+- HarmonyOS native ArkUI service widget
+- HarmonyOS push notifications (notificationManager)
+- ArkWeb container + JSBridge bidirectional communication
+- Standalone LLM Proxy service (decoupled from Netlify Edge Function)
+
+[Privacy]
+- All learning data is stored locally (IndexedDB / relationalStore)
+- API keys are held by the backend LLM Proxy, the frontend never touches them
+- No personal user information is collected
+- Privacy policy: https://wordaydream.example.com/privacy
+
+[Supported Devices]
+- HarmonyOS 5.0+ (cann8.0+)
+- Phone / Tablet / 2-in-1

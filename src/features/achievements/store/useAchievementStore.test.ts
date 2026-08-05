@@ -12,6 +12,10 @@
  * - vi.resetModules() + 动态 import 重建 store
  *   → 新 store 走 onRehydrateStorage, 只加载 achievements,
  *     newUnlocks 是初始值 []
+ *
+ * v0.4.0-harmony Stage 4 (D4): checkAndUnlock 内部走 scheduleIdleTask,
+ * jsdom 无 requestIdleCallback, 降级为 setTimeout(0) (macrotask).
+ * 测试中需 await setTimeout(0) 让 idle task 落地后再断言副作用.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AchievementContext } from '../types';
@@ -30,6 +34,15 @@ afterEach(() => {
   vi.resetModules();
 });
 
+/**
+ * 等待 checkAndUnlock 内部的 scheduleIdleTask 落地.
+ * jsdom 无 requestIdleCallback, scheduleIdleTask 降级为 setTimeout(0).
+ * 用 setTimeout(0) 排到同一 macrotask 队列之后即可.
+ */
+function flushIdleTasks(): Promise<void> {
+  return new Promise((r) => setTimeout(r, 0));
+}
+
 describe('useAchievementStore persist (T03)', () => {
   it('T03: newUnlocks 刷新后为空 (volatile)', async () => {
     // 1. 创建 store, 触发 first_session (session_count=1)
@@ -44,6 +57,9 @@ describe('useAchievementStore persist (T03)', () => {
       lastSessionPerfect: false,
     };
     useAchievementStore.getState().checkAndUnlock(ctx);
+
+    // v0.4.0-harmony Stage 4: checkAndUnlock 走 scheduleIdleTask (setTimeout 0 降级)
+    await flushIdleTasks();
 
     // 2. 断言 newUnlocks 至少有 1 个 (first_session)
     const before = useAchievementStore.getState().newUnlocks;

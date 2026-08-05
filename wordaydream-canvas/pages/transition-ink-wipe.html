@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>过渡动画：墨迹擦除</title>
+    <style id="theme-vars">
+:root {
+  --primary: #d97757;
+  --primary-foreground: #ffffff;
+  --brand-50: #fdf8f5;
+  --brand-100: #fbe8de;
+  --brand-200: #f6d0b9;
+  --brand-300: #efb088;
+  --brand-400: #e78a57;
+  --brand-500: #d97757;
+  --brand-600: #c25e3e;
+  --brand-700: #a14a30;
+  --brand-800: #823b28;
+  --brand-900: #6b3222;
+  --brand-950: #3b1910;
+  --surface-base: #faf9f5;
+  --surface-elevated: #ffffff;
+  --surface-subtle: #f5f4ee;
+  --text-50: #1b1b19;
+  --text-100: #2d2d2a;
+  --text-200: #444440;
+  --text-300: #5c5c57;
+  --text-400: #8a8a82;
+  --text-500: #b8b8ae;
+  --border-600: #e4e2d8;
+  --border-700: #d8d6cd;
+  --border-800: #b7b5a9;
+  --destructive: #c25e3e;
+  --radius: 12px;
+  --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+}
+@theme inline {
+  --color-primary: #d97757;
+  --color-surface-base: #faf9f5;
+  --color-surface-elevated: #ffffff;
+  --color-surface-subtle: #f5f4ee;
+  --color-text-50: #1b1b19;
+  --color-border-700: #d8d6cd;
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+}
+    </style>
+    <style id="semantic-token-fallback">
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.border-primary { border-color: var(--primary); }
+.bg-surface-base { background-color: var(--surface-base); }
+.text-surface-base { color: var(--surface-base); }
+.bg-surface-elevated { background-color: var(--surface-elevated); }
+.bg-surface-subtle { background-color: var(--surface-subtle); }
+.text-text-50 { color: var(--text-50); }
+.bg-text-50 { background-color: var(--text-50); }
+.text-text-400 { color: var(--text-400); }
+.border-border-700 { border-color: var(--border-700); }
+.bg-border-700 { background-color: var(--border-700); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @layer base {
+    body { background: var(--surface-base); color: var(--text-50); font-family: var(--font-sans); text-wrap: pretty; }
+  }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased overflow-hidden">
+
+    <!-- Stage: holds the 3 layers, locked to viewport height -->
+    <div id="stage" class="stage">
+
+        <!-- Base layer: two placeholder screens side by side (50/50) -->
+        <div class="screens">
+            <!-- Left placeholder: current page (reading view) -->
+            <section class="screen screen--current">
+                <span class="screen-tag">当前页面</span>
+                <span class="screen-accent" aria-hidden="true"></span>
+                <h2 class="screen-title">阅读 · 第三章</h2>
+                <div class="screen-lines">
+                    <div class="mock-line" style="width: 90%;"></div>
+                    <div class="mock-line" style="width: 75%;"></div>
+                    <div class="mock-line" style="width: 85%;"></div>
+                    <div class="mock-line" style="width: 60%;"></div>
+                    <div class="mock-line" style="width: 70%;"></div>
+                </div>
+                <p class="screen-hint">继续阅读以解锁词汇</p>
+            </section>
+
+            <!-- Right placeholder: target page (vocab review view) -->
+            <section class="screen screen--target">
+                <span class="screen-tag">目标页面</span>
+                <span class="screen-accent" aria-hidden="true"></span>
+                <h2 class="screen-title">词汇 · 复习</h2>
+                <div class="screen-card">
+                    <div class="card-line" style="width: 80%;"></div>
+                    <div class="card-line" style="width: 60%;"></div>
+                    <div class="card-line" style="width: 70%;"></div>
+                </div>
+                <p class="screen-hint screen-hint--mono">已掌握 3 / 8</p>
+            </section>
+        </div>
+
+        <!-- Transition overlay: dark block that sweeps left → right -->
+        <div id="transition-overlay" class="transition-overlay" aria-hidden="true">
+            <!-- Paper grain texture child (opacity 0.15) -->
+            <div class="paper-texture"></div>
+            <!-- Inlined botanical sprig — ink-draws on top of the dark block -->
+            <svg class="sprig-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 40" fill="none" stroke="var(--surface-base)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="presentation" aria-hidden="true">
+                <!-- Center stem -->
+                <path class="sprig-path" d="M20 20 C 80 18, 140 22, 200 20 C 260 18, 320 22, 380 20 C 420 19, 450 21, 470 20" />
+                <!-- Left branch leaves -->
+                <path class="sprig-path" d="M60 20 C 50 12, 40 8, 30 6 C 38 14, 48 18, 60 20" />
+                <path class="sprig-path" d="M60 20 C 50 28, 40 32, 30 34 C 38 26, 48 22, 60 20" />
+                <path class="sprig-path" d="M110 20 C 100 14, 88 10, 76 8 C 86 16, 98 19, 110 20" />
+                <path class="sprig-path" d="M110 20 C 100 26, 88 30, 76 32 C 86 24, 98 21, 110 20" />
+                <!-- Center accent leaf -->
+                <path class="sprig-path" d="M200 20 C 190 10, 175 5, 160 3 C 172 12, 188 18, 200 20" />
+                <path class="sprig-path" d="M200 20 C 190 30, 175 35, 160 37 C 172 28, 188 22, 200 20" />
+                <!-- Right branch leaves -->
+                <path class="sprig-path" d="M290 20 C 300 12, 312 8, 324 6 C 314 14, 302 18, 290 20" />
+                <path class="sprig-path" d="M290 20 C 300 28, 312 32, 324 34 C 314 26, 302 22, 290 20" />
+                <path class="sprig-path" d="M340 20 C 350 14, 362 10, 374 8 C 364 16, 352 19, 340 20" />
+                <path class="sprig-path" d="M340 20 C 350 26, 362 30, 374 32 C 364 24, 352 21, 340 20" />
+                <!-- Small berries (fill only — fade in after the line art draws) -->
+                <circle class="sprig-berry" cx="155" cy="2" r="2" fill="var(--surface-base)" fill-opacity="0.35" stroke="none"/>
+                <circle class="sprig-berry" cx="250" cy="20" r="1.5" fill="var(--surface-base)" fill-opacity="0.45" stroke="none"/>
+                <circle class="sprig-berry" cx="430" cy="20" r="1.5" fill="var(--surface-base)" fill-opacity="0.45" stroke="none"/>
+            </svg>
+        </div>
+
+    </div>
+
+    <!-- Replay button (fixed, bottom center) -->
+    <button id="replay-btn" type="button" class="replay-btn" aria-label="重播过渡动画">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
+        </svg>
+        重播
+    </button>
+
+    <style>
+        /* === Stage === */
+        .stage {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* === Base layer: two screens side by side === */
+        .screens {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        .screen {
+            flex: 1 1 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 48px 40px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .screen--current {
+            background-color: var(--surface-base);
+            border-right: 1px solid var(--border-700);
+        }
+        .screen--target {
+            background-color: var(--surface-subtle);
+        }
+        .screen-tag {
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-400);
+            margin-bottom: 0.75rem;
+        }
+        .screen-accent {
+            display: block;
+            width: 32px;
+            height: 2px;
+            background-color: var(--primary);
+            margin: 0 0 1rem 0;
+        }
+        .screen-title {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--text-50);
+            margin: 0 0 1.75rem 0;
+            text-wrap: balance;
+            line-height: 1.2;
+        }
+        .screen-lines {
+            width: 100%;
+            max-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+        }
+        .mock-line {
+            height: 8px;
+            border-radius: 4px;
+            background-color: var(--border-600);
+            width: 100%;
+        }
+        .screen-card {
+            width: 100%;
+            max-width: 280px;
+            background-color: var(--surface-elevated);
+            border: 1px solid var(--border-700);
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+        }
+        .card-line {
+            height: 8px;
+            border-radius: 4px;
+            background-color: var(--border-600);
+            width: 100%;
+        }
+        .screen-hint {
+            margin-top: 1.5rem;
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 13px;
+            color: var(--text-400);
+        }
+        .screen-hint--mono {
+            font-family: var(--font-mono);
+            font-style: normal;
+            font-size: 13px;
+            color: var(--primary);
+        }
+
+        /* === Transition overlay (the ink-wipe block) === */
+        .transition-overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            opacity: 1;
+            background-color: var(--text-50);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .transition-overlay.playing {
+            width: 100%;
+            min-width: 200px;
+            opacity: 0;
+            transition:
+                width 600ms cubic-bezier(0.22, 1, 0.36, 1) 500ms,
+                opacity 400ms ease-in 1500ms;
+        }
+        /* Paper grain texture child */
+        .paper-texture {
+            position: absolute;
+            inset: 0;
+            background-image: url('../assets/paper-texture-dark.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        /* Botanical sprig — centered in the visible portion of the block */
+        .sprig-svg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            z-index: 2;
+            opacity: 0.92;
+        }
+        .sprig-path {
+            stroke-dasharray: var(--path-length);
+            stroke-dashoffset: var(--path-length);
+        }
+        .transition-overlay.playing .sprig-path {
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 800ms ease-in-out 700ms;
+        }
+        /* Berries fade in after the line art finishes drawing */
+        .sprig-berry { opacity: 0; }
+        .transition-overlay.playing .sprig-berry {
+            opacity: 1;
+            transition: opacity 0.4s ease-out 1450ms;
+        }
+
+        /* === Replay button === */
+        .replay-btn {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 10px 28px;
+            border-radius: 9999px;
+            background: var(--text-50);
+            color: var(--surface-base);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: box-shadow 0.2s ease-out, opacity 0.4s ease-out;
+            z-index: 100;
+        }
+        .replay-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .replay-btn:hover {
+            box-shadow: 0 0 0 2px var(--border-800);
+        }
+        .replay-btn:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* === Reduced motion: animations off, elements in final state === */
+        @media (prefers-reduced-motion: reduce) {
+            .transition-overlay,
+            .transition-overlay.playing {
+                width: 100% !important;
+                opacity: 0 !important;
+                transition: none !important;
+            }
+            .sprig-path,
+            .transition-overlay.playing .sprig-path {
+                stroke-dashoffset: 0 !important;
+                transition: none !important;
+            }
+            .sprig-berry { opacity: 1 !important; }
+            .replay-btn {
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                transition: box-shadow 0.2s ease-out !important;
+            }
+        }
+    </style>
+
+    <script>
+        // Set the exact path length for each sprig path so stroke-dasharray
+        // + stroke-dashoffset can drive the ink-draw animation.
+        (function initSprigLengths() {
+            document.querySelectorAll('.sprig-path').forEach(function (path) {
+                var length = (typeof path.getTotalLength === 'function') ? path.getTotalLength() : 1000;
+                path.style.strokeDasharray = length;
+                path.style.setProperty('--path-length', length);
+            });
+        })();
+
+        // Drive the transition sequence by toggling the `playing` class on the
+        // overlay container. CSS transition delays sequence the sub-animations.
+        var overlay = document.getElementById('transition-overlay');
+        var replayBtn = document.getElementById('replay-btn');
+        var btnTimer = null;
+        var loopTimer = null;
+        // Approx. total animation length (width 1100ms + opacity fade to ~1900ms)
+        var ANIM_DURATION_MS = 1900;
+        // Pause after the sequence completes before auto-restarting the loop.
+        var LOOP_PAUSE_MS = 2000;
+        var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function playTransition() {
+            // Reset to the initial state (no transition → instant snap back).
+            overlay.classList.remove('playing');
+            replayBtn.classList.remove('visible');
+            if (btnTimer) { clearTimeout(btnTimer); btnTimer = null; }
+            if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+
+            // Force a reflow so the browser registers the reset state before
+            // we re-apply the `playing` transitions.
+            void overlay.offsetWidth;
+
+            requestAnimationFrame(function () {
+                overlay.classList.add('playing');
+                // Reveal the replay button after the sequence completes (~1900ms).
+                btnTimer = setTimeout(function () {
+                    replayBtn.classList.add('visible');
+                }, 2000);
+                // Loop the demo: restart after the sequence completes + 2s pause.
+                // Skip the loop when the user prefers reduced motion.
+                if (!reduceMotion) {
+                    loopTimer = setTimeout(playTransition, ANIM_DURATION_MS + LOOP_PAUSE_MS);
+                }
+            });
+        }
+
+        replayBtn.addEventListener('click', playTransition);
+
+        // Auto-play shortly after load so the initial frame paints first.
+        window.addEventListener('load', function () {
+            setTimeout(playTransition, 400);
+        });
+
+        // Re-measure path lengths once fonts/layout settle (defensive).
+        window.addEventListener('resize', function () {
+            document.querySelectorAll('.sprig-path').forEach(function (path) {
+                if (typeof path.getTotalLength === 'function') {
+                    var length = path.getTotalLength();
+                    path.style.strokeDasharray = length;
+                    path.style.setProperty('--path-length', length);
+                }
+            });
+        });
+
+        // Lucide init
+        if (window.lucide) { lucide.createIcons(); }
+    </script>
+</body>
+</html>

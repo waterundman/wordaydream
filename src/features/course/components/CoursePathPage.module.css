@@ -1,0 +1,266 @@
+/* CoursePathPage (v2.3.0 Stage 4)
+ *
+ * 课程导航页: 课程选择 / Module 列表.
+ *
+ * 布局:
+ * - .page flex 容器 (与 HomePage 一致风格)
+ * - .main 阅读区: ≥60% width, max-width 42rem, centered
+ * - 顶部 header: 课程标题 + 课程切换按钮
+ * - 主体: ModuleSection 列表 或 课程选择列表
+ *
+ * 设计约束:
+ * - 配色用 tokens.css 变量 (warm white #faf8f5 + dark ink #1c1917)
+ * - 无 emoji
+ * - prefers-reduced-motion 降级
+ * - Typography line-height 1.7
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  min-height: 100vh;
+  background: var(--color-paper);
+}
+
+/* === Header === */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+.title {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 600;
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.switchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out-quart);
+}
+
+.switchBtn:hover {
+  color: var(--color-ink);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.switchBtn:focus-visible {
+  outline: 2px solid var(--color-flame);
+  outline-offset: 2px;
+}
+
+/* === Home 按钮 === */
+.homeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-out-quart);
+}
+
+.homeBtn:hover {
+  color: var(--color-ink);
+  border-color: var(--color-accent);
+}
+
+.homeBtn:focus-visible {
+  outline: 2px solid var(--color-flame);
+  outline-offset: 2px;
+}
+
+/* === Main 阅读区: ≥60% width, max-width 42rem, centered === */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: var(--reading-max-width);
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.moduleList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* === 课程选择视图 (未选课) === */
+.courseList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.courseCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration-fast) var(--ease-out-quart);
+}
+
+.courseCard:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.courseCard:active {
+  transform: scale(0.99);
+}
+
+.courseCard:focus-visible {
+  outline: 2px solid var(--color-flame);
+  outline-offset: 2px;
+}
+
+.courseCardTitle {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  line-height: 1.3;
+}
+
+.courseCardMeta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.courseCardCta {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  margin-top: var(--space-1);
+}
+
+/* === 空状态提示 === */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+}
+
+.emptyStateText {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+/* === Tablet === */
+@media (max-width: 1023px) {
+  .page {
+    padding: var(--space-8) var(--space-5);
+  }
+}
+
+/* === Mobile === */
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-6) var(--space-4);
+    gap: var(--space-5);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .courseCard {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .courseCardTitle {
+    font-size: var(--text-lg);
+  }
+}
+
+/* === Reduced motion: 关闭所有动画/过渡 === */
+@media (prefers-reduced-motion: reduce) {
+  .switchBtn,
+  .switchBtn:hover,
+  .homeBtn,
+  .homeBtn:hover,
+  .courseCard,
+  .courseCard:hover,
+  .courseCard:active {
+    transition: none;
+    transform: none;
+  }
+}

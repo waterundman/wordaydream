@@ -1,0 +1,13 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "wordaydream",
+  "version": "0.3.0",
+  "description": "Wordaydream HarmonyOS NEXT shell (Web container + native bridge).",
+  "main": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ohos/hypium": "1.0.21"
+  },
+  "devDependencies": {},
+  "dynamicDependencies": {}
+}

@@ -99,7 +99,9 @@ export function ReadingHistoryPanel({ onReRead }: ReadingHistoryPanelProps) {
                 <div className={styles.progressBar}>
                   <div
                     className={styles.progressFill}
-                    style={{ width: `${getProgress(entry.resolvedCount, entry.totalTokenCount)}%` }}
+                    style={{
+                      transform: `scaleX(${getProgress(entry.resolvedCount, entry.totalTokenCount) / 100})`,
+                    }}
                   />
                 </div>
                 <div className={styles.progressText}>

@@ -206,9 +206,10 @@ const GrammarSpan = memo(function GrammarSpan({
 interface Props {
   language?: Language;
   isReplay?: boolean;
+  hideTitle?: boolean;
 }
 
-export function InteractivePassage({ language, isReplay = false }: Props = {}) {
+export function InteractivePassage({ language, isReplay = false, hideTitle = false }: Props = {}) {
   const { session, activeOccurrenceId, setActiveOccurrence } = useReadingSessionStore();
   const [visibleParagraphs, setVisibleParagraphs] = useState<Set<number>>(new Set());
   const [activeGrammarPointId, setActiveGrammarPointId] = useState<string | null>(null);
@@ -307,9 +308,8 @@ export function InteractivePassage({ language, isReplay = false }: Props = {}) {
   const segments = useMemo(() => {
     if (!session) return [];
 
-    const result: TextSegment[] = [];
-    let currentIndex = 0;
     const text = session.passage.text;
+    const result: TextSegment[] = [];
 
     // 边界守卫:过滤非法 token/grammarPoint(避免 startIndex 偏移导致 highlight 跨段)
     const isValidRange = (start: number, end: number) =>
@@ -323,7 +323,6 @@ export function InteractivePassage({ language, isReplay = false }: Props = {}) {
       isValidRange(t.startIndex, t.endIndex)
     );
     if (validTokens.length !== session.passage.tokens.length) {
-      // 一次性 warn 防止刷屏
       console.warn(
         `[InteractivePassage] dropped ${session.passage.tokens.length - validTokens.length} invalid token(s) out of bounds`,
       );
@@ -332,120 +331,120 @@ export function InteractivePassage({ language, isReplay = false }: Props = {}) {
       isValidRange(gp.startIndex, gp.endIndex)
     );
 
-    const sortedTokens = [...validTokens].sort((a, b) => a.startIndex - b.startIndex);
-    const sortedGrammarPoints = [...validGrammarPoints].sort(
-      (a, b) => a.startIndex - b.startIndex
-    );
+    // v2.2.4 Stage 3 (Bug 11): 重构 segments 生成逻辑.
+    // 旧逻辑 (v1.5.4): token 和 grammar 在同一主循环中竞争, 当 token 落在 grammar
+    // 范围内时 token 被静默跳过 → "单词划线几乎不存在".
+    // 新逻辑: 区间裁剪算法 — token 永远优先渲染 (可交互核心), grammar 裁剪到不与
+    // token 重叠的区间 (可能被拆分成多段), 文本不会重复.
+    //
+    // 算法:
+    // 1. token ranges 永远完整保留
+    // 2. grammar ranges 被裁剪: 移除与任何 token 重叠的部分, 保留空隙
+    // 3. 合并后按 start 排序, 填充 gaps, 渲染
 
-    let tokenIdx = 0;
-    let grammarIdx = 0;
+    type Range =
+      | { start: number; end: number; type: 'token'; token: TokenOccurrence }
+      | { start: number; end: number; type: 'grammar'; grammarPoint: GrammarPoint };
 
-    while (tokenIdx < sortedTokens.length || grammarIdx < sortedGrammarPoints.length) {
-      const nextToken = sortedTokens[tokenIdx];
-      const nextGrammar = sortedGrammarPoints[grammarIdx];
+    // Step 1: token ranges
+    const tokenRanges: Range[] = validTokens
+      .map((t) => ({
+        start: t.startIndex,
+        end: t.endIndex,
+        type: 'token' as const,
+        token: t,
+      }))
+      .sort((a, b) => a.start - b.start);
 
-      let nextSegment: TextSegment | null = null;
+    // Step 2: 裁剪 grammar ranges — 移除与任何 token 重叠的部分
+    const grammarRanges: Range[] = [];
+    for (const gp of validGrammarPoints) {
+      let subStart = gp.startIndex;
+      const subEnd = gp.endIndex;
 
-      if (!nextToken && nextGrammar) {
-        nextSegment = {
+      // 收集所有与此 grammar 重叠的 token ranges
+      const overlappingTokens = tokenRanges
+        .filter((t) => t.start < subEnd && t.end > subStart)
+        .sort((a, b) => a.start - b.start);
+
+      if (overlappingTokens.length === 0) {
+        // 无重叠, grammar 完整保留
+        grammarRanges.push({
+          start: subStart,
+          end: subEnd,
           type: 'grammar',
-          content: text.slice(nextGrammar.startIndex, nextGrammar.endIndex),
-          startIndex: nextGrammar.startIndex,
-          grammarPoint: nextGrammar,
-        };
-        grammarIdx++;
-      } else if (nextToken && !nextGrammar) {
-        nextSegment = {
-          type: 'token',
-          content: nextToken.surfaceForm,
-          token: nextToken,
-        };
-        tokenIdx++;
-      } else if (nextToken && nextGrammar) {
-        // v1.5.4 fix: 当 startIndex 相同时 token 优先 (token 是可交互的),
-        // 避免 grammar 先消费文本导致 token 不可点击.
-        if (nextToken.startIndex <= nextGrammar.startIndex) {
-          nextSegment = {
-            type: 'token',
-            content: nextToken.surfaceForm,
-            token: nextToken,
-          };
-          tokenIdx++;
-        } else {
-          nextSegment = {
-            type: 'grammar',
-            content: text.slice(nextGrammar.startIndex, nextGrammar.endIndex),
-            startIndex: nextGrammar.startIndex,
-            grammarPoint: nextGrammar,
-          };
-          grammarIdx++;
-        }
+          grammarPoint: gp,
+        });
+        continue;
       }
 
-      if (nextSegment) {
-        if (nextSegment.type === 'token') {
-          // v1.5.4 fix: 跳过与已渲染区域重叠的 token, 避免文本重复.
-          // 当 grammar 先渲染且 token 完全在其范围内时, token 文本已被 grammar 的
-          // text.slice 包含, 跳过 token 避免重复 (但 token 不可点击, 属于边缘情况).
-          if (nextSegment.token!.startIndex < currentIndex) {
-            // token 起点已被消费, 跳过不渲染
-          } else {
-            if (nextSegment.token!.startIndex > currentIndex) {
-              result.push({
-                type: 'text',
-                content: text.slice(currentIndex, nextSegment.token!.startIndex),
-                startIndex: currentIndex,
-              });
-            }
-            currentIndex = nextSegment.token!.endIndex;
-            result.push(nextSegment);
-          }
-        } else if (nextSegment.type === 'grammar') {
-          // v1.5.4 fix: grammar 与已渲染 token 重叠时, 调整 grammar 起点避免文本重复.
-          // 例如 grammar "verbarg sich" [177,189) 与 token "verbarg" [177,184):
-          // token 先渲染 [177,184), grammar 调整为 [184,189) 只渲染 " sich".
-          const gp = nextSegment.grammarPoint!;
-          if (gp.startIndex < currentIndex) {
-            const adjustedStart = currentIndex;
-            const adjustedEnd = gp.endIndex;
-            if (adjustedEnd > adjustedStart) {
-              // v1.5.4 fix: 分离前导空格到 text segment,
-              // 避免 inline-block 元素吃掉 grammar 的前导空格.
-              let contentStart = adjustedStart;
-              if (text[adjustedStart] === ' ') {
-                result.push({
-                  type: 'text',
-                  content: ' ',
-                  startIndex: adjustedStart,
-                });
-                contentStart = adjustedStart + 1;
-              }
-              if (adjustedEnd > contentStart) {
-                result.push({
-                  type: 'grammar',
-                  content: text.slice(contentStart, adjustedEnd),
-                  startIndex: contentStart,
-                  grammarPoint: gp,
-                });
-              }
-              currentIndex = adjustedEnd;
-            }
-            // 调整后为空则跳过
-          } else {
-            if (gp.startIndex > currentIndex) {
-              result.push({
-                type: 'text',
-                content: text.slice(currentIndex, gp.startIndex),
-                startIndex: currentIndex,
-              });
-            }
-            currentIndex = gp.endIndex;
-            result.push(nextSegment);
-          }
+      // 有重叠, 裁剪 grammar: 保留 token 之间的空隙
+      for (const tok of overlappingTokens) {
+        if (tok.start > subStart) {
+          // token 前有空隙, 保留这段 grammar
+          grammarRanges.push({
+            start: subStart,
+            end: tok.start,
+            type: 'grammar',
+            grammarPoint: gp,
+          });
         }
+        subStart = Math.max(subStart, tok.end);
+      }
+      if (subStart < subEnd) {
+        // 最后一个 token 后有空隙
+        grammarRanges.push({
+          start: subStart,
+          end: subEnd,
+          type: 'grammar',
+          grammarPoint: gp,
+        });
       }
     }
 
+    // Step 3: 合并 token + grammar ranges, 按 start 排序 (token 优先)
+    const allRanges = [...tokenRanges, ...grammarRanges].sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      // start 相同时 token 优先 (可交互)
+      if (a.type === 'token' && b.type === 'grammar') return -1;
+      if (a.type === 'grammar' && b.type === 'token') return 1;
+      return 0;
+    });
+
+    // Step 4: 渲染, 填充 gaps
+    let currentIndex = 0;
+    for (const range of allRanges) {
+      // 跳过已消费区间 (防御性, 理论上不会发生)
+      if (range.start < currentIndex) continue;
+      if (range.end <= range.start) continue;
+
+      // 填充 gap
+      if (range.start > currentIndex) {
+        result.push({
+          type: 'text',
+          content: text.slice(currentIndex, range.start),
+          startIndex: currentIndex,
+        });
+      }
+
+      if (range.type === 'token') {
+        result.push({
+          type: 'token',
+          content: range.token.surfaceForm,
+          token: range.token,
+        });
+      } else {
+        result.push({
+          type: 'grammar',
+          content: text.slice(range.start, range.end),
+          startIndex: range.start,
+          grammarPoint: range.grammarPoint,
+        });
+      }
+      currentIndex = range.end;
+    }
+
+    // 尾部文本
     if (currentIndex < text.length) {
       result.push({
         type: 'text',
@@ -677,7 +676,7 @@ export function InteractivePassage({ language, isReplay = false }: Props = {}) {
 
   return (
     <article className={styles.passage}>
-      {session.passage.title && (
+      {session.passage.title && !hideTitle && (
         <h1 className={styles.title} style={getParagraphStyle(0)}>
           {session.passage.title}
         </h1>

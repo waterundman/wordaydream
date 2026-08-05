@@ -29,5 +29,6 @@
     "strictNullChecks": true,
     "noImplicitAny": true
   },
-  "include": ["src", "netlify/edge-functions"]
+  "include": ["src", "netlify/edge-functions"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**", "src/**/__integration__/**"]
 }
