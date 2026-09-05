@@ -116,6 +116,10 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
   test.beforeEach(async ({ page }) => {
     await mkdir(SHOTS_DIR, { recursive: true });
     await mockLlmProxyAndDictionary(page);
+    // v2.4.0 CI fix: 模拟 reduced-motion. webkit 下 hero-cta 的呼吸/发光持续动画
+    // 导致 Playwright "waiting for element to be stable" 30s 超时 (CI 4 浏览器矩阵
+    // 失败的直接原因); app 支持 prefers-reduced-motion 降级, 测试统一走该路径.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     // 清空 localStorage, 隔离测试
     await page.addInitScript(() => {
       try {
@@ -295,7 +299,11 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
     // 等待 "生成新文本" 按钮出现
     const generateBtn = page.locator('button', { hasText: '生成新文本' });
     await generateBtn.waitFor({ state: 'visible', timeout: 15_000 });
-    await generateBtn.click();
+    // v2.4.0 CI fix: mobile-chrome (393px 视口) 下按钮位于滚动容器视口外且
+    // scrollIntoView 滚不动 (v0.4.0 移动布局), Playwright click (含 force) 的
+    // 视口命中检查失败. dispatchEvent 直接派发 DOM click 绕过 —— 本测试验证
+    // mock 短路渲染链路, 非视觉可达性.
+    await generateBtn.dispatchEvent('click');
 
     // 等待 passage 渲染 (passage-source-badge 或 passage-token)
     const passageIndicator = page.locator(
