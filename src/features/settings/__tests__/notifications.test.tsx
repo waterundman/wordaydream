@@ -207,7 +207,8 @@ describe('T04: NotificationsSection 鸿蒙端渲染开关 + 时间窗', () => {
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
       triggerHapticFeedback: () => {},
-      handleHarmonyLaunch: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
     _resetPlatformCache();
@@ -237,7 +238,8 @@ describe('T04: NotificationsSection 鸿蒙端渲染开关 + 时间窗', () => {
       readPreferences: () => Promise.resolve(null),
       writePreferences,
       triggerHapticFeedback: () => {},
-      handleHarmonyLaunch: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
     _resetPlatformCache();
@@ -277,7 +279,8 @@ describe('T05: completeReview 触发 registerReminder', () => {
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
       triggerHapticFeedback: () => {},
-      handleHarmonyLaunch: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
 
@@ -488,7 +491,8 @@ describe('T07: PlatformCapability.supportsNotifications', () => {
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
       triggerHapticFeedback: () => {},
-      handleHarmonyLaunch: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
     _resetPlatformCache();
@@ -508,7 +512,8 @@ describe('T07: PlatformCapability.supportsNotifications', () => {
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
       triggerHapticFeedback: () => {},
-      handleHarmonyLaunch: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
     _resetPlatformCache();

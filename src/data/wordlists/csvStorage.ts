@@ -59,6 +59,15 @@ let dbInstance: IDBDatabase | null = null;
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 /**
+ * 诊断用: 返回当前连接池持有的 IDBDatabase 实例 (null = 未打开/已 close).
+ * dbInstance 本身只写不读 (连接池语义由 dbPromise 承载), 导出 getter 避免死代码告警,
+ * 同时为 IndexedDB 连接泄漏排查提供观测点.
+ */
+export function getDbConnectionState(): IDBDatabase | null {
+  return dbInstance;
+}
+
+/**
  * v0.4.0-harmony Stage 2 D2: 打开 IndexedDB (连接池优化), 不可用时抛错 (由调用方 catch 降级)
  *
  * 连接池策略:

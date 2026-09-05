@@ -164,7 +164,11 @@ async function deepseekProvider(args: ProviderArgs): Promise<ProviderResult> {
     throw err;
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    model: string;
+    choices: Array<{ message: { content: string } }>;
+    usage: { prompt_tokens: number; completion_tokens: number };
+  };
   return {
     text: data.choices[0].message.content,
     model: data.model,
@@ -207,7 +211,11 @@ async function openaiProvider(args: ProviderArgs): Promise<ProviderResult> {
     throw err;
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    model: string;
+    choices: Array<{ message: { content: string } }>;
+    usage: { prompt_tokens: number; completion_tokens: number };
+  };
   return {
     text: data.choices[0].message.content,
     model: data.model,
@@ -247,7 +255,11 @@ async function anthropicProvider(args: ProviderArgs): Promise<ProviderResult> {
     throw err;
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    model: string;
+    content: Array<{ text: string }>;
+    usage: { input_tokens: number; output_tokens: number };
+  };
   return {
     text: data.content[0].text,
     model: data.model,

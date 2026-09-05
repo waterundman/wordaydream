@@ -14,8 +14,8 @@
  * 单例模式: 全局唯一实例.
  * 异常返回安全默认值 (0 / null / 'en' / []), 不抛错.
  *
- * 注意: MemoryCardStore 需先由 HarmonyBridge constructor 调用 initialize(context)
- * 完成 RDB 初始化; 若未初始化, getDueCardsCount 返回 0, getDueCards 返回空数组.
+ * 注意: 服务卡片可能运行在独立进程, 每次 RDB 查询都会使用自身 Context
+ * 等待 MemoryCardStore 初始化完成, 不依赖主应用的 HarmonyBridge 生命周期.
  * Stage 4: getLanguage 需通过 setContext 注入 Context 后才能读取 preferences,
  *   未注入时 fallback 'en'.
  */
@@ -47,13 +47,26 @@ export class CardDataProvider {
   /**
    * Stage 4: 注入 Context (供 getLanguage 读取 preferences).
    *
-   * 由 ReviewCardWidget.aboutToAppear 调用 getContext(this) as common.Context 注入.
+   * 由 ReviewCardFormAbility 使用其 FormExtensionContext 注入。
    * 幂等: 重复调用安全 (覆盖旧值).
-   * 真机验证项: ArkTS V2 form widget 的 getContext(this) 返回类型实际为
-   *   FormExtensionContext, 此处用基类 common.Context 接收, 由 ArkTS 多态保证.
    */
   setContext(context: common.Context): void {
     this.context = context;
+  }
+
+  /** 使用服务卡片进程的 Context 显式初始化并等待 RDB 就绪. */
+  private async getMemoryCardStore(): Promise<MemoryCardStore | null> {
+    if (this.context === null) {
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'getMemoryCardStore: context not set'
+      );
+      return null;
+    }
+    const store: MemoryCardStore = MemoryCardStore.getInstance();
+    await store.initialize(this.context);
+    return store;
   }
 
   /**
@@ -62,7 +75,10 @@ export class CardDataProvider {
    */
   async getDueCardsCountForWidget(): Promise<number> {
     try {
-      const store: MemoryCardStore = MemoryCardStore.getInstance();
+      const store: MemoryCardStore | null = await this.getMemoryCardStore();
+      if (store === null) {
+        return 0;
+      }
       const count: number = await store.getDueCardsCount(Date.now());
       return count;
     } catch (e) {
@@ -84,7 +100,10 @@ export class CardDataProvider {
    */
   async getNextDueCardForWidget(): Promise<MemoryCardRecord | null> {
     try {
-      const store: MemoryCardStore = MemoryCardStore.getInstance();
+      const store: MemoryCardStore | null = await this.getMemoryCardStore();
+      if (store === null) {
+        return null;
+      }
       const cards: MemoryCardRecord[] = await store.getDueCards(Date.now(), 1);
       if (cards.length === 0) {
         return null;
@@ -157,7 +176,10 @@ export class CardDataProvider {
       totalCount: 0,
     };
     try {
-      const store: MemoryCardStore = MemoryCardStore.getInstance();
+      const store: MemoryCardStore | null = await this.getMemoryCardStore();
+      if (store === null) {
+        return defaultStats;
+      }
       const stats: TodayReviewStats = await store.getTodayReviewStats(Date.now());
       return stats;
     } catch (e) {
@@ -219,7 +241,10 @@ export class CardDataProvider {
    */
   async getRecentlyReviewedCardsForWidget(limit: number): Promise<MemoryCardRecord[]> {
     try {
-      const store: MemoryCardStore = MemoryCardStore.getInstance();
+      const store: MemoryCardStore | null = await this.getMemoryCardStore();
+      if (store === null) {
+        return [];
+      }
       const cards: MemoryCardRecord[] = await store.getRecentlyReviewedCards(limit);
       return cards;
     } catch (e) {

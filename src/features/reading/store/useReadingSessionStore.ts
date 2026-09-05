@@ -10,7 +10,6 @@ import type {
 } from '../../../types';
 import { getMockPassage } from '../../../mocks/passages';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
-import { generatePassage, clearPassageCache } from '../services/passageGenerator';
 import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
@@ -205,10 +204,6 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         const controller = new AbortController();
         loadSessionAbortController = controller;
 
-        // v2.2.1 Stage 1 (Bug 1): 清理 passage 缓存, 确保本次生成拿到新 passage
-        // (与 generatePassage 的 forceRefresh 形成双保险, 页面刷新场景仍可命中缓存写入).
-        clearPassageCache();
-
         set({ isLoading: true, streamingPreviewText: null });
         await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -243,6 +238,14 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
 
         let passage: Passage;
         try {
+          // Keep the complete LLM/parser graph out of the first-screen module
+          // graph. Native ESM caches this module after the first reading request.
+          const { generatePassage, clearPassageCache } = await import(
+            '../services/passageGenerator'
+          );
+          if (controller.signal.aborted) return;
+          // v2.2.1 Stage 1 (Bug 1): clear the passage cache before generation.
+          clearPassageCache();
           // v1.5.3 fix V3-P3-006: 透传 controller.signal, abort 时真正中断 LLM fetch.
           // v2.2.4 Stage 2 (流式): 传 onChunk 回调, 流式生成时更新 streamingPreviewText.
           //   generatePassage 内部判断 llm.streaming + onChunk 决定是否走流式分支.

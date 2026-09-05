@@ -1,6 +1,6 @@
 import type { GenerateOptions } from './provider';
 import type { LLMResponse } from '../../../types';
-import { getLLMConfig } from '../config/llmConfig';
+import { getLLMConfig, requireLLMProxyUrl } from '../config/llmConfig';
 
 /**
  * v1.3.0 Edge Function 响应 schema (与 openaiProvider.ts / deepseekProvider.ts 镜像)
@@ -37,7 +37,7 @@ interface EdgeLLMResponse {
 export async function anthropicGenerate(options: GenerateOptions): Promise<LLMResponse> {
   const config = getLLMConfig();
 
-  const response = await fetch(config.proxyUrl, {
+  const response = await fetch(requireLLMProxyUrl(config.proxyUrl), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

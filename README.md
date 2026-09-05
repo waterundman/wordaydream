@@ -1,5 +1,8 @@
 # Wordaydream
 
+> [!IMPORTANT]
+> HarmonyOS 6.0.2 / API 22 的当前架构、能力边界、构建与模拟器验证证据，请以 [`harmony/CURRENT_STATUS.md`](./harmony/CURRENT_STATUS.md) 为准。
+
 **语境化词汇学习应用** - 在真实文本中学习词汇，基于 FSRS 间隔重复算法巩固记忆。
 
 ## 核心特性

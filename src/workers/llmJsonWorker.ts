@@ -56,11 +56,16 @@ interface LlmJsonParseResponse {
 }
 
 // Schema 类型用最小契约 (Worker 内部不暴露 zod 类型, 仅用 unknown 接收 schema 对象)
+// 注: issue.path 用 PropertyKey[] 对齐 zod v4 ($ZodIssue.path: (string|number|symbol)[]),
+//     否则 ZodObject 无法结构性赋值给本契约 (TS2322).
 interface ZodSchemaLike {
   safeParse: (input: unknown) => {
     success: boolean;
     data?: unknown;
-    error?: { issues: Array<{ path: Array<string | number>; message: string }>; message: string };
+    error?: {
+      issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey>; message: string }>;
+      message: string;
+    };
   };
 }
 

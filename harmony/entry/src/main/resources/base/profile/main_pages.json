@@ -1,7 +1,5 @@
 {
   "src": [
-    "pages/IndexDebug",
-    "pages/Index",
-    "pages/WebTest"
+    "pages/Index"
   ]
 }

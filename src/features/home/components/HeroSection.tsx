@@ -11,6 +11,7 @@
  * 0 emoji 硬约束.
  */
 import { useScrollReveal } from '../../../hooks/useScrollReveal';
+import { publicAssetUrl } from '../../../platform/publicAssetUrl';
 import { ProgressRing } from './ProgressRing';
 import styles from './HeroSection.module.css';
 
@@ -42,7 +43,7 @@ export function HeroSection({
     >
       <div className={styles.fleuronWrap}>
         <img
-          src="/assets/svg/ornament-fleuron.svg"
+          src={publicAssetUrl('assets/svg/ornament-fleuron.svg')}
           width="24"
           height="24"
           alt=""
@@ -54,7 +55,7 @@ export function HeroSection({
         <div className={styles.textContent}>
           <h2 className={styles.heading}>在语境中学习词汇</h2>
           <img
-            src="/assets/svg/underline-handdrawn.svg"
+            src={publicAssetUrl('assets/svg/underline-handdrawn.svg')}
             width="200"
             height="6"
             alt=""

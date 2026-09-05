@@ -54,7 +54,7 @@
 .paperTexture {
   position: absolute;
   inset: 0;
-  background-image: url('/assets/img/paper-texture-light.jpg');
+  background-image: url('/assets/img/paper-texture-warm.jpg');
   background-size: cover;
   opacity: 0.15;
   border-radius: inherit;

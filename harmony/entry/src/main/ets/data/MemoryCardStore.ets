@@ -48,6 +48,7 @@ export class MemoryCardStore {
   private static instance: MemoryCardStore | null = null;
   private rdbStore: relationalStore.RdbStore | null = null;
   private initDone: boolean = false;
+  private initializePromise: Promise<void> | null = null;
 
   private constructor() {}
 
@@ -60,22 +61,32 @@ export class MemoryCardStore {
 
   /**
    * 初始化 RDB store 并创建表 (IF NOT EXISTS).
-   * 幂等: 重复调用安全 (initDone 守卫).
+   * 幂等: 并发调用共享同一个 initializePromise, 完成后直接复用 store.
    */
-  async initialize(context: common.Context): Promise<void> {
+  initialize(context: common.Context): Promise<void> {
+    if (this.initDone && this.rdbStore !== null) {
+      return Promise.resolve();
+    }
+    if (this.initializePromise !== null) {
+      return this.initializePromise;
+    }
+    this.initializePromise = this.initializeStore(context);
+    return this.initializePromise;
+  }
+
+  private async initializeStore(context: common.Context): Promise<void> {
     try {
-      if (this.initDone && this.rdbStore !== null) {
-        return;
-      }
       const config: relationalStore.StoreConfig = {
         name: STORE_NAME,
         securityLevel: relationalStore.SecurityLevel.S1,
       };
-      this.rdbStore = await relationalStore.getRdbStore(context, config);
-      await this.rdbStore.executeSql(CREATE_TABLE_SQL);
-      await this.rdbStore.executeSql(CREATE_INDEX_SQL_DUE);
-      await this.rdbStore.executeSql(CREATE_INDEX_SQL_LAST_REVIEW);
-      await this.rdbStore.executeSql(CREATE_INDEX_SQL_LANGUAGE);
+      const store: relationalStore.RdbStore =
+        await relationalStore.getRdbStore(context, config);
+      await store.executeSql(CREATE_TABLE_SQL);
+      await store.executeSql(CREATE_INDEX_SQL_DUE);
+      await store.executeSql(CREATE_INDEX_SQL_LAST_REVIEW);
+      await store.executeSql(CREATE_INDEX_SQL_LANGUAGE);
+      this.rdbStore = store;
       this.initDone = true;
       hilog.info(DOMAIN, TAG, 'initialize done: store=%{public}s table=%{public}s', STORE_NAME, TABLE_NAME);
     } catch (e) {
@@ -90,7 +101,26 @@ export class MemoryCardStore {
       // 异常兜底: rdbStore 保持 null, 后续操作返回空值
       this.rdbStore = null;
       this.initDone = false;
+    } finally {
+      this.initializePromise = null;
     }
+  }
+
+  private async getReadyStore(operation: string): Promise<relationalStore.RdbStore | null> {
+    const pendingInitialize: Promise<void> | null = this.initializePromise;
+    if (pendingInitialize !== null) {
+      await pendingInitialize;
+    }
+    if (!this.initDone || this.rdbStore === null) {
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        '%{public}s: store not initialized',
+        operation
+      );
+      return null;
+    }
+    return this.rdbStore;
   }
 
   /**
@@ -99,8 +129,9 @@ export class MemoryCardStore {
    */
   async upsertCard(card: MemoryCardRecord): Promise<void> {
     try {
-      if (this.rdbStore === null) {
-        hilog.warn(DOMAIN, TAG, 'upsertCard: store not initialized, skip');
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('upsertCard');
+      if (store === null) {
         return;
       }
       const sql: string =
@@ -129,7 +160,7 @@ export class MemoryCardStore {
         card.status,
         card.learningSteps,
       ];
-      await this.rdbStore.executeSql(sql, args);
+      await store.executeSql(sql, args);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -148,22 +179,30 @@ export class MemoryCardStore {
    */
   async getDueCardsCount(now: number): Promise<number> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('getDueCardsCount');
+      if (store === null) {
         return 0;
       }
       const sql: string =
         `SELECT COUNT(*) AS cnt FROM ${TABLE_NAME} WHERE ${COLUMN_DUE} <= ?`;
       const resultSet: relationalStore.ResultSet =
-        await this.rdbStore.querySql(sql, [now]);
-      let count: number = 0;
-      if (resultSet.goToFirstRow()) {
-        const idx: number = resultSet.getColumnIndex('cnt');
-        if (idx >= 0) {
-          count = resultSet.getLong(idx);
+        await store.querySql(sql, [now]);
+      try {
+        let count: number = 0;
+        if (resultSet.goToFirstRow()) {
+          const idx: number = resultSet.getColumnIndex('cnt');
+          if (idx >= 0) {
+            count = resultSet.getLong(idx);
+          }
         }
+        return count;
+      } catch (e) {
+        const error: Error = e as Error;
+        throw error;
+      } finally {
+        resultSet.close();
       }
-      resultSet.close();
-      return count;
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -183,20 +222,28 @@ export class MemoryCardStore {
    */
   async getDueCards(now: number, limit: number): Promise<MemoryCardRecord[]> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('getDueCards');
+      if (store === null) {
         return [];
       }
       const sql: string =
         `SELECT * FROM ${TABLE_NAME} WHERE ${COLUMN_DUE} <= ? ` +
         `ORDER BY ${COLUMN_DUE} ASC LIMIT ?`;
       const resultSet: relationalStore.ResultSet =
-        await this.rdbStore.querySql(sql, [now, limit]);
-      const cards: MemoryCardRecord[] = [];
-      while (resultSet.goToNextRow()) {
-        cards.push(this.mapRow(resultSet));
+        await store.querySql(sql, [now, limit]);
+      try {
+        const cards: MemoryCardRecord[] = [];
+        while (resultSet.goToNextRow()) {
+          cards.push(this.mapRow(resultSet));
+        }
+        return cards;
+      } catch (e) {
+        const error: Error = e as Error;
+        throw error;
+      } finally {
+        resultSet.close();
       }
-      resultSet.close();
-      return cards;
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -211,21 +258,23 @@ export class MemoryCardStore {
   }
 
   /**
-   * 删除指定卡片 (按 id).
+   * 删除指定词位组的卡片 (Web Map key 为 lexemeGroupId).
    */
-  async deleteCard(cardId: string): Promise<void> {
+  async deleteCardByLexemeGroupId(lexemeGroupId: string): Promise<void> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('deleteCardByLexemeGroupId');
+      if (store === null) {
         return;
       }
-      const sql: string = `DELETE FROM ${TABLE_NAME} WHERE ${COLUMN_ID} = ?`;
-      await this.rdbStore.executeSql(sql, [cardId]);
+      const sql: string = `DELETE FROM ${TABLE_NAME} WHERE ${COLUMN_LEXEME_GROUP_ID} = ?`;
+      await store.executeSql(sql, [lexemeGroupId]);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
         DOMAIN,
         TAG,
-        'deleteCard failed: code=%{public}d msg=%{public}s',
+        'deleteCardByLexemeGroupId failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );
@@ -237,11 +286,13 @@ export class MemoryCardStore {
    */
   async clear(): Promise<void> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('clear');
+      if (store === null) {
         return;
       }
       const sql: string = `DELETE FROM ${TABLE_NAME}`;
-      await this.rdbStore.executeSql(sql);
+      await store.executeSql(sql);
       hilog.info(DOMAIN, TAG, 'clear done: table=%{public}s', TABLE_NAME);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
@@ -263,19 +314,27 @@ export class MemoryCardStore {
    */
   async getAllCards(): Promise<MemoryCardRecord[]> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('getAllCards');
+      if (store === null) {
         return [];
       }
       const sql: string =
         `SELECT * FROM ${TABLE_NAME} ORDER BY ${COLUMN_DUE} ASC`;
       const resultSet: relationalStore.ResultSet =
-        await this.rdbStore.querySql(sql);
-      const cards: MemoryCardRecord[] = [];
-      while (resultSet.goToNextRow()) {
-        cards.push(this.mapRow(resultSet));
+        await store.querySql(sql);
+      try {
+        const cards: MemoryCardRecord[] = [];
+        while (resultSet.goToNextRow()) {
+          cards.push(this.mapRow(resultSet));
+        }
+        return cards;
+      } catch (e) {
+        const error: Error = e as Error;
+        throw error;
+      } finally {
+        resultSet.close();
       }
-      resultSet.close();
-      return cards;
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -296,20 +355,28 @@ export class MemoryCardStore {
    */
   async getRecentlyReviewedCards(limit: number): Promise<MemoryCardRecord[]> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('getRecentlyReviewedCards');
+      if (store === null) {
         return [];
       }
       const sql: string =
         `SELECT * FROM ${TABLE_NAME} WHERE ${COLUMN_LAST_REVIEW_AT} > 0 ` +
         `ORDER BY ${COLUMN_LAST_REVIEW_AT} DESC LIMIT ?`;
       const resultSet: relationalStore.ResultSet =
-        await this.rdbStore.querySql(sql, [limit]);
-      const cards: MemoryCardRecord[] = [];
-      while (resultSet.goToNextRow()) {
-        cards.push(this.mapRow(resultSet));
+        await store.querySql(sql, [limit]);
+      try {
+        const cards: MemoryCardRecord[] = [];
+        while (resultSet.goToNextRow()) {
+          cards.push(this.mapRow(resultSet));
+        }
+        return cards;
+      } catch (e) {
+        const error: Error = e as Error;
+        throw error;
+      } finally {
+        resultSet.close();
       }
-      resultSet.close();
-      return cards;
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -341,7 +408,9 @@ export class MemoryCardStore {
       totalCount: 0,
     };
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('getTodayReviewStats');
+      if (store === null) {
         return defaultStats;
       }
       // 本地午夜 (今日 00:00:00.000)
@@ -354,33 +423,37 @@ export class MemoryCardStore {
         `(SELECT COUNT(*) FROM ${TABLE_NAME} WHERE ${COLUMN_LAST_REVIEW_AT} >= ?) AS reviewedCount, ` +
         `(SELECT COUNT(*) FROM ${TABLE_NAME}) AS totalCount`;
       const resultSet: relationalStore.ResultSet =
-        await this.rdbStore.querySql(sql, [now, todayStart]);
-
-      let dueCount: number = 0;
-      let reviewedCount: number = 0;
-      let totalCount: number = 0;
-      if (resultSet.goToFirstRow()) {
-        const dueIdx: number = resultSet.getColumnIndex('dueCount');
-        const reviewedIdx: number = resultSet.getColumnIndex('reviewedCount');
-        const totalIdx: number = resultSet.getColumnIndex('totalCount');
-        if (dueIdx >= 0) {
-          dueCount = resultSet.getLong(dueIdx);
+        await store.querySql(sql, [now, todayStart]);
+      try {
+        let dueCount: number = 0;
+        let reviewedCount: number = 0;
+        let totalCount: number = 0;
+        if (resultSet.goToFirstRow()) {
+          const dueIdx: number = resultSet.getColumnIndex('dueCount');
+          const reviewedIdx: number = resultSet.getColumnIndex('reviewedCount');
+          const totalIdx: number = resultSet.getColumnIndex('totalCount');
+          if (dueIdx >= 0) {
+            dueCount = resultSet.getLong(dueIdx);
+          }
+          if (reviewedIdx >= 0) {
+            reviewedCount = resultSet.getLong(reviewedIdx);
+          }
+          if (totalIdx >= 0) {
+            totalCount = resultSet.getLong(totalIdx);
+          }
         }
-        if (reviewedIdx >= 0) {
-          reviewedCount = resultSet.getLong(reviewedIdx);
-        }
-        if (totalIdx >= 0) {
-          totalCount = resultSet.getLong(totalIdx);
-        }
+        const stats: TodayReviewStats = {
+          dueCount,
+          reviewedCount,
+          totalCount,
+        };
+        return stats;
+      } catch (e) {
+        const error: Error = e as Error;
+        throw error;
+      } finally {
+        resultSet.close();
       }
-      resultSet.close();
-
-      const stats: TodayReviewStats = {
-        dueCount,
-        reviewedCount,
-        totalCount,
-      };
-      return stats;
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -401,18 +474,26 @@ export class MemoryCardStore {
    */
   async getCardById(id: string): Promise<MemoryCardRecord | null> {
     try {
-      if (this.rdbStore === null) {
+      const store: relationalStore.RdbStore | null =
+        await this.getReadyStore('getCardById');
+      if (store === null) {
         return null;
       }
       const sql: string = `SELECT * FROM ${TABLE_NAME} WHERE ${COLUMN_ID} = ?`;
       const resultSet: relationalStore.ResultSet =
-        await this.rdbStore.querySql(sql, [id]);
-      let card: MemoryCardRecord | null = null;
-      if (resultSet.goToFirstRow()) {
-        card = this.mapRow(resultSet);
+        await store.querySql(sql, [id]);
+      try {
+        let card: MemoryCardRecord | null = null;
+        if (resultSet.goToFirstRow()) {
+          card = this.mapRow(resultSet);
+        }
+        return card;
+      } catch (e) {
+        const error: Error = e as Error;
+        throw error;
+      } finally {
+        resultSet.close();
       }
-      resultSet.close();
-      return card;
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -431,24 +512,30 @@ export class MemoryCardStore {
    * 按列名读取 (getColumnIndex), 类型与 RDB schema 一致.
    */
   private mapRow(rs: relationalStore.ResultSet): MemoryCardRecord {
-    const card: MemoryCardRecord = {
-      id: rs.getString(rs.getColumnIndex(COLUMN_ID)),
-      lexemeGroupId: rs.getString(rs.getColumnIndex(COLUMN_LEXEME_GROUP_ID)),
-      lemma: rs.getString(rs.getColumnIndex(COLUMN_LEMMA)),
-      objectiveDifficulty: rs.getLong(rs.getColumnIndex(COLUMN_OBJECTIVE_DIFFICULTY)),
-      language: rs.getString(rs.getColumnIndex(COLUMN_LANGUAGE)),
-      firstLearnedAt: rs.getLong(rs.getColumnIndex(COLUMN_FIRST_LEARNED_AT)),
-      lastReviewAt: rs.getLong(rs.getColumnIndex(COLUMN_LAST_REVIEW_AT)),
-      due: rs.getLong(rs.getColumnIndex(COLUMN_DUE)),
-      stability: rs.getDouble(rs.getColumnIndex(COLUMN_STABILITY)),
-      difficulty: rs.getDouble(rs.getColumnIndex(COLUMN_DIFFICULTY)),
-      elapsedDays: rs.getLong(rs.getColumnIndex(COLUMN_ELAPSED_DAYS)),
-      scheduledDays: rs.getLong(rs.getColumnIndex(COLUMN_SCHEDULED_DAYS)),
-      reps: rs.getLong(rs.getColumnIndex(COLUMN_REPS)),
-      lapses: rs.getLong(rs.getColumnIndex(COLUMN_LAPSES)),
-      status: rs.getString(rs.getColumnIndex(COLUMN_STATUS)),
-      learningSteps: rs.getLong(rs.getColumnIndex(COLUMN_LEARNING_STEPS)),
-    };
-    return card;
+    try {
+      const card: MemoryCardRecord = {
+        id: rs.getString(rs.getColumnIndex(COLUMN_ID)),
+        lexemeGroupId: rs.getString(rs.getColumnIndex(COLUMN_LEXEME_GROUP_ID)),
+        lemma: rs.getString(rs.getColumnIndex(COLUMN_LEMMA)),
+        objectiveDifficulty: rs.getLong(rs.getColumnIndex(COLUMN_OBJECTIVE_DIFFICULTY)),
+        language: rs.getString(rs.getColumnIndex(COLUMN_LANGUAGE)),
+        firstLearnedAt: rs.getLong(rs.getColumnIndex(COLUMN_FIRST_LEARNED_AT)),
+        lastReviewAt: rs.getLong(rs.getColumnIndex(COLUMN_LAST_REVIEW_AT)),
+        due: rs.getLong(rs.getColumnIndex(COLUMN_DUE)),
+        stability: rs.getDouble(rs.getColumnIndex(COLUMN_STABILITY)),
+        difficulty: rs.getDouble(rs.getColumnIndex(COLUMN_DIFFICULTY)),
+        elapsedDays: rs.getLong(rs.getColumnIndex(COLUMN_ELAPSED_DAYS)),
+        scheduledDays: rs.getLong(rs.getColumnIndex(COLUMN_SCHEDULED_DAYS)),
+        reps: rs.getLong(rs.getColumnIndex(COLUMN_REPS)),
+        lapses: rs.getLong(rs.getColumnIndex(COLUMN_LAPSES)),
+        status: rs.getString(rs.getColumnIndex(COLUMN_STATUS)),
+        learningSteps: rs.getLong(rs.getColumnIndex(COLUMN_LEARNING_STEPS)),
+      };
+      return card;
+    } catch (e) {
+      // ArkTS requires explicit handling for ResultSet getters; preserve the error.
+      const error: Error = e as Error;
+      throw error;
+    }
   }
 }

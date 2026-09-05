@@ -3,6 +3,7 @@ import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { HarmonyBridge } from '../bridge/HarmonyBridge';
+import { TextToSpeechService } from '../tts/TextToSpeechService';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'EntryAbility';
@@ -23,8 +24,9 @@ export default class EntryAbility extends UIAbility {
    */
   private lastWidgetRefresh: number = 0;
 
-  onCreate(_want: Want, _launchParam: AbilityConstant.LaunchParam): void {
+  onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onCreate');
+    this.handleLaunchWant(want);
   }
 
   /**
@@ -46,13 +48,17 @@ export default class EntryAbility extends UIAbility {
    */
   onNewWant(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onNewWant');
+    this.handleLaunchWant(want);
+  }
+
+  private handleLaunchWant(want: Want): void {
     try {
       const parameters: Record<string, Object> | undefined = want.parameters;
       if (parameters === undefined || parameters === null) {
         hilog.warn(
           DOMAIN,
           TAG,
-          'onNewWant: no parameters, skip dispatch'
+          'handleLaunchWant: no parameters, skip dispatch'
         );
         return;
       }
@@ -61,7 +67,7 @@ export default class EntryAbility extends UIAbility {
         hilog.warn(
           DOMAIN,
           TAG,
-          'onNewWant: no query parameter, skip dispatch'
+          'handleLaunchWant: no query parameter, skip dispatch'
         );
         return;
       }
@@ -69,7 +75,7 @@ export default class EntryAbility extends UIAbility {
       hilog.info(
         DOMAIN,
         TAG,
-        'onNewWant: dispatching query=%{public}s',
+        'handleLaunchWant: dispatching query=%{public}s',
         query
       );
       // HarmonyBridge.handleHarmonyLaunch 内部从 AppStorage 读取
@@ -94,7 +100,7 @@ export default class EntryAbility extends UIAbility {
       hilog.error(
         DOMAIN,
         TAG,
-        'onNewWant failed: code=%{public}d msg=%{public}s',
+        'handleLaunchWant failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );
@@ -170,6 +176,18 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageDestroy(): void {
     hilog.info(DOMAIN, TAG, 'onWindowStageDestroy');
+    try {
+      TextToSpeechService.getInstance().shutdown();
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'TTS shutdown failed during window destroy: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+    }
   }
 
   onForeground(): void {

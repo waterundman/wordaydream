@@ -22,12 +22,36 @@
  * 覆盖 test_spec (8 cases, T01-T08, all critical/non-critical, framework=vitest).
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   validateSpeechText,
   validateSpeechRate,
   validateSpeechLanguage,
 } from '../bridgeInputValidator';
 import type { SpeakPayload, SpeechEngineInfo } from '../harmonyBridge';
+
+const PROJECT_ROOT: string = process.cwd();
+const TTS_SERVICE_PATH: string = join(
+  PROJECT_ROOT,
+  'harmony',
+  'entry',
+  'src',
+  'main',
+  'ets',
+  'tts',
+  'TextToSpeechService.ets',
+);
+const ENTRY_ABILITY_PATH: string = join(
+  PROJECT_ROOT,
+  'harmony',
+  'entry',
+  'src',
+  'main',
+  'ets',
+  'entryability',
+  'EntryAbility.ets',
+);
 
 // =============================================================================
 // TS mock TextToSpeechService (mirror ArkTS 单例模式)
@@ -130,6 +154,76 @@ class MockHarmonyBridge {
     } catch (_e) {
       return [];
     }
+  }
+}
+
+interface HarnessPendingSpeech {
+  requestId: string;
+  resolve: () => void;
+  reject: (error: Error) => void;
+}
+
+/**
+ * 纯 TS 行为镜像：只表达 ArkTS 服务的 requestId/Promise 结算协议，
+ * 让并发、过期回调、stop 与 shutdown 能在无设备环境下确定性回归。
+ */
+class SingleActiveSpeechHarness {
+  private pending: HarnessPendingSpeech | null = null;
+
+  start(requestId: string): Promise<void> {
+    const previous: HarnessPendingSpeech | null = this.pending;
+    if (previous !== null) {
+      this.pending = null;
+      previous.reject(new Error('superseded'));
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      this.pending = {
+        requestId,
+        resolve,
+        reject,
+      };
+    });
+  }
+
+  complete(requestId: string): void {
+    const pending: HarnessPendingSpeech | null = this.pending;
+    if (pending === null || pending.requestId !== requestId) {
+      return;
+    }
+    this.pending = null;
+    pending.resolve();
+  }
+
+  fail(requestId: string): void {
+    const pending: HarnessPendingSpeech | null = this.pending;
+    if (pending === null || pending.requestId !== requestId) {
+      return;
+    }
+    this.pending = null;
+    pending.reject(new Error('engine error'));
+  }
+
+  stop(): void {
+    const pending: HarnessPendingSpeech | null = this.pending;
+    if (pending === null) {
+      return;
+    }
+    this.pending = null;
+    pending.resolve();
+  }
+
+  shutdown(): void {
+    const pending: HarnessPendingSpeech | null = this.pending;
+    if (pending === null) {
+      return;
+    }
+    this.pending = null;
+    pending.reject(new Error('shutdown'));
+  }
+
+  activeRequestId(): string | null {
+    return this.pending?.requestId ?? null;
   }
 }
 
@@ -482,6 +576,150 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
       expect(info.engineName).toBe('Default');
       expect(info.supportedLanguages).toEqual(['de-DE', 'en-US']);
       expect(info.isOnline).toBe(false);
+    });
+  });
+
+  describe('单活动朗读 Promise 生命周期', () => {
+    it('新 speak 拒绝旧请求，旧回调不能完成新请求', async () => {
+      const harness = new SingleActiveSpeechHarness();
+      const first: Promise<void> = harness.start('request-1');
+      const firstOutcome: Promise<string> = first.then(
+        () => 'resolved',
+        (error: Error) => `rejected:${error.message}`,
+      );
+
+      const second: Promise<void> = harness.start('request-2');
+
+      await expect(firstOutcome).resolves.toBe('rejected:superseded');
+      expect(harness.activeRequestId()).toBe('request-2');
+
+      harness.complete('request-1');
+      expect(harness.activeRequestId()).toBe('request-2');
+
+      harness.complete('request-2');
+      await expect(second).resolves.toBeUndefined();
+      expect(harness.activeRequestId()).toBeNull();
+    });
+
+    it('过期 error 被忽略，匹配 error 才拒绝活动请求', async () => {
+      const harness = new SingleActiveSpeechHarness();
+      const active: Promise<void> = harness.start('request-active');
+      const activeOutcome: Promise<string> = active.then(
+        () => 'resolved',
+        (error: Error) => `rejected:${error.message}`,
+      );
+
+      harness.fail('request-stale');
+      expect(harness.activeRequestId()).toBe('request-active');
+
+      harness.fail('request-active');
+      await expect(activeOutcome).resolves.toBe('rejected:engine error');
+      expect(harness.activeRequestId()).toBeNull();
+    });
+
+    it('stop 即使没有引擎回调也会 resolve pending', async () => {
+      const harness = new SingleActiveSpeechHarness();
+      const pending: Promise<void> = harness.start('request-stop');
+
+      harness.stop();
+
+      await expect(pending).resolves.toBeUndefined();
+      expect(harness.activeRequestId()).toBeNull();
+    });
+
+    it('shutdown 会 reject pending，避免窗口销毁后 Promise 悬空', async () => {
+      const harness = new SingleActiveSpeechHarness();
+      const pending: Promise<void> = harness.start('request-shutdown');
+      const outcome: Promise<string> = pending.then(
+        () => 'resolved',
+        (error: Error) => `rejected:${error.message}`,
+      );
+
+      harness.shutdown();
+
+      await expect(outcome).resolves.toBe('rejected:shutdown');
+      expect(harness.activeRequestId()).toBeNull();
+    });
+  });
+
+  describe('ArkTS TTS 生命周期源码契约', () => {
+    it('真实服务按 requestId 匹配回调并在替换前 reject 旧请求', () => {
+      const source: string = readFileSync(TTS_SERVICE_PATH, 'utf-8');
+      expect(source).toContain('interface PendingSpeech');
+      expect(source).toContain('private pendingSpeech: PendingSpeech | null');
+      expect(source).toContain('private createListener(): textToSpeech.SpeakListener');
+      expect(source).toContain('pending.requestId !== requestId');
+      expect(source).toContain('this.resolveRequest(requestId)');
+      expect(source).toContain('this.rejectRequest(requestId, errorCode, errorMessage)');
+      expect(source).toContain('createdEngine.setListener(this.createListener())');
+
+      const interruptStart: number = source.indexOf('private interruptPendingSpeech');
+      const resolveStart: number = source.indexOf('private resolveRequest', interruptStart);
+      const interruptBlock: string = source.slice(interruptStart, resolveStart);
+      expect(interruptStart).toBeGreaterThan(-1);
+      expect(interruptBlock.indexOf('this.rejectRequest')).toBeGreaterThan(-1);
+      expect(interruptBlock.indexOf('this.engine.stop()')).toBeGreaterThan(
+        interruptBlock.indexOf('this.rejectRequest'),
+      );
+
+      const speakStart: number = source.indexOf('speak(payload: SpeakPayload)');
+      const startSpeechDefinition: number = source.indexOf(
+        'private async startSpeech',
+        speakStart,
+      );
+      const speakEntryBlock: string = source.slice(speakStart, startSpeechDefinition);
+      expect(speakEntryBlock.indexOf('this.pendingSpeech = pending')).toBeGreaterThan(-1);
+      expect(speakEntryBlock.indexOf('this.startSpeech(requestId, payload)')).toBeGreaterThan(
+        speakEntryBlock.indexOf('this.pendingSpeech = pending'),
+      );
+    });
+
+    it('同语言共享初始化，isSupported 不以默认语言抢占在途 speak', () => {
+      const source: string = readFileSync(TTS_SERVICE_PATH, 'utf-8');
+      expect(source).toContain('private engineInitPromise: Promise<void> | null');
+      expect(source).toContain("private initializingLanguage: string = ''");
+
+      const createStart: number = source.indexOf('async createEngine(');
+      const initializeStart: number = source.indexOf('private async initializeEngine', createStart);
+      const createBlock: string = source.slice(createStart, initializeStart);
+      expect(createBlock).toContain(
+        'activeInit !== null && this.initializingLanguage === language',
+      );
+      expect(createBlock).toContain('await activeInit');
+      expect(createBlock).toContain('this.engineInitPromise = initPromise');
+
+      const initializeBodyStart: number = source.indexOf(
+        'private async initializeEngine',
+        initializeStart,
+      );
+      const speakStart: number = source.indexOf('speak(payload: SpeakPayload)', initializeBodyStart);
+      const initializeBlock: string = source.slice(initializeBodyStart, speakStart);
+      expect(initializeBlock).not.toContain('this.rejectPending(');
+
+      const supportedStart: number = source.indexOf('async isSupported()');
+      const enginesStart: number = source.indexOf('async getEngines()', supportedStart);
+      const supportedBlock: string = source.slice(supportedStart, enginesStart);
+      expect(supportedBlock).toContain('const activeInit: Promise<void> | null');
+      expect(supportedBlock.indexOf('await activeInit')).toBeGreaterThan(-1);
+      expect(supportedBlock.indexOf('await this.createEngine()')).toBeGreaterThan(
+        supportedBlock.indexOf('await activeInit'),
+      );
+    });
+
+    it('stop/shutdown 结算 pending，且 shutdown 使在途 createEngine 失效', () => {
+      const source: string = readFileSync(TTS_SERVICE_PATH, 'utf-8');
+      expect(source).toContain('finally {\n      this.resolvePending();');
+      expect(source).toContain('this.rejectPending(\n      ERROR_SERVICE_SHUTDOWN');
+      expect(source).toContain('this.engineGeneration = this.engineGeneration + 1');
+      expect(source).toContain('generation !== this.engineGeneration');
+      expect(source).toMatch(/online:\s*1/);
+    });
+
+    it('EntryAbility 窗口销毁时调用 TTS shutdown', () => {
+      const source: string = readFileSync(ENTRY_ABILITY_PATH, 'utf-8');
+      expect(source).toContain("import { TextToSpeechService } from '../tts/TextToSpeechService'");
+      expect(source).toContain('onWindowStageDestroy(): void');
+      expect(source).toContain('TextToSpeechService.getInstance().shutdown()');
     });
   });
 });

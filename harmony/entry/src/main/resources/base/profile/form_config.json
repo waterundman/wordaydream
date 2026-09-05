@@ -5,11 +5,13 @@
       "displayName": "$string:share_card_title",
       "description": "$string:share_card_desc",
       "src": "./ets/widget/ReviewCardWidget.ets",
+      "uiSyntax": "arkts",
       "window": {
-        "designWidth": 720
+        "designWidth": 720,
+        "autoDesignWidth": true
       },
       "isDefault": true,
-      "type": "arkts",
+      "isDynamic": true,
       "colorMode": "auto",
       "supportDimensions": ["2*2", "2*4"],
       "defaultDimension": "2*2",

@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:harmony": "vite build --mode harmony",
+    "build:harmony": "vite build --mode harmony && node scripts/verify-harmony-build.mjs",
+    "build:harmony:hap": "npm run build:harmony && node scripts/assemble-harmony-hap.mjs",
+    "verify:harmony-build": "node scripts/verify-harmony-build.mjs",
+    "test:harmony-build-verifier": "node --test scripts/verify-harmony-build.test.mjs",
+    "test:harmony-build-wrapper": "node --test scripts/hvigor-output.test.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest",

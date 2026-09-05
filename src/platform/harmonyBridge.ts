@@ -12,7 +12,6 @@
  *   - readPreferences
  *   - writePreferences
  *   - triggerHapticFeedback
- *   - handleHarmonyLaunch (Stage 5: 元服务分享卡片 / 桌面服务卡片唤起跳转派发)
  */
 
 /** 提醒任务载荷, 由 registerReminder 透传给 notificationAgent. */
@@ -125,15 +124,10 @@ export interface HarmonyBridge {
   writePreferences(key: string, value: string): Promise<void>;
   /** 触发触觉反馈 (线性马达振动). */
   triggerHapticFeedback(intensity: 'light' | 'medium' | 'heavy'): void;
-  /**
-   * 派发鸿蒙原生跳转到 ArkWeb (Stage 5).
-   *
-   * 由 EntryAbility.onNewWant 调用, 处理元服务分享卡片 / 桌面服务卡片
-   * 唤起时的二次进入跳转. query 格式如 'action=startReview' 或
-   * 'action=openCard&cardId=xxx', 透传到 Web 端
-   * window.handleHarmonyLaunch, 由 useUrlHashSync 解析后跳转 hash 路由.
-   */
-  handleHarmonyLaunch(query: string): void;
+  /** 通知原生侧当前页面已安装启动请求处理器. */
+  notifyWebReady(): void;
+  /** 通知原生侧 React 已提交当前页面内容，可撤下原生加载层. */
+  notifyWebContentReady(): void;
   /**
    * Stage 3: Web → 鸿蒙 relationalStore 镜像 (upsert).
    *
@@ -145,9 +139,9 @@ export interface HarmonyBridge {
   /**
    * Stage 3: Web → 鸿蒙 relationalStore 镜像 (delete).
    *
-   * 由 useMemoryStore.deleteCard fire-and-forget 调用.
+   * 参数是 Web Map 的 lexemeGroupId，不是 RDB 主键 id.
    */
-  deleteCard(cardId: string): Promise<void>;
+  deleteCard(lexemeGroupId: string): Promise<void>;
   /**
    * Stage 3: 鸿蒙 → Web 卡片恢复 (R-1 闭环核心).
    *
@@ -213,7 +207,7 @@ declare global {
      * 由 ArkTS 侧 HarmonyBridge.handleHarmonyLaunch 通过
      * controller.runJavaScript 反向调用. Web 端实现负责解析 query
      * (action=startReview 等) 并通过 useUrlHashSync 跳转 hash 路由.
-     * 未挂载时 ArkTS 侧通过 `typeof === 'function'` 守卫静默跳过.
+     * 未挂载时 ArkTS 侧通过 `typeof === 'function'` 守卫保留启动请求.
      */
     handleHarmonyLaunch?: (query: string) => void;
   }

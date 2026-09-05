@@ -1,21 +1,15 @@
-# Wordaydream v1.5.0 Netlify 自动部署 workflow
-# v1.5.1 Stage 1 强化: 加 retry + health check + status badge
+# Wordaydream Netlify CI workflow (原 Netlify Deploy CI)
 #
-# 真实部署由 Netlify 自动触发 (推荐, 推荐保留此 workflow 仅作 CI 检查)
-# 此 workflow 提供 CI 检查 (lint + test + typecheck + build + PWA manifest verify)
-#   + 可选的 GitHub Actions 直接 deploy (deploy job, 默认 enabled)
-#   + v1.5.1: deploy job 加 retry on failure + post-deploy health check + status badge
+# v2.4.0 重构 (2026-09 CI 审计):
+# - 删除 deploy job: 历史上因 ci job 失败 (needs: ci) 从未执行过;
+#   生产部署由 Netlify 官方 Git 集成 (netlify.toml) 负责, 两者是冗余双路径.
+#   保留此 workflow 仅作 CI 检查 (lint + test + typecheck + build + PWA manifest verify).
+# - 加 concurrency: 同 ref 新 push 取消旧 run.
+# - 删除硬编码 VITE_APP_VERSION '1.5.1' 的 deploy build (job 已删).
 #
-# 沙箱不执行 (无 GitHub Actions runner), 仅作为配置层就绪.
-# 用户需在 GitHub repo Settings -> Secrets 配置以下 secrets:
-#   NETLIFY_AUTH_TOKEN  (Netlify Personal Access Token)
-#   NETLIFY_SITE_ID     (Netlify Site ID)
-#   VITE_LLM_PROVIDER   (openai|anthropic|deepseek|mock)
-#   VITE_LLM_PROXY_URL  (https://your-site.netlify.app/.netlify/edge-functions/llm-proxy)
-#   VITE_LLM_GRAYSCALE  (0-100)
-#   OPENAI_API_KEY      (可选, 阻塞点 2 runbook 配置)
-#   ANTHROPIC_API_KEY   (可选, 阻塞点 2 runbook 配置)
-#   DEEPSEEK_API_KEY    (可选, 阻塞点 2 runbook 配置)
+# 历史 (v1.5.0/v1.5.1): 本 workflow 曾承担 GitHub Actions 直接 deploy, 需要以下 secrets:
+#   NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID / VITE_LLM_PROXY_URL 等.
+#   Netlify 官方集成的环境变量在 Netlify UI (Site settings -> Environment variables) 配置.
 #
 # 完整 runbook 见 docs/OPERATIONS.md
 #   - Section 1: Netlify 部署 (8 步骤)
@@ -23,7 +17,12 @@
 #
 # 0 emoji (硬约束)
 
-name: Netlify Deploy CI
+name: Netlify CI
+
+# v2.4.0 fix: 同 ref 新 push 取消旧 run, 避免排队浪费 runner
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -71,92 +70,3 @@ jobs:
         run: |
           test -f dist/manifest.webmanifest && echo "manifest OK"
           test -f dist/sw.js && echo "sw.js OK"
-
-  deploy:
-    name: Deploy to Netlify (main only)
-    needs: ci
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      # 部署所需的 secrets (未配置时 deploy job 会因 if 跳过)
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-      # v2.4.0 fix: NETLIFY_SITE_URL 提到 job 级 env.
-      # step 的 if 在 step 执行前求值, 读不到 step 级 env, 必须放 job 级.
-      NETLIFY_SITE_URL: ${{ secrets.NETLIFY_SITE_URL }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Check required secrets
-        run: |
-          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
-            echo "FAIL: NETLIFY_AUTH_TOKEN secret not set"
-            exit 1
-          fi
-          if [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "FAIL: NETLIFY_SITE_ID secret not set"
-            exit 1
-          fi
-          echo "Secrets OK"
-
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Build (production env from secrets)
-        run: npm run build
-        env:
-          # v2.4.0 fix: 生产构建从 secrets 读取真实 provider, 不再硬编码 mock.
-          # VITE_LLM_PROVIDER / VITE_LLM_PROXY_URL 由 Netlify UI secrets 注入,
-          # 未配置时回退到 mock (避免 build 失败, 但 LLM 功能不可用).
-          VITE_LLM_PROVIDER: ${{ secrets.VITE_LLM_PROVIDER || 'mock' }}
-          VITE_LLM_PROXY_URL: ${{ secrets.VITE_LLM_PROXY_URL }}
-          VITE_LLM_GRAYSCALE: ${{ secrets.VITE_LLM_GRAYSCALE || '100' }}
-          VITE_OFFLINE_FALLBACK: 'true'
-          VITE_APP_VERSION: '1.5.1'
-
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3.0
-        with:
-          publish-dir: './dist'
-          production-deploy: true
-          deploy-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          netlify-site-id: ${{ secrets.NETLIFY_SITE_ID }}
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      # v2.4.0 fix: post-deploy health check.
-      # 原 URL 用 site ID 拼接 (UUID 不是合法域名), 改用 NETLIFY_SITE_URL secret.
-      # 未配置 NETLIFY_SITE_URL 时跳过 health check (不阻塞 deploy).
-      - name: Post-deploy health check
-        if: success() && env.NETLIFY_SITE_URL != ''
-        run: |
-          echo "Health check: $NETLIFY_SITE_URL"
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_SITE_URL" || echo "000")
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "FAIL: root path returned $HTTP_CODE"
-            exit 1
-          fi
-          MANIFEST_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_SITE_URL/manifest.webmanifest" || echo "000")
-          if [ "$MANIFEST_CODE" != "200" ]; then
-            echo "FAIL: manifest.webmanifest returned $MANIFEST_CODE"
-            exit 1
-          fi
-          SW_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NETLIFY_SITE_URL/sw.js" || echo "000")
-          if [ "$SW_CODE" != "200" ]; then
-            echo "FAIL: sw.js returned $SW_CODE"
-            exit 1
-          fi
-          echo "OK: root=$HTTP_CODE manifest=$MANIFEST_CODE sw.js=$SW_CODE"
-
-      # v1.5.1 强化: status badge (在 README 显示)
-      # 见 https://github.com/badges/shields (workflow 状态徽章)
-      # 用户在 README 加: ![Netlify Deploy](https://github.com/<user>/wordaydream/actions/workflows/netlify-deploy.yml/badge.svg)

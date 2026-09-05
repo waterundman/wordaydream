@@ -16,6 +16,11 @@
 
 name: Playwright E2E
 
+# v2.4.0 fix: 同 ref 新 push 取消旧 run, 避免排队浪费 runner
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, develop]
@@ -33,7 +38,9 @@ jobs:
   playwright:
     name: Playwright 4 场景 E2E (chromium / firefox / webkit / mobile-chrome)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # v2.4.0 fix: 20min 在 linux runner 上余量不足 (npm ci + browser install +
+    # webServer build 300s + 4x4 测试), 撞线超时; 放宽到 35min.
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4

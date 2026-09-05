@@ -25,6 +25,7 @@ dist-ssr
 
 # 环境变量 (含 API key, 绝对不能提交)
 .env
+.env.harmony
 server/.env
 
 # 调试文件
@@ -49,3 +50,10 @@ minirobot-market-analysis/
 pnpm-lock.yaml
 
 .iga/
+
+# v2.4.0 CI 修复: 本地工具与测试产物
+.workbuddy/
+.lighthouseci/
+.runtime-smoke/
+pw-out-*/
+test-results-audit/

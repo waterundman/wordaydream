@@ -60,7 +60,7 @@ vi.mock('../../../platform/speechSynthesis', () => ({
 // Imports (在 vi.mock 之后, 确保 mock 生效)
 // =============================================================================
 
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { ReadingSessionPage } from '../ReadingSessionPage';
 import { useReadingSessionStore } from '../store/useReadingSessionStore';
 import { useReadingHistoryStore } from '../store/useReadingHistoryStore';
@@ -391,6 +391,39 @@ describe('ReadingSessionPage 双路径 TTS (v0.3.0-harmony Stage 2)', () => {
       // speakViaWebSpeechSynthesis 不被调用 (fallback 路径未触发)
       expect(speakViaWebSpeechSynthesisMock).not.toHaveBeenCalled();
     });
+    it('resets native playback UI when the speech promise settles', async () => {
+      let completeSpeech: () => void = () => undefined;
+      const speechPromise = new Promise<void>((resolve) => {
+        completeSpeech = resolve;
+      });
+      const speakSpy = vi.fn(() => speechPromise);
+      setPlatformMock(makeHarmonyWithBridgePlatform(() => speakSpy()));
+
+      const tokens = [makeToken('t1', 'g1', false)];
+      const session = makeSession('hello world', tokens);
+      useReadingSessionStore.setState({
+        session,
+        currentHistoryId: null,
+        lastConfig: { language: 'en', difficulty: 2 },
+      });
+
+      render(<ReadingSessionPage />);
+      fireEvent.click(
+        screen.getByRole('button', { name: '\u6717\u8bfb' }),
+      );
+      expect(
+        screen.getByRole('button', { name: '\u505c\u6b62\u6717\u8bfb' }),
+      ).toBeInTheDocument();
+
+      completeSpeech();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: '\u6717\u8bfb' }),
+        ).toBeInTheDocument();
+      });
+    });
+
 
     it('harmonyBridge.speak 调用时 payload 包含 text/language/rate', () => {
       const speakSpy = vi.fn(() => Promise.resolve());

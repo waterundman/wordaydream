@@ -13,8 +13,10 @@
  * 4 场景 (保留 v1.5.0 测试意图, 选择器全部校对):
  * - T01: 离线 banner 出现 + LLM proxy 不被调用 (router 短路到 mock)
  * - T02: PWA install prompt 捕获 + InstallPromptButton 在 SettingsPanel 内显示
+ *        (v2.4.0 fix: SettingsPanel 仅在阅读页渲染, 路径改为 hero-cta -> 阅读页 -> 设置)
  * - T03: Service Worker 注册 (production build / preview 模式)
- * - T04: 生成文本 + passage 渲染 (mock LLM, 验证流式链路)
+ * - T04: 生成文本 + passage 渲染 (v2.4.0 fix: provider=mock 时 router 本地短路,
+ *        断言 demo 语料渲染 + proxy 0 调用, 原断言 mock proxy payload 'garden' 永远失败)
  *
  * 0 emoji (项目硬约束)
  */
@@ -185,7 +187,7 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
     await page.goto('/');
     await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 15_000 });
 
-    // 模拟 beforeinstallprompt 事件
+    // 模拟 beforeinstallprompt 事件 (app 在 main.tsx 挂载时注册监听, 任意页面派发均可捕获)
     await page.evaluate(() => {
       const event = new Event('beforeinstallprompt');
       const augmented = event as Event & {
@@ -197,7 +199,15 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
       window.dispatchEvent(event);
     });
 
-    // 打开 Settings 面板 (HomePage.tsx aria-label="设置")
+    // v2.4.0 fix: SettingsPanel 仅在阅读页 (ReadingSessionPage) 渲染,
+    // home 模式下 onOpenSettings 只写 settingsOpen 状态, 无消费者.
+    // 正确路径: hero-cta 进入阅读页 -> 点阅读页的设置按钮.
+    await page.locator('[data-testid="hero-cta"]').click();
+
+    // 等待阅读页挂载 (此时 [aria-label="设置"] 只剩 ReadingSessionPage 一个匹配)
+    const generateBtn = page.locator('button', { hasText: '生成新文本' });
+    await generateBtn.waitFor({ state: 'visible', timeout: 15_000 });
+
     const settingsButton = page.locator('[aria-label="设置"]').first();
     await settingsButton.waitFor({ state: 'visible', timeout: 5_000 });
     await settingsButton.click();
@@ -259,16 +269,30 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
     });
   });
 
-  test('T04 [v1.5.0]: 生成文本 + passage 渲染 (mock LLM, 验证流式链路)', async ({
+  test('T04 [v1.5.0]: 生成文本 + passage 渲染 (mock provider 本地短路, 验证渲染链路)', async ({
     page,
   }, testInfo) => {
+    // v2.4.0 fix: CI/webServer 注入 VITE_LLM_PROVIDER=mock, router.ts 在 provider==='mock'
+    // 时直接走本地 MockLLMProvider (短路), 根本不发起 /api/llm-proxy 请求.
+    // 原 spec 假设请求会发到 proxy 并断言 mock payload 文本 'garden', 永远失败.
+    // 新断言: passage 渲染 demo 语料 ('The Quiet Revolution') + proxy 调用数为 0.
+    let llmProxyCallCount = 0;
+    await page.route('**/api/llm-proxy', (route) => {
+      llmProxyCallCount += 1;
+      return route.fulfill({ status: 500, body: 'unexpected call with mock provider' });
+    });
+    await page.route('**/.netlify/edge-functions/llm-proxy', (route) => {
+      llmProxyCallCount += 1;
+      return route.fulfill({ status: 500, body: 'unexpected call with mock provider' });
+    });
+
     await page.goto('/');
     await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 15_000 });
 
     // 点击 hero CTA 进入阅读页 (HeroSection.tsx data-testid="hero-cta")
     await page.locator('[data-testid="hero-cta"]').click();
 
-    // 等待 "生成新文本" 按钮出现 (ReadingSessionPage.tsx line 445)
+    // 等待 "生成新文本" 按钮出现
     const generateBtn = page.locator('button', { hasText: '生成新文本' });
     await generateBtn.waitFor({ state: 'visible', timeout: 15_000 });
     await generateBtn.click();
@@ -280,9 +304,12 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
     await passageIndicator.first().waitFor({ state: 'visible', timeout: 30_000 });
     await expect(passageIndicator.first()).toBeVisible();
 
-    // 验证 passage 文本内容 (mock payload 中的 "garden")
+    // 验证 passage 内容为 mock provider 的本地 demo 语料 (router 短路, 非 proxy payload)
     const body = page.locator('body');
-    await expect(body).toContainText('garden', { ignoreCase: true });
+    await expect(body).toContainText('revolution', { ignoreCase: true });
+
+    // mock provider 短路: 全程不应有任何 LLM proxy 请求
+    expect(llmProxyCallCount).toBe(0);
 
     await page.screenshot({
       path: join(SHOTS_DIR, `T04-streaming-typing-${testInfo.project.name}.png`),

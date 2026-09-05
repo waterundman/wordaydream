@@ -408,20 +408,20 @@ npx -p lighthouse lighthouse https://your-site-name.netlify.app \
 
 ### 3.3 CI 集成: `.github/workflows/lighthouse.yml`
 
-- workflow 文件: `.github/workflows/lighthouse.yml` (v1.5.1 NEW)
-- 触发条件: 每周一 06:00 UTC cron + 手动 `workflow_dispatch`
-- 跑分目标: Netlify preview URL (PR 触发时) 或 production URL (cron 触发时)
-- 报告上传: GitHub Actions Artifacts (保留 30 天)
-- 5 项阈值: 与 3.2 本地一致, 失败则 workflow exit 1
+- workflow 文件: `.github/workflows/lighthouse.yml` (v1.5.1 NEW, v2.4.0 重写)
+- 触发条件: 每周一 06:00 UTC cron + 手动 `workflow_dispatch` (+ PR)
+- 跑分目标: `.lighthouserc.cjs` 的 `staticDistDir: './dist'` (workflow 自行 build 后跑产物, 不依赖外部 URL)
+- 报告上传: GitHub Actions Artifacts `.lighthouseci/` (保留 30 天)
+- 阈值: `.lighthouserc.cjs` assertions (4 项: performance / accessibility / best-practices / seo),
+  失败则 workflow exit 1. performance 阈值见文件内注释 (v2.4.0 临时现实水位 + 收紧路径).
 
 ```yaml
-# 简化版 (详见 .github/workflows/lighthouse.yml)
-- name: Run Lighthouse CI
-  uses: treosh/lighthouse-ci-action@v11
-  with:
-    configPath: ./lighthouse.config.js
-    uploadArtifacts: true
-    temporaryPublicStorage: true
+# v2.4.0 实际配置 (v1.5.1 的 treosh/lighthouse-ci-action@v11 已废弃移除:
+# 该 action 2+ 年未更新, 且其 configPath 期望 LHCI config 而非 lighthouse config)
+- name: Run Lighthouse CI (4 项评级, 3 次取中位数, 5% buffer)
+  run: npx lhci autorun --config=./.lighthouserc.cjs
+  env:
+    LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 ```
 
 ### 3.4 报告解读: 5 项分数 + 优化建议

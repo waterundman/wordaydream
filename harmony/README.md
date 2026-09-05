@@ -1,4 +1,9 @@
-# Wordaydream HarmonyOS NEXT Shell — Stage 1 骨架
+> [!IMPORTANT]
+> 本文件是早期 Harmony 移植记录，保留用于追溯。其中的 “Stage 1”、API 12、DevEco 5.0、占位桥接和部分构建/签名说明已经过时。请以 [CURRENT_STATUS.md](./CURRENT_STATUS.md) 作为当前 HarmonyOS 6.0.2 / API 22 架构、能力边界、验证证据和后续工作的权威说明。
+>
+> 不要依据下方历史阶段表判断当前鸿蒙化进度。
+
+# Wordaydream HarmonyOS NEXT Shell — Stage 1 骨架（历史文档）
 
 > **版本**: v0.1.0-harmony Stage 1
 > **架构**: 方案 B (Web 容器 + 原生能力) — ArkWeb 加载 Vite 构建产物, 通过 JSBridge 桥接鸿蒙原生能力

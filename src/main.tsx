@@ -8,6 +8,14 @@ import App from './App.tsx'
 import { useOfflineModeStore } from './features/llm/store/offlineMode'
 // v0.1.0-harmony Stage 2: SW 注册抽出到 platform 模块, 内部处理鸿蒙 ArkWeb 降级
 import { registerServiceWorker } from './platform/swRegistration'
+import { installHarmonyLaunchHandling } from './domain/harmonyLaunch'
+import { HarmonyContentReady } from './platform/HarmonyContentReady'
+
+// Install before React mounts so cold-start Want dispatches cannot race effects.
+installHarmonyLaunchHandling()
+// onPageEnd only confirms that the ArkWeb shell loaded. Explicitly acknowledge
+// handler installation so an empty/failed bundle cannot consume native launches.
+window.harmonyBridge?.notifyWebReady()
 
 // 启动 window 'online' / 'offline' 事件监听, 镜像 navigator.onLine 到 store.
 // 在 main.tsx module 顶层调用, 整个应用生命周期都生效.
@@ -37,6 +45,7 @@ registerServiceWorker()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+      <HarmonyContentReady />
       <App />
     </TooltipProvider>
   </StrictMode>,

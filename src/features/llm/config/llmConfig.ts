@@ -40,6 +40,7 @@
 // import type 仅提供类型命名空间 (zType.infer / zType.ZodType), 编译时完全擦除, 不影响 bundle.
 // zType 别名避免与运行时 const { z } 冲突 (TS2440).
 import type { z as zType } from 'zod';
+import { HARMONY_PROXY_DISABLED } from '../../../config/harmonyCsp';
 const { z } = await import('zod');
 
 /**
@@ -95,6 +96,13 @@ function readEnvString(key: string): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function readProxyUrl(): string | undefined {
+  // Keep this as a direct property read: the Harmony Vite target replaces this
+  // exact expression with either its HTTPS endpoint or the disabled sentinel.
+  const value = import.meta.env.VITE_LLM_PROXY_URL;
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
 /**
  * 把字符串字段转 int (失败返回 undefined, 让 zod default 接管)
  */
@@ -125,9 +133,13 @@ function readEnvFloat(key: string): number | undefined {
  */
 export function getLLMConfig(): LLMConfig {
   if (cachedConfig) return cachedConfig;
+  const configuredProxyUrl = readProxyUrl();
   cachedConfig = LLMConfigSchema.parse({
     provider: readEnvString("VITE_LLM_PROVIDER"),
-    proxyUrl: readEnvString("VITE_LLM_PROXY_URL"),
+    proxyUrl:
+      configuredProxyUrl === HARMONY_PROXY_DISABLED
+        ? ''
+        : configuredProxyUrl,
     maxTokens: readEnvInt("VITE_LLM_MAX_TOKENS"),
     temperature: readEnvFloat("VITE_LLM_TEMPERATURE"),
     retryAttempts: readEnvInt("VITE_LLM_RETRY_ATTEMPTS"),
@@ -136,6 +148,15 @@ export function getLLMConfig(): LLMConfig {
     grayscale: readEnvInt("VITE_LLM_GRAYSCALE"),
   });
   return cachedConfig;
+}
+
+/** Fail before fetch when the Harmony build deliberately has no proxy. */
+export function requireLLMProxyUrl(proxyUrl: string): string {
+  const normalized = proxyUrl.trim();
+  if (!normalized) {
+    throw new Error('LLM proxy is not configured');
+  }
+  return normalized;
 }
 
 /**

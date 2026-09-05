@@ -57,6 +57,26 @@ const WIDGET_PATH: string = join(
   'widget',
   'ReviewCardWidget.ets'
 );
+const FORM_ABILITY_PATH: string = join(
+  HARMONY_MAIN,
+  'ets',
+  'widget',
+  'ReviewCardFormAbility.ets'
+);
+const MODULE_CONFIG_PATH: string = join(
+  PROJECT_ROOT,
+  'harmony',
+  'entry',
+  'src',
+  'main',
+  'module.json5'
+);
+const BRIDGE_PATH: string = join(
+  HARMONY_MAIN,
+  'ets',
+  'bridge',
+  'HarmonyBridge.ets'
+);
 const FORM_CONFIG_PATH: string = join(
   HARMONY_MAIN,
   'resources',
@@ -316,11 +336,13 @@ describe('Stage 6 — T03: MemoryCardStore.getDueCardsCount SQL 逻辑', () => {
 
   it('ArkTS MemoryCardStore.ets 定义所有必需方法', () => {
     const content: string = readFileSync(STORE_PATH, 'utf-8');
-    expect(content).toContain('async initialize(');
+    expect(content).toContain(
+      'initialize(context: common.Context): Promise<void>'
+    );
     expect(content).toContain('async upsertCard(');
     expect(content).toContain('async getDueCardsCount(');
     expect(content).toContain('async getDueCards(');
-    expect(content).toContain('async deleteCard(');
+    expect(content).toContain('async deleteCardByLexemeGroupId(');
     expect(content).toContain('async clear(');
   });
 
@@ -330,6 +352,50 @@ describe('Stage 6 — T03: MemoryCardStore.getDueCardsCount SQL 逻辑', () => {
     const catchCount: number = (content.match(/catch\s*\(/g) || []).length;
     expect(tryCount).toBe(catchCount);
     expect(tryCount).toBeGreaterThanOrEqual(6);
+  });
+
+  it('并发初始化共享同一个 Promise，所有 Store 读写等待 ready', () => {
+    const content: string = readFileSync(STORE_PATH, 'utf-8');
+    expect(content).toContain(
+      'private initializePromise: Promise<void> | null = null'
+    );
+    expect(content).toMatch(
+      /if \(this\.initializePromise !== null\)[\s\S]*?return this\.initializePromise;/
+    );
+    expect(content).toContain(
+      'this.initializePromise = this.initializeStore(context)'
+    );
+    const readyWaitCount: number =
+      (content.match(/await this\.getReadyStore\(/g) || []).length;
+    expect(readyWaitCount).toBeGreaterThanOrEqual(9);
+  });
+
+  it('删除使用 Web Map key lexemeGroupId，而不是 RDB 主键 id', () => {
+    const storeContent: string = readFileSync(STORE_PATH, 'utf-8');
+    const bridgeContent: string = readFileSync(BRIDGE_PATH, 'utf-8');
+    expect(storeContent).toMatch(
+      /deleteCardByLexemeGroupId[\s\S]*?WHERE \$\{COLUMN_LEXEME_GROUP_ID\} = \?/
+    );
+    const bridgeDeletePattern: RegExp =
+      /async deleteCard\(lexemeGroupId: string\)[\s\S]*?deleteCardByLexemeGroupId\(lexemeGroupId\)/;
+    expect(bridgeContent).toMatch(bridgeDeletePattern);
+  });
+
+  it('Bridge 与服务卡片进程均在 RDB 操作前显式等待初始化', () => {
+    const bridgeContent: string = readFileSync(BRIDGE_PATH, 'utf-8');
+    const providerContent: string = readFileSync(PROVIDER_PATH, 'utf-8');
+    expect(bridgeContent).toMatch(
+      /getMemoryCardStore[\s\S]*?await store\.initialize\(this\.context\)/
+    );
+    expect(providerContent).toMatch(
+      /getMemoryCardStore[\s\S]*?await store\.initialize\(this\.context\)/
+    );
+    expect(
+      (bridgeContent.match(/await this\.getMemoryCardStore\(\)/g) || []).length
+    ).toBeGreaterThanOrEqual(7);
+    expect(
+      (providerContent.match(/await this\.getMemoryCardStore\(\)/g) || []).length
+    ).toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -342,9 +408,54 @@ describe('Stage 6 — T04: form_config.json schema 校验', () => {
     const form: Record<string, unknown> = config.forms[0];
     expect(form.name).toBe('review_card');
     expect(form.src).toContain('ReviewCardWidget.ets');
-    expect(form.type).toBe('arkts');
+    expect(form.uiSyntax).toBe('arkts');
+    expect(form.type).toBeUndefined();
     expect(form.isDefault).toBe(true);
+    expect(form.isDynamic).toBe(true);
     expect(form.colorMode).toBe('auto');
+    expect(form.window).toMatchObject({
+      designWidth: 720,
+      autoDesignWidth: true,
+    });
+  });
+
+  it('module.json5 通过 type=form 的 extensionAbility 注册卡片提供方', () => {
+    const raw: string = readFileSync(MODULE_CONFIG_PATH, 'utf-8');
+    const config: {
+      module: {
+        extensionAbilities: Array<Record<string, unknown>>;
+        metadata: Array<Record<string, unknown>>;
+      };
+    } = JSON.parse(raw);
+    const extension: Record<string, unknown> =
+      config.module.extensionAbilities[0];
+    expect(extension.name).toBe('ReviewCardFormAbility');
+    expect(extension.srcEntry).toBe('./ets/widget/ReviewCardFormAbility.ets');
+    expect(extension.type).toBe('form');
+    expect(extension.metadata).toEqual([
+      { name: 'ohos.extension.form', resource: '$profile:form_config' },
+    ]);
+    expect(config.module.metadata).not.toContainEqual(
+      expect.objectContaining({ name: 'ohos.extension.form' })
+    );
+  });
+
+  it('FormExtensionAbility 负责生命周期、尺寸注入和 BindingData 更新', () => {
+    const ability: string = readFileSync(FORM_ABILITY_PATH, 'utf-8');
+    const widget: string = readFileSync(WIDGET_PATH, 'utf-8');
+    expect(ability).toContain('extends FormExtensionAbility');
+    expect(ability).toContain('onAddForm(want: Want)');
+    expect(ability).toContain('formBindingData.createFormBindingData');
+    expect(ability).toContain('formInfo.FormParam.DIMENSION_KEY');
+    expect(ability).toContain('formProvider.updateForm');
+    expect(ability).toContain('onSizeChanged(');
+    expect(widget).toContain('@Entry(storage)');
+    expect(widget).toContain("@LocalStorageProp('formDimension')");
+    expect(widget).not.toContain('formBindingData.getDimension');
+    expect(widget).not.toContain('getContext(this)');
+    expect(widget).not.toContain("from '@kit.FormKit'");
+    expect(widget).not.toContain('hilog');
+    expect(widget).toContain('textOverflow({ overflow: TextOverflow.Ellipsis })');
   });
 
   it('supportDimensions 含 2*2 和 2*4', () => {
@@ -459,11 +570,13 @@ describe('Stage 6 — T06: Web 端 MemoryCard 类型 regression guard', () => {
     expect(_invalid).toBe('zh');
   });
 
-  it('ReviewCardWidget.ets 使用 @ComponentV2 + @LocalV2 + @Builder', () => {
+  it('ReviewCardWidget.ets 是可加载的 Entry 卡片并消费绑定数据', () => {
     const content: string = readFileSync(WIDGET_PATH, 'utf-8');
-    expect(content).toContain('@ComponentV2');
-    expect(content).toContain('@LocalV2');
+    expect(content).toContain('@Entry');
+    expect(content).toContain('@Component');
+    expect(content).toContain('@LocalStorageProp');
     expect(content).toContain('@Builder');
+    expect(content).not.toContain('formBindingData.getDimension');
     expect(content).toContain('postCardAction');
     expect(content).toContain('EntryAbility');
     expect(content).toContain('action=startReview');

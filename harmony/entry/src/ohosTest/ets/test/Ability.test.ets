@@ -42,7 +42,7 @@ export default function abilityTest() {
       const abilityDelegatorRegistry = require('@kit.TestKit');
       const delegator = abilityDelegatorRegistry.getAbilityDelegator();
       context = delegator.getAppContext();
-      bridge = new HarmonyBridge(context);
+      bridge = HarmonyBridge.getInstance(context);
       hilog.info(0x0000, 'testTag', '%{public}s', 'HarmonyBridgeTest beforeAll ready');
     })
 
@@ -64,13 +64,13 @@ export default function abilityTest() {
       expect(count >= 0).assertTrue();
     })
 
-    it('readPreferencesMissingKeyReturnsNull', 0, async () => {
+    it('readPreferencesRejectsUnknownKey', 0, async () => {
       const value: string | null = await bridge.readPreferences('__nonexistent_key_test__');
       expect(value).assertNull();
     })
 
     it('writeAndReadPreferencesRoundTrip', 0, async () => {
-      const key: string = '__test_roundtrip_key__';
+      const key: string = 'streak_data';
       const value: string = 'test_value_' + Date.now().toString();
       await bridge.writePreferences(key, value);
       const readBack: string | null = await bridge.readPreferences(key);
@@ -126,14 +126,14 @@ export default function abilityTest() {
       expect(a === b).assertTrue();
     })
 
-    it('initializeIdempotent', 0, () => {
+    it('initializeIdempotent', 0, async () => {
       const abilityDelegatorRegistry = require('@kit.TestKit');
       const ctx: common.Context = abilityDelegatorRegistry.getAbilityDelegator().getAppContext();
       const store: MemoryCardStore = MemoryCardStore.getInstance();
       let noThrow: boolean = true;
       try {
-        store.initialize(ctx);
-        store.initialize(ctx); // 幂等, 第二次不抛错
+        await store.initialize(ctx);
+        await store.initialize(ctx); // 幂等, 第二次不抛错
       } catch (e) {
         noThrow = false;
       }

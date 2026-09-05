@@ -49,7 +49,9 @@ export const InkWipeTransition = memo(function InkWipeTransition({
     // 阶段 1: cover — overlay 从左向右覆盖全屏
     setPhase('covering');
 
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    // 注: 全部用 window.setTimeout, 返回 number (DOM timer id);
+    // ReturnType<typeof setTimeout> 在引入 @types/node 后解析为 NodeJS.Timeout, 与 window 版本不兼容.
+    const timers: number[] = [];
 
     // cover 动画 ~400ms 后, 通知父组件切换内容
     timers.push(

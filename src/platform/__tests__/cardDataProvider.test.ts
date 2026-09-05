@@ -182,9 +182,9 @@ describe('CardDataProvider (v0.2.0-harmony Stage 4 TS mirror)', () => {
       // ArkTS 源文本一致性: CardDataProvider.ets getLanguage 含 'zh' | 'en' | 'de' 校验
       const arkContent: string = readFileSync(HARMONY_PROVIDER_PATH, 'utf-8');
       expect(arkContent).toContain('getLanguage');
-      expect(arkContent).toMatch(/raw === 'zh'/);
-      expect(arkContent).toMatch(/raw === 'en'/);
-      expect(arkContent).toMatch(/raw === 'de'/);
+      expect(arkContent).toMatch(/=== 'zh'/);
+      expect(arkContent).toMatch(/=== 'en'/);
+      expect(arkContent).toMatch(/=== 'de'/);
       expect(arkContent).toContain("return 'en'");
     });
   });
@@ -226,14 +226,16 @@ describe('CardDataProvider (v0.2.0-harmony Stage 4 TS mirror)', () => {
       expect(arkContent).toContain('formatDueCountText');
     });
 
-    it('T09 [critical]: ReviewCardWidget.ets 含尺寸分支 + 多语言 + 进度环 + emitter', () => {
+    it('T09 [critical]: ReviewCardWidget 使用 BindingData 尺寸分支、多语言和进度环', () => {
       const arkWidget: string = readFileSync(HARMONY_WIDGET_PATH, 'utf-8');
       // 尺寸分支
       expect(arkWidget).toContain('DIMENSION_2_2');
       expect(arkWidget).toContain('DIMENSION_2_4');
-      expect(arkWidget).toContain('formBindingData.getDimension');
+      expect(arkWidget).toContain("@LocalStorageProp('formDimension')");
+      expect(arkWidget).not.toContain('formBindingData.getDimension');
+      expect(arkWidget).not.toContain('getContext(this)');
       // 多语言 state
-      expect(arkWidget).toContain("@LocalV2 language");
+      expect(arkWidget).toContain("@LocalStorageProp('language')");
       expect(arkWidget).toContain('getCtaText');
       expect(arkWidget).toContain('getUpdatedPrefix');
       // CTA 文案三语言
@@ -247,14 +249,10 @@ describe('CardDataProvider (v0.2.0-harmony Stage 4 TS mirror)', () => {
       // 进度环
       expect(arkWidget).toContain('ProgressRing');
       expect(arkWidget).toContain('ProgressType.Ring');
-      // emitter 监听 + 5min 节流
-      expect(arkWidget).toContain('emitter.on');
-      expect(arkWidget).toContain('handleRefreshEvent');
-      expect(arkWidget).toContain('refreshCardData');
-      expect(arkWidget).toContain('WIDGET_REFRESH_THROTTLE_MS');
-      // 不回归: Stage 6 关键符号保留
-      expect(arkWidget).toContain('@ComponentV2');
-      expect(arkWidget).toContain('@LocalV2');
+      // 卡片入口与绑定状态
+      expect(arkWidget).toContain('@Entry');
+      expect(arkWidget).toContain('@Component');
+      expect(arkWidget).toContain('@LocalStorageProp');
       expect(arkWidget).toContain('@Builder');
       expect(arkWidget).toContain('postCardAction');
       expect(arkWidget).toContain('EntryAbility');

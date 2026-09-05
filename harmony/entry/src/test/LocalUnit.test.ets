@@ -8,6 +8,10 @@
  * 仅测试不依赖系统 API 的纯 ArkTS 模块.
  */
 import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium';
+import {
+  BRIDGE_ASYNC_METHODS,
+  BRIDGE_SYNC_METHODS,
+} from '../main/ets/bridge/BridgeMethodRegistry';
 
 /** 测试用 ReminderPayload 字段类型映射 (ArkTS 严格模式要求显式 interface). */
 interface ReminderPayloadFields {
@@ -124,19 +128,21 @@ export default function localUnitTest() {
   })
 
   describe('HarmonyBridgeContractTest', () => {
-    // 验证 HarmonyBridge 方法签名契约 (6 方法, 与 Web TS interface 一一对应).
+    // Validate the same method registry used by the production ArkWeb page.
 
-    it('bridgeHasSixMethods', 0, () => {
-      // 6 方法: getDueCardsCount, registerReminder, readPreferences, writePreferences, triggerHapticFeedback, handleHarmonyLaunch
-      const methodNames: string[] = [
-        'getDueCardsCount',
-        'registerReminder',
-        'readPreferences',
-        'writePreferences',
-        'triggerHapticFeedback',
-        'handleHarmonyLaunch',
-      ];
-      expect(methodNames.length).assertEqual(6);
+    it('bridgeMethodRegistryMatchesContract', 0, () => {
+      const methodNames: string[] =
+        BRIDGE_SYNC_METHODS.concat(BRIDGE_ASYNC_METHODS);
+      expect(BRIDGE_SYNC_METHODS.length).assertEqual(4);
+      expect(BRIDGE_ASYNC_METHODS.length).assertEqual(12);
+      expect(methodNames.length).assertEqual(16);
+      expect(BRIDGE_SYNC_METHODS.includes('triggerHapticFeedback')).assertTrue();
+      expect(BRIDGE_SYNC_METHODS.includes('stopSpeech')).assertTrue();
+      expect(BRIDGE_SYNC_METHODS.includes('notifyWebReady')).assertTrue();
+      expect(BRIDGE_SYNC_METHODS.includes('notifyWebContentReady')).assertTrue();
+      expect(BRIDGE_ASYNC_METHODS.includes('speak')).assertTrue();
+      expect(BRIDGE_ASYNC_METHODS.includes('getAllCards')).assertTrue();
+      expect(!methodNames.includes('handleHarmonyLaunch')).assertTrue();
     })
 
     it('reminderPayloadFields', 0, () => {

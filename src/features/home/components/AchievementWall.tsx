@@ -10,6 +10,7 @@
  */
 import type { ReactNode } from 'react';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
+import { publicAssetUrl } from '../../../platform/publicAssetUrl';
 import styles from './AchievementWall.module.css';
 
 interface AchievementWallProps {
@@ -85,7 +86,7 @@ export function AchievementWall({ onOpenAll, revealClassName }: AchievementWallP
       <header className={styles.header}>
         <h2 className={styles.title}>
           <img
-            src="/assets/svg/ornament-fleuron.svg"
+            src={publicAssetUrl('assets/svg/ornament-fleuron.svg')}
             width="20"
             height="20"
             alt=""

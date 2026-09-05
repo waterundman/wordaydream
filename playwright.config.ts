@@ -34,6 +34,13 @@
  */
 
 import { defineConfig, devices } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+// v2.4.0 fix: VITE_APP_VERSION 从 package.json 动态读取,
+// 替换硬编码 '1.5.1' (与实际版本脱节, 与 package.test.ts 同一问题源).
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
+  version: string;
+};
 
 /**
  * v1.5.1 Stage 1 强化: PORT 配置
@@ -55,17 +62,21 @@ export default defineConfig({
   // harmony_full.spec.ts 是鸿蒙端完整套件, 由 playwright.harmony.config.ts 单独跑,
   // 不应在 Web 端 4 浏览器矩阵跑 (会导致 HF01 产物检查 SKIP + HF02/HF10 的
   // 0 console.error 守护在 CI 慢机器上 flaky).
+  // v2.4.0 fix2: harmony.spec.ts 同理 (ArkWeb UA 模拟套件, 有独立 config,
+  // 且其 H03 与 Web T04 为同款生成流程, 混跑会放大 flaky 面).
   testDir: './e2e',
   testMatch: /.*\.spec\.ts/,
-  testIgnore: /harmony_full\.spec\.ts/,
+  testIgnore: [/harmony_full\.spec\.ts/, /harmony\.spec\.ts/],
 
   // v1.5.2 fix M12: 默认 preview (production build) 模式, SW 才会注册
   // 本地快速调试: E2E_USE_DEV=true npx playwright test (跳过 SW test)
   webServer: {
     command: WEB_SERVER_COMMAND,
     url: BASE_URL,
-    // v2.4.0 fix: dev 模式可复用已有 server; preview 模式必须由本处 build+preview 启动
-    reuseExistingServer: USE_DEV,
+    // v2.4.0 fix: dev 模式可复用已有 server; preview 模式必须由本处 build+preview 启动.
+    // E2E_REUSE_SERVER=true 时强制复用 (本地调试用: 沙箱会拦截 vite emptyOutDir,
+    // 此时由外部预先 build+preview, e2e 直接连 4173).
+    reuseExistingServer: USE_DEV || process.env.E2E_REUSE_SERVER === 'true',
     // v2.4.0 fix: preview 需先 build, 120s 对大项目不够, 放宽到 300s
     timeout: 300 * 1000,
     stdout: 'pipe',
@@ -77,7 +88,7 @@ export default defineConfig({
       VITE_LLM_PROXY_URL: 'http://localhost:8888/.netlify/edge-functions/llm-proxy',
       VITE_LLM_GRAYSCALE: '0',
       VITE_OFFLINE_FALLBACK: 'true',
-      VITE_APP_VERSION: '1.5.1',
+      VITE_APP_VERSION: pkg.version,
     },
   },
 

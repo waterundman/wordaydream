@@ -13,6 +13,7 @@
  * - 配色 / 缓动 / 层级全部引用 tokens.css 变量
  */
 import { useEffect, useRef, useState } from 'react';
+import { publicAssetUrl } from '../../platform/publicAssetUrl';
 import styles from './AchievementUnlockOverlay.module.css';
 
 interface Props {
@@ -147,7 +148,7 @@ export function AchievementUnlockOverlay({ visible, streak, title, onDismiss }: 
     >
       {/* 墨溅底纹 (位于徽章之后) */}
       <img
-        src="/assets/img/ink-splash-terracotta.jpg"
+        src={publicAssetUrl('assets/img/ink-splash-terracotta.jpg')}
         className={`${styles.inkSplash} ${inkVisible ? styles.visible : ''}`}
         alt=""
         aria-hidden="true"

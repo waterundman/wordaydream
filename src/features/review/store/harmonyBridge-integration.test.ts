@@ -109,6 +109,8 @@ describe('v0.1.0-harmony Stage 3: rateCard ↔ harmonyBridge integration', () =>
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
       triggerHapticFeedback: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
 
@@ -152,6 +154,8 @@ describe('v0.1.0-harmony Stage 3: rateCard ↔ harmonyBridge integration', () =>
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
       triggerHapticFeedback: () => {},
+      notifyWebReady: () => {},
+      notifyWebContentReady: () => {},
     };
     (window as BridgeWindow).harmonyBridge = bridgeStub;
 

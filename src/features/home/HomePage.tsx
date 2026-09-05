@@ -33,6 +33,7 @@ import { useWordlistStore } from '../wordlist/store/useWordlistStore';
 import { useMemoryStore } from '../review/store/useMemoryStore';
 import { useReviewSessionStore } from '../review/store/useReviewSessionStore';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import { publicAssetUrl } from '../../platform/publicAssetUrl';
 import type { DifficultyLevel } from '../../types';
 import styles from './HomePage.module.css';
 
@@ -267,7 +268,7 @@ export function HomePage({
         {/* Seedling 空状态 */}
         <div className={`${styles.seedling} ${achievementClassName}`}>
           <img
-            src="/assets/svg/spot-seedling.svg"
+            src={publicAssetUrl('assets/svg/spot-seedling.svg')}
             width="96"
             height="64"
             alt=""

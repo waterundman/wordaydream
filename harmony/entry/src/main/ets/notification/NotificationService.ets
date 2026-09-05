@@ -19,7 +19,7 @@
 import notificationManager from '@ohos.notificationManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { wantAgent, Want, WantAgent } from '@kit.AbilityKit';
+import { common, wantAgent, Want, WantAgent } from '@kit.AbilityKit';
 import { getReviewReminderText, NotificationText } from './templates';
 
 const DOMAIN: number = 0x0001;
@@ -70,6 +70,9 @@ export class NotificationService {
    * 注: 当前实现为"立即 publish" (鸿蒙 notificationManager 无原生延迟调度,
    *   reminderAgent 需要额外 system_grant 权限). 时间窗延迟逻辑计算 triggerAt
    *   但实际 publish 时机由调用方决定 (Stage 7 范围内立即 publish, 真机由用户验证).
+   * SAFETY OVERRIDE: the Stage 7 note above is historical. The current guard
+   * skips every future trigger instead of publishing it immediately, until
+   * reminderAgent entitlement and signing are provisioned.
    */
   async scheduleReviewReminder(
     dueAt: number,
@@ -86,6 +89,17 @@ export class NotificationService {
 
       const now: number = Date.now();
       const triggerAt: number = this.computeTriggerAt(dueAt, now, win);
+      if (triggerAt > now) {
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'scheduleReviewReminder skipped future delivery: dueAt=%{public}d triggerAt=%{public}d; reminderAgent capability is not provisioned',
+          dueAt,
+          triggerAt
+        );
+        return;
+      }
+
       const text: NotificationText = getReviewReminderText(language, dueCount);
 
       // API 22: actionType/actionData 已从 NotificationRequest 移除, 改用 wantAgent
@@ -142,7 +156,7 @@ export class NotificationService {
       hilog.info(
         DOMAIN,
         TAG,
-        'scheduleReviewReminder published: dueAt=%{public}d dueCount=%{public}d lang=%{public}s triggerAt=%{public}d',
+        'scheduleReviewReminder published due notification: dueAt=%{public}d dueCount=%{public}d lang=%{public}s triggerAt=%{public}d',
         dueAt,
         dueCount,
         language,
@@ -184,7 +198,7 @@ export class NotificationService {
   /** 取消所有由本 service 发布的通知. */
   async cancelAllReminders(): Promise<void> {
     try {
-      await notificationManager.cancelAll();
+      await this.cancelReminder(REMINDER_TAG);
       hilog.info(DOMAIN, TAG, 'cancelAllReminders done');
     } catch (e) {
       const err: BusinessError = e as BusinessError;
@@ -202,9 +216,9 @@ export class NotificationService {
    * 请求通知权限 (弹窗引导用户授权).
    * 返回 true 表示已授权, false 表示用户拒绝或异常.
    */
-  async requestPermission(): Promise<boolean> {
+  async requestPermission(context: common.UIAbilityContext): Promise<boolean> {
     try {
-      await notificationManager.requestEnableNotification();
+      await notificationManager.requestEnableNotification(context);
       hilog.info(DOMAIN, TAG, 'requestPermission: granted');
       return true;
     } catch (e) {

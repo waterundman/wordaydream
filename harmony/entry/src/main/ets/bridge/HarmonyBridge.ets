@@ -42,25 +42,29 @@ import type { MemoryCardRecord, TodayReviewStats } from '../data/MemoryCardSchem
 import { MemoryCardStore } from '../data/MemoryCardStore';
 import { NotificationService, NotificationWindow } from '../notification/NotificationService';
 import { BridgeInputValidator } from './BridgeInputValidator';
+import {
+  WEB_CONTROLLER_STORAGE_KEY,
+  WEB_CONTENT_READY_STORAGE_KEY,
+  WEB_HANDLER_READY_STORAGE_KEY,
+  WEB_READY_GENERATION_STORAGE_KEY,
+} from './BridgeMethodRegistry';
 import { TextToSpeechService } from '../tts/TextToSpeechService';
 import type { SpeakPayload, SpeechEngineInfo } from '../tts/TextToSpeechService';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'HarmonyBridge';
 const PREFS_NAME: string = 'wordaydream_prefs';
-const WEB_CONTROLLER_STORAGE_KEY: string = 'webController';
 
 export class HarmonyBridge {
   private static instance: HarmonyBridge | null = null;
   private context: common.Context;
   private prefsName: string = PREFS_NAME;
   private cachedPrefs: preferences.Preferences | null = null;
+  private pendingLaunchQueries: Array<string> = [];
+  private launchDispatchInProgress: boolean = false;
 
   private constructor(context: common.Context) {
     this.context = context;
-    // Stage 6: 初始化 MemoryCardStore (RDB), 供 getDueCardsCount 读取到期卡片数.
-    // initialize 幂等, 异常由 store 内部兜底 (rdbStore 保持 null, 查询返回 0).
-    MemoryCardStore.getInstance().initialize(context);
   }
 
   /** 单例入口 (幂等, context 仅首次调用时使用). */
@@ -76,8 +80,28 @@ export class HarmonyBridge {
     if (this.cachedPrefs !== null) {
       return this.cachedPrefs;
     }
-    this.cachedPrefs = await preferences.getPreferences(this.context, this.prefsName);
-    return this.cachedPrefs;
+    try {
+      this.cachedPrefs =
+        await preferences.getPreferences(this.context, this.prefsName);
+      return this.cachedPrefs;
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.error(
+        DOMAIN,
+        TAG,
+        'getPreferences failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+      throw new Error(err.message);
+    }
+  }
+
+  /** 每次 RDB 操作均等待共享初始化任务，首次失败时允许后续调用重试. */
+  private async getMemoryCardStore(): Promise<MemoryCardStore> {
+    const store: MemoryCardStore = MemoryCardStore.getInstance();
+    await store.initialize(this.context);
+    return store;
   }
 
   /**
@@ -88,8 +112,9 @@ export class HarmonyBridge {
    */
   async getDueCardsCount(): Promise<number> {
     try {
+      const store: MemoryCardStore = await this.getMemoryCardStore();
       const count: number =
-        await MemoryCardStore.getInstance().getDueCardsCount(Date.now());
+        await store.getDueCardsCount(Date.now());
       hilog.info(
         DOMAIN,
         TAG,
@@ -136,8 +161,9 @@ export class HarmonyBridge {
       const win: NotificationWindow = await this.readNotificationWindow();
 
       // 3. 获取到期卡片数 (供通知文案展示 "有 N 个词汇到期")
+      const store: MemoryCardStore = await this.getMemoryCardStore();
       const dueCount: number =
-        await MemoryCardStore.getInstance().getDueCardsCount(payload.dueAt);
+        await store.getDueCardsCount(payload.dueAt);
 
       // 4. 调度通知 (NotificationService 内部 try/catch 兜底)
       await NotificationService.getInstance().scheduleReviewReminder(
@@ -387,33 +413,14 @@ export class HarmonyBridge {
         );
         return;
       }
-      const controller: webview.WebviewController | undefined = AppStorage.get<
-        webview.WebviewController
-      >(WEB_CONTROLLER_STORAGE_KEY);
-      if (controller === undefined || controller === null) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'handleHarmonyLaunch: webController not ready yet, query=%{public}s',
-          query
-        );
-        return;
-      }
-      // 转义单引号和双引号, 防止 query 内容破坏 JS 字符串字面量.
-      // query 通常为 URL-search-likes 格式 (action=startReview&cardId=xxx),
-      // 不含引号, 但防御性转义保证任意 query 都安全.
-      const escapedQuery: string = query
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"');
-      const jsCode: string =
-        `if (typeof window.handleHarmonyLaunch === 'function') { window.handleHarmonyLaunch('${escapedQuery}'); }`;
-      controller.runJavaScript(jsCode);
       hilog.info(
         DOMAIN,
         TAG,
-        'handleHarmonyLaunch dispatched: query=%{public}s',
-        query
+        'handleHarmonyLaunch queued: query=%{public}s queueSize=%{public}d',
+        query,
+        this.pendingLaunchQueries.push(query)
       );
+      this.resumePendingLaunches();
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -423,6 +430,170 @@ export class HarmonyBridge {
         err.code,
         err.message
       );
+    }
+  }
+
+  /**
+   * Confirm that the current trusted Web page installed handleHarmonyLaunch.
+   *
+   * This is deliberately separate from Index.onPageEnd: a shell can finish
+   * loading without executing the application bundle. Keep the generation
+   * monotonic across reloads so an older failed dispatch cannot suppress a
+   * retry triggered by a newer Web context.
+   */
+  notifyWebReady(): void {
+    try {
+      const previousGeneration: number =
+        AppStorage.get<number>(WEB_READY_GENERATION_STORAGE_KEY) ?? 0;
+      const readyGeneration: number = previousGeneration + 1;
+      AppStorage.setOrCreate<boolean>(WEB_HANDLER_READY_STORAGE_KEY, true);
+      AppStorage.setOrCreate<number>(
+        WEB_READY_GENERATION_STORAGE_KEY,
+        readyGeneration
+      );
+      hilog.info(
+        DOMAIN,
+        TAG,
+        'Web launch handler ready: generation=%{public}d',
+        readyGeneration
+      );
+      this.resumePendingLaunches();
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'notifyWebReady failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+    }
+  }
+
+  /**
+   * Confirm that React committed visible application content.
+   *
+   * The native shell keeps its loading/error layer independent from launch
+   * dispatch readiness: module initialization can install the launch handler
+   * before React successfully renders the page.
+   */
+  notifyWebContentReady(): void {
+    try {
+      AppStorage.setOrCreate<boolean>(WEB_CONTENT_READY_STORAGE_KEY, true);
+      hilog.info(DOMAIN, TAG, 'Web content ready');
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'notifyWebContentReady failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+    }
+  }
+
+  /**
+   * Dispatch queued native launch actions in FIFO order.
+   *
+   * A query remains queued until ArkWeb confirms that the Web handler ran.
+   * Missing readiness, missing controllers, and runJavaScript failures preserve
+   * the action until a readiness handshake or controller transition retries it.
+   */
+  resumePendingLaunches(): void {
+    if (
+      this.launchDispatchInProgress ||
+      this.pendingLaunchQueries.length === 0
+    ) {
+      return;
+    }
+
+    const webHandlerReady: boolean =
+      AppStorage.get<boolean>(WEB_HANDLER_READY_STORAGE_KEY) ?? false;
+    if (!webHandlerReady) {
+      hilog.info(
+        DOMAIN,
+        TAG,
+        'resumePendingLaunches waiting for Web readiness: queueSize=%{public}d',
+        this.pendingLaunchQueries.length
+      );
+      return;
+    }
+
+    const controller: webview.WebviewController | undefined = AppStorage.get<
+      webview.WebviewController
+    >(WEB_CONTROLLER_STORAGE_KEY);
+    if (controller === undefined || controller === null) {
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'resumePendingLaunches waiting for webController: queueSize=%{public}d',
+        this.pendingLaunchQueries.length
+      );
+      return;
+    }
+
+    const readyGeneration: number =
+      AppStorage.get<number>(WEB_READY_GENERATION_STORAGE_KEY) ?? 0;
+
+    const query: string = this.pendingLaunchQueries[0];
+    const queryLiteral: string = JSON.stringify(query);
+    const jsCode: string =
+      "(function () { if (typeof window.handleHarmonyLaunch !== 'function') {" +
+      " throw new Error('Harmony launch handler is not ready'); }" +
+      " window.handleHarmonyLaunch(" + queryLiteral +
+      "); return 'dispatched'; })();";
+
+    this.launchDispatchInProgress = true;
+    try {
+      controller.runJavaScript(jsCode)
+        .then((_result: string) => {
+          if (
+            this.pendingLaunchQueries.length > 0 &&
+            this.pendingLaunchQueries[0] === query
+          ) {
+            this.pendingLaunchQueries.shift();
+          }
+          this.launchDispatchInProgress = false;
+          hilog.info(
+            DOMAIN,
+            TAG,
+            'Harmony launch dispatched: query=%{public}s remaining=%{public}d',
+            query,
+            this.pendingLaunchQueries.length
+          );
+          this.resumePendingLaunches();
+        })
+        .catch((e: BusinessError) => {
+          this.launchDispatchInProgress = false;
+          hilog.warn(
+            DOMAIN,
+            TAG,
+            'Harmony launch retained after ArkWeb rejection: code=%{public}d msg=%{public}s',
+            e.code,
+            e.message
+          );
+          const currentGeneration: number =
+            AppStorage.get<number>(WEB_READY_GENERATION_STORAGE_KEY) ?? 0;
+          if (currentGeneration !== readyGeneration) {
+            this.resumePendingLaunches();
+          }
+        });
+    } catch (e) {
+      this.launchDispatchInProgress = false;
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'Harmony launch retained after dispatch failure: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+      const currentGeneration: number =
+        AppStorage.get<number>(WEB_READY_GENERATION_STORAGE_KEY) ?? 0;
+      if (currentGeneration !== readyGeneration) {
+        this.resumePendingLaunches();
+      }
     }
   }
 
@@ -444,7 +615,8 @@ export class HarmonyBridge {
         );
         return;
       }
-      await MemoryCardStore.getInstance().upsertCard(card);
+      const store: MemoryCardStore = await this.getMemoryCardStore();
+      await store.upsertCard(card);
       hilog.info(
         DOMAIN,
         TAG,
@@ -467,26 +639,28 @@ export class HarmonyBridge {
   /**
    * Stage 3: Web → 鸿蒙 relationalStore 镜像 (delete).
    *
-   * 1. 校验 cardId (BridgeInputValidator.validateCardId), 失败 hilog.warn + return.
-   * 2. 调用 MemoryCardStore.deleteCard (Stage 6 已有方法).
+   * Web 传入的键是 MemoryCard Map key (lexemeGroupId), 并非 RDB 主键 id.
+   * 1. 校验 lexemeGroupId (复用 ID 格式校验), 失败 hilog.warn + return.
+   * 2. 调用 MemoryCardStore.deleteCardByLexemeGroupId.
    * 3. hilog.info 记录成功日志.
    */
-  async deleteCard(cardId: string): Promise<void> {
+  async deleteCard(lexemeGroupId: string): Promise<void> {
     try {
-      if (!BridgeInputValidator.validateCardId(cardId)) {
+      if (!BridgeInputValidator.validateCardId(lexemeGroupId)) {
         hilog.warn(
           DOMAIN,
           TAG,
-          'deleteCard rejected: invalid cardId'
+          'deleteCard rejected: invalid lexemeGroupId'
         );
         return;
       }
-      await MemoryCardStore.getInstance().deleteCard(cardId);
+      const store: MemoryCardStore = await this.getMemoryCardStore();
+      await store.deleteCardByLexemeGroupId(lexemeGroupId);
       hilog.info(
         DOMAIN,
         TAG,
-        'deleteCard done: id=%{public}s',
-        cardId
+        'deleteCard done: lexemeGroupId=%{public}s',
+        lexemeGroupId
       );
     } catch (e) {
       const err: BusinessError = e as BusinessError;
@@ -508,8 +682,9 @@ export class HarmonyBridge {
    */
   async getAllCards(): Promise<MemoryCardRecord[]> {
     try {
+      const store: MemoryCardStore = await this.getMemoryCardStore();
       const cards: MemoryCardRecord[] =
-        await MemoryCardStore.getInstance().getAllCards();
+        await store.getAllCards();
       hilog.info(
         DOMAIN,
         TAG,
@@ -552,8 +727,9 @@ export class HarmonyBridge {
         );
         return [];
       }
+      const store: MemoryCardStore = await this.getMemoryCardStore();
       const cards: MemoryCardRecord[] =
-        await MemoryCardStore.getInstance().getRecentlyReviewedCards(limit);
+        await store.getRecentlyReviewedCards(limit);
       hilog.info(
         DOMAIN,
         TAG,
@@ -588,8 +764,9 @@ export class HarmonyBridge {
       totalCount: 0,
     };
     try {
+      const store: MemoryCardStore = await this.getMemoryCardStore();
       const stats: TodayReviewStats =
-        await MemoryCardStore.getInstance().getTodayReviewStats(Date.now());
+        await store.getTodayReviewStats(Date.now());
       hilog.info(
         DOMAIN,
         TAG,
@@ -670,10 +847,11 @@ export class HarmonyBridge {
       hilog.warn(
         DOMAIN,
         TAG,
-        'speak failed (fire-and-forget fallback): code=%{public}d msg=%{public}s',
+        'speak failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );
+      throw new Error(err.message);
     }
   }
 

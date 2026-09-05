@@ -11,7 +11,6 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
 import { InkWipeTransition } from './components/transitions/InkWipeTransition';
 import { AchievementUnlockOverlay } from './components/transitions/AchievementUnlockOverlay';
 import { AchievementToast } from './features/achievements/components/AchievementToast';
-import { useAchievementStore } from './features/achievements/store/useAchievementStore';
 import { ThemeProvider } from './components/ThemeProvider';
 import { ScrollProgressBar } from './components/ScrollProgressBar';
 import { LoadingFallback } from './components/LoadingFallback';
@@ -58,8 +57,6 @@ function App() {
     title: string;
   } | null>(null);
 
-  const newUnlocks = useAchievementStore((s) => s.newUnlocks);
-
   useUrlHashSync(); // v1.7.0 Stage 2: URL hash 同步 AppMode
 
   useCursorGlow(true);
@@ -105,11 +102,21 @@ function App() {
 
   // v2.3: 两阶段过渡 — cover (overlay 覆盖) → 切换内容 → reveal (overlay 揭开)
   // 用户点击导航时设置 pendingMode + 触发 transition, onCovered 时才真正 setAppMode.
+  //
+  // v2.4.0 fix (导航回归): isTransitioning===true 时 setIsTransitioning(true) 是 no-op,
+  // InkWipeTransition 的 effect 依赖 active (false→true) 才重跑, 导致 pendingMode 永远
+  // 挂起, 页面卡死 (首屏开场动画 1.9s 内点击任何导航必触发, e2e T02/T04 因此超时).
+  // 修复: 过渡进行中直接同步 setAppMode (overlay 仍在, 内容在 overlay 下方切换),
+  // 当前动画的 onComplete 会正常把 isTransitioning 置 false.
   const navigateTo = useCallback((mode: typeof appMode) => {
     if (mode === appMode) return;
+    if (isTransitioning) {
+      setAppMode(mode);
+      return;
+    }
     pendingModeRef.current = mode;
     setIsTransitioning(true);
-  }, [appMode]);
+  }, [appMode, isTransitioning, setAppMode]);
 
   const handleCovered = useCallback(() => {
     const pending = pendingModeRef.current;

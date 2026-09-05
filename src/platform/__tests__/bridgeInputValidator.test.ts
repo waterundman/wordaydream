@@ -216,9 +216,9 @@ describe('BridgeInputValidator (v0.2.0-harmony Stage 2)', () => {
       expect(html).toMatch(/default-src\s+'self'/);
       expect(html).toMatch(/script-src\s+'self'/);
       expect(html).toMatch(/connect-src\s+'self'/);
-      // connect-src 必须包含 LLM Proxy / ArkWeb 所需 origin
+      // Harmony 虚拟 HTTPS 壳保持 MixedMode 关闭: 仅允许受控安全 origin。
       expect(html).toContain('arkweb://*');
-      expect(html).toContain('http://localhost:*');
+      expect(html).not.toMatch(/connect-src[^;]*http:/i);
       expect(html).toContain('https://*.hapogo.com');
       // script-src 'self' (Vite module script 兼容)
       expect(html).toContain("script-src 'self'");

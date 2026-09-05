@@ -731,181 +731,20 @@ export function parsePassagePayload(raw: string): ParseResult & {
   };
 }
 
-// =====================================================================
-// v0.4.0-harmony Stage 4 (D4): Worker-based async API
-// =====================================================================
-
 /**
- * Worker schema 名称 (与 router.ts 的 ExpectJson 类型映射一致)
- * - 'passage' / 'evaluation' / 'difficulty' / 'gloss' / 'generic'
+ * Main-thread fallback used by the lightweight Worker client. Keeping this
+ * adapter here preserves the exact zod/jsonrepair and language-check behavior
+ * while allowing callers to load this heavy module only after Worker failure.
  */
-export type WorkerSchemaName = 'passage' | 'evaluation' | 'difficulty' | 'gloss' | 'generic';
-
-/**
- * LLM JSON Worker 通信协议
- * - 请求: { id, raw, schemaName, expectedLanguage? }
- * - 响应: { id, ok, result?, error? }
- */
-interface LlmJsonWorkerRequest {
-  id: number;
-  raw: string;
-  schemaName: WorkerSchemaName;
-  expectedLanguage?: Language;
-}
-
-interface LlmJsonWorkerResponse {
-  id: number;
-  ok: boolean;
-  result?: {
-    ok: boolean;
-    data?: unknown;
-    error?: string;
-    repaired?: boolean;
-    issues?: Array<{ path: string; message: string }>;
-  };
-  error?: string;
-}
-
-/**
- * Worker 单例 (惰性创建, 同一进程内复用)
- */
-let _llmJsonWorker: Worker | null = null;
-let _llmJsonWorkerUnsupported: boolean = false;
-let _llmJsonRequestCounter: number = 0;
-const _llmJsonPendingRequests = new Map<number, {
-  resolve: (result: ParseResult<unknown>) => void;
-  reject: (error: Error) => void;
-}>();
-
-/**
- * 获取 (惰性创建) LLM JSON Worker 单例
- *
- * - 首次调用时 new Worker(...)
- * - Worker 不可用 (typeof Worker === 'undefined') 返回 null
- * - Worker 创建失败也返回 null (降级到主线程)
- */
-function getLlmJsonWorker(): Worker | null {
-  if (_llmJsonWorkerUnsupported) return null;
-  if (_llmJsonWorker) return _llmJsonWorker;
-  if (typeof Worker === 'undefined') {
-    _llmJsonWorkerUnsupported = true;
-    return null;
-  }
-  try {
-    _llmJsonWorker = new Worker(
-      new URL('../../../workers/llmJsonWorker.ts', import.meta.url),
-      { type: 'module' }
-    );
-    _llmJsonWorker.onmessage = (ev: MessageEvent) => {
-      const resp = ev.data as LlmJsonWorkerResponse;
-      if (!resp || typeof resp.id !== 'number') return;
-      const pending = _llmJsonPendingRequests.get(resp.id);
-      if (!pending) return;
-      _llmJsonPendingRequests.delete(resp.id);
-
-      if (!resp.ok || !resp.result) {
-        pending.reject(new Error(resp.error ?? 'LLM JSON worker failed without error message'));
-        return;
-      }
-
-      // 主线程埋点: Worker 内部无法访问 useAnalyticsStore, 由主线程代为埋点
-      if (resp.result.repaired && resp.result.ok) {
-        try {
-          useAnalyticsStore.getState().incrementLLMRepair();
-          const nextCount = useAnalyticsStore.getState().llmRepairCount;
-          console.info(`[JSON Repair] count=${nextCount} (via worker)`);
-        } catch {
-          // 埋点失败不阻塞主流程
-        }
-      }
-
-      pending.resolve(resp.result as ParseResult<unknown>);
-    };
-    _llmJsonWorker.onerror = (err) => {
-      console.warn('[jsonParser] Worker error, falling back to main thread:', err);
-      for (const [id, pending] of _llmJsonPendingRequests) {
-        _llmJsonPendingRequests.delete(id);
-        pending.reject(new Error('LLM JSON worker crashed'));
-      }
-      _llmJsonWorker = null;
-      _llmJsonWorkerUnsupported = true;
-    };
-    return _llmJsonWorker;
-  } catch (e) {
-    console.warn('[jsonParser] Worker creation failed, falling back to main thread:', e);
-    _llmJsonWorkerUnsupported = true;
-    return null;
-  }
-}
-
-/**
- * v0.4.0-harmony Stage 4 (D4): 异步解析 LLM JSON (Worker-based)
- *
- * - Worker 可用: 把 raw + schemaName + expectedLanguage postMessage 给 worker, 等待结果
- * - Worker 不可用: fallback 到主线程 sync parseLLMResponse
- *
- * 与 sync parseLLMResponse 的区别:
- * - 返回 Promise<ParseResult<T>>
- * - CPU 密集的 jsonrepair + zod safeParse 在 worker 线程, 不阻塞主线程
- * - Worker 内部 dynamic import jsonrepair + zod, 不与主线程共享 module graph
- *
- * 调用方: router.ts 的 generateWithJsonRetry (已切到 async API).
- * 测试环境 (jsdom 无 Worker) 自动 fallback 到 sync 路径, 现有测试不受影响.
- *
- * @param raw LLM 响应原文
- * @param schemaName schema 名称 ('passage' / 'evaluation' / 'difficulty' / 'gloss' / 'generic')
- * @param expectedLanguage 期望语言 (仅 'passage' schema 生效, 与 sync API 行为一致)
- */
-export async function parseLLMResponseAsync<T = PassagePayload>(
+export function parseLLMResponseBySchemaName<T = PassagePayload>(
   raw: string,
-  schemaName: WorkerSchemaName = 'passage',
+  schemaName: import('./llmJsonWorkerClient').WorkerSchemaName = 'passage',
   expectedLanguage?: Language,
-): Promise<ParseResult<T>> {
-  const worker = getLlmJsonWorker();
-  if (!worker) {
-    // Fallback: 主线程执行 (与 sync API 等价)
-    // 用 sync parseLLMResponse 的对应 schema 调用
-    const syncResult = parseLLMResponse(raw, {
-      schema: getSchemaForWorkerName(schemaName),
-      expectedLanguage,
-    });
-    return syncResult as ParseResult<T>;
-  }
-
-  const id = ++_llmJsonRequestCounter;
-  const request: LlmJsonWorkerRequest = {
-    id,
-    raw,
-    schemaName,
+): ParseResult<T> {
+  return parseLLMResponse(raw, {
+    schema: getSchemaForWorkerName(schemaName),
     expectedLanguage,
-  };
-
-  return new Promise<ParseResult<T>>((resolve, reject) => {
-    // 超时保护 (60s, LLM JSON 可能较大)
-    const timeout = setTimeout(() => {
-      _llmJsonPendingRequests.delete(id);
-      reject(new Error('LLM JSON worker timeout (60s)'));
-    }, 60000);
-
-    _llmJsonPendingRequests.set(id, {
-      resolve: (result) => {
-        clearTimeout(timeout);
-        resolve(result as ParseResult<T>);
-      },
-      reject: (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      },
-    });
-
-    try {
-      worker.postMessage(request);
-    } catch (e) {
-      clearTimeout(timeout);
-      _llmJsonPendingRequests.delete(id);
-      reject(e instanceof Error ? e : new Error(String(e)));
-    }
-  });
+  }) as ParseResult<T>;
 }
 
 /**
@@ -913,7 +752,9 @@ export async function parseLLMResponseAsync<T = PassagePayload>(
  *
  * 与 router.ts 的 getSchemaForExpectJson 一致, 但接受 WorkerSchemaName 类型.
  */
-function getSchemaForWorkerName(name: WorkerSchemaName): zType.ZodType<unknown> {
+function getSchemaForWorkerName(
+  name: import('./llmJsonWorkerClient').WorkerSchemaName,
+): zType.ZodType<unknown> {
   switch (name) {
     case 'passage':
       return PassagePayloadSchema;
@@ -927,17 +768,4 @@ function getSchemaForWorkerName(name: WorkerSchemaName): zType.ZodType<unknown> 
       // 宽松校验: 接受任意 JSON object (与 router.ts getSchemaForExpectJson('generic') 等价)
       return z.object({}).passthrough();
   }
-}
-
-/**
- * @internal 测试用: 强制重置 Worker 单例 + unsupported 标志.
- */
-export function _resetLlmJsonWorkerForTesting(): void {
-  if (_llmJsonWorker) {
-    _llmJsonWorker.terminate();
-    _llmJsonWorker = null;
-  }
-  _llmJsonWorkerUnsupported = false;
-  _llmJsonPendingRequests.clear();
-  _llmJsonRequestCounter = 0;
 }

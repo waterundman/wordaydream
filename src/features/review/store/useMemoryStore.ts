@@ -6,6 +6,29 @@ import { publish } from '../../../domain/events';
 import type { MemoryCardsUpdatedPayload } from '../../../domain/events';
 import type { MemoryCardRecordBridge } from '../../../platform/harmonyBridge';
 
+let resolveNativeMemoryRestore: (() => void) | null = null;
+let nativeMemoryRestoreSettled: boolean = false;
+const nativeMemoryRestoreReady: Promise<void> = new Promise((resolve) => {
+  resolveNativeMemoryRestore = resolve;
+});
+
+/**
+ * Resolves after persisted Web state is hydrated and any required Harmony RDB
+ * restore attempt has settled. Launch actions use this to avoid racing an empty
+ * localStorage snapshot against the native card mirror.
+ */
+export function waitForNativeMemoryRestore(): Promise<void> {
+  return nativeMemoryRestoreReady;
+}
+
+function markNativeMemoryRestoreSettled(): void {
+  if (nativeMemoryRestoreSettled) {
+    return;
+  }
+  nativeMemoryRestoreSettled = true;
+  resolveNativeMemoryRestore?.();
+  resolveNativeMemoryRestore = null;
+}
 /**
  * v0.2.0-harmony Stage 3: Web MemoryCard → 鸿蒙 MemoryCardRecordBridge 转换.
  *
@@ -340,27 +363,27 @@ export const useMemoryStore = create<MemoryStore>()(
         }
       },
 
-      deleteCard: (cardId: string) => {
+      deleteCard: (lexemeGroupId: string) => {
         const next = new Map(get().cards);
-        next.delete(cardId);
+        next.delete(lexemeGroupId);
         // v0.4.0-harmony Stage 1 D1: 增量更新 dueCardsIndex — 从索引中移除.
         const prevIndex = get().dueCardsIndex;
         const nextIndex = prevIndex === null ? null : new Set(prevIndex);
-        nextIndex?.delete(cardId);
+        nextIndex?.delete(lexemeGroupId);
         // v0.4.0-harmony Stage 2 D2: 增量更新 cardsByLanguageIndex — 从对应 language set 移除.
         // 需先查卡片获取 language (删之前从旧 cards 取, next 上已无该卡).
-        const prevCard = get().cards.get(cardId);
+        const prevCard = get().cards.get(lexemeGroupId);
         const prevLangIndex = get().cardsByLanguageIndex;
         const nextLangIndex = prevLangIndex === null ? null : new Map(prevLangIndex);
         if (nextLangIndex !== null && prevCard?.language) {
-          nextLangIndex.get(prevCard.language)?.delete(cardId);
+          nextLangIndex.get(prevCard.language)?.delete(lexemeGroupId);
         }
         set({ cards: next, dueCardsIndex: nextIndex, cardsByLanguageIndex: nextLangIndex });
 
         // v0.2.0 Stage 3: Web → 鸿蒙 relationalStore 镜像 (fire-and-forget)
         try {
           void window.harmonyBridge
-            ?.deleteCard(cardId)
+            ?.deleteCard(lexemeGroupId)
             ?.catch?.(() => {
               // silent skip — JSBridge 异步失败不传播到 Web
             });
@@ -465,7 +488,7 @@ export const useMemoryStore = create<MemoryStore>()(
       resetAll: () => {
         // v0.2.0 Stage 3: resetAll 罕见且不阻塞, harmonyBridge 没有 clear 方法,
         // 遍历 state.cards.keys() 逐个 deleteCard (fire-and-forget, 不阻塞主流程)
-        const existingCardIds: string[] = Array.from(get().cards.keys());
+        const existingLexemeGroupIds: string[] = Array.from(get().cards.keys());
         set({
           cards: new Map(),
           newlyAdded: [],
@@ -476,10 +499,10 @@ export const useMemoryStore = create<MemoryStore>()(
           // v0.4.0-harmony Stage 2 D2: 重置 cardsByLanguageIndex 为 null (与 dueCardsIndex 一致).
           cardsByLanguageIndex: null,
         });
-        for (const cardId of existingCardIds) {
+        for (const lexemeGroupId of existingLexemeGroupIds) {
           try {
             void window.harmonyBridge
-              ?.deleteCard(cardId)
+              ?.deleteCard(lexemeGroupId)
               ?.catch?.(() => {
                 // silent skip — JSBridge 异步失败不传播到 Web
               });
@@ -499,7 +522,10 @@ export const useMemoryStore = create<MemoryStore>()(
         schemaVersion: state.schemaVersion,
       }),
       onRehydrateStorage: () => (state) => {
-        if (!state) return;
+        if (!state) {
+          markNativeMemoryRestoreSettled();
+          return;
+        }
         if (state.cards && !(state.cards instanceof Map)) {
           state.cards = new Map(Object.entries(state.cards));
         }
@@ -540,8 +566,8 @@ export const useMemoryStore = create<MemoryStore>()(
           window.harmonyBridge
         ) {
           const bridge = window.harmonyBridge;
-          void bridge
-            .getAllCards()
+          void Promise.resolve()
+            .then(() => bridge.getAllCards())
             .then((cards: MemoryCardRecordBridge[]) => {
               if (!cards || cards.length === 0) return; // 首次安装场景, 静默跳过
               const newCards = new Map<string, MemoryCard>();
@@ -561,8 +587,13 @@ export const useMemoryStore = create<MemoryStore>()(
             })
             .catch(() => {
               // silent skip — JSBridge 异步失败不传播到 Web
+            })
+            .finally(() => {
+              markNativeMemoryRestoreSettled();
             });
+          return;
         }
+        markNativeMemoryRestoreSettled();
       },
       // v1.5.3 fix V4-P2-003: 实现 migrate, 为旧数据补 learningSteps 和 language 字段.
       migrate: (persistedState, version) => {

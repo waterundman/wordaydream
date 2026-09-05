@@ -7,6 +7,7 @@
  * - T03 [worker-error]: Worker 抛错时 reject, 主线程拿到 error
  * - T04 [worker-crash]: Worker onerror 触发后, 后续调用降级到 fallback
  * - T05 [parity]: Worker 路径与 sync 路径对相同 CSV 返回等价 entries
+ * - T06 [timeout]: 超时后终止故障 Worker，后续调用稳定降级
  *
  * 测试策略:
  * - jsdom 默认无 Worker, T01 直接走 fallback
@@ -200,5 +201,22 @@ describe('v0.4.0-harmony Stage 4: parseCsvWordlistAsync (CSV Worker)', () => {
     expect(asyncResult.entries).toEqual(syncResult.entries);
     expect(asyncResult.errors).toEqual(syncResult.errors);
     expect(asyncResult.success).toBe(syncResult.success);
+  });
+
+  it('T06 [timeout]: 超时后终止 Worker，并让后续调用降级', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('Worker', MockWorker);
+
+    const promise = parseCsvWordlistAsync(CSV_FIXTURE, 'timeout.csv');
+    const rejection = expect(promise).rejects.toThrow('CSV worker timeout (30s)');
+    const mock = MockWorker.lastInstance;
+    await vi.advanceTimersByTimeAsync(30000);
+    await rejection;
+
+    expect(mock?.terminated).toBe(true);
+    const fallback = await parseCsvWordlistAsync(CSV_FIXTURE, 'fallback.csv');
+    expect(fallback.success).toBe(true);
+    expect(MockWorker.lastInstance).toBe(mock);
+    vi.useRealTimers();
   });
 });

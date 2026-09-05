@@ -181,21 +181,21 @@ OPTIONS 预检返回 204 + 标准 CORS 头.
 `.env.harmony.example` 模板:
 
 ```
-VITE_LLM_PROXY_URL_HARMONY=http://192.168.1.100:3001/api/llm
+VITE_LLM_PROXY_URL_HARMONY=https://dev-proxy.example.com/api/llm
 ```
 
 ### 5.2 ArkWeb 跨域
 
-ArkWeb 加载 rawfile 协议 (`arkweb://rawfile/...` 或 `file://rawfile/...`), 调用
-`http://192.168.1.100:3001/api/llm` 是跨域请求. 本服务已显式允许 `arkweb://` /
-`file://` origin, 浏览器层不会拦截响应.
+ArkWeb 页面使用 `https://app.wordaydream.invalid` 虚拟同源入口。Harmony 构建只接受
+证书有效、设备可访问的 HTTPS 代理地址，并把该 origin 注入 CSP。开发机上的 HTTP
+服务需要放到受信任的 HTTPS 反向代理或隧道后面；不要放宽 ArkWeb MixedMode。
 
 ### 5.3 真机调试 IP
 
-DevEco 真机调试时, 把 `VITE_LLM_PROXY_URL_HARMONY` 改为开发机的局域网 IP:
+DevEco 真机调试时，把 `VITE_LLM_PROXY_URL_HARMONY` 改为设备可访问的 HTTPS 地址：
 
 ```
-VITE_LLM_PROXY_URL_HARMONY=http://192.168.1.100:3001/api/llm
+VITE_LLM_PROXY_URL_HARMONY=https://dev-proxy.example.com/api/llm
 ```
 
 (不要用 `localhost`, 真机的 localhost 指向设备本身, 不是开发机.)

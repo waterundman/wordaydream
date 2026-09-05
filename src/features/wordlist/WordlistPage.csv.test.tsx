@@ -11,7 +11,7 @@
  * - mock `data/wordlists/csvStorage` 模块返回空列表 (避免 IndexedDB 依赖)
  * - @testing-library/react + vitest
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { WordlistPage } from './WordlistPage';
 import { useSettingsStore } from '../settings/store/useSettingsStore';
@@ -19,6 +19,7 @@ import { useReadingSessionStore } from '../reading/store/useReadingSessionStore'
 import { useWordlistStore } from './store/useWordlistStore';
 import { listCsvWordlists } from '../../data/wordlists/csvStorage';
 import type { StoredCsvWordlist } from '../../data/wordlists/csvStorage';
+import { parseCsvWordlistAsync } from '../../data/wordlists/csvLoader';
 
 vi.mock('../../data/wordlists', () => {
   const mockWordlist = {
@@ -51,12 +52,27 @@ vi.mock('../../data/wordlists/csvStorage', () => ({
   getAllCsvEntries: vi.fn(async () => []),
 }));
 
+vi.mock('../../data/wordlists/csvLoader', async () => {
+  const actual = await vi.importActual<typeof import('../../data/wordlists/csvLoader')>(
+    '../../data/wordlists/csvLoader',
+  );
+  return {
+    ...actual,
+    parseCsvWordlistAsync: vi.fn(actual.parseCsvWordlistAsync),
+  };
+});
+
 beforeEach(() => {
+  vi.clearAllMocks();
   useSettingsStore.setState({ difficulty: 2 });
   useReadingSessionStore.setState({
     lastConfig: { language: 'en' as const, difficulty: 2 as const },
   });
   useWordlistStore.setState({ progress: {} });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('WordlistPage CSV 导入 (v2.2.0 Stage 2)', () => {
@@ -126,13 +142,74 @@ describe('WordlistPage inline style 清理 (v2.2.3 Stage 3 D3-1)', () => {
     await waitFor(() => {
       expect(screen.getByTestId('csv-import-preview')).toBeInTheDocument();
     });
+    expect(parseCsvWordlistAsync).toHaveBeenCalledWith(
+      expect.stringContaining('lemma,pos,translation,cefr'),
+      'test.csv',
+    );
 
     // 验证预览区内所有元素无 inline style 属性
     const preview = screen.getByTestId('csv-import-preview');
     const elementsWithStyle = preview.querySelectorAll('[style]');
     expect(elementsWithStyle).toHaveLength(0);
+  });
 
-    vi.unstubAllGlobals();
+  it('CSV Worker 解析期间禁用重复选择，并在完成后恢复', async () => {
+    let resolveParse: ((result: Awaited<ReturnType<typeof parseCsvWordlistAsync>>) => void) | null = null;
+    vi.mocked(parseCsvWordlistAsync).mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolveParse = resolve;
+      }),
+    );
+    vi.stubGlobal('FileReader', class {
+      onload: ((e: { target: { result: string } }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      readAsText(_file: File) {
+        this.onload?.({ target: { result: 'lemma,pos,translation,cefr\nhave,verb,有,A2' } });
+      }
+    });
+
+    const { container } = render(<WordlistPage onGoHome={() => {}} />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['test'], 'worker.csv')] },
+    });
+
+    const importButton = screen.getByRole('button', { name: '导入 CSV 词库' });
+    expect(importButton).toBeDisabled();
+    expect(importButton).toHaveAttribute('aria-busy', 'true');
+
+    resolveParse?.({
+      success: true,
+      entries: [{ lemma: 'have', pos: 'verb', translation: '有', cefr: 'A2' }],
+      errors: [],
+      fileName: 'worker.csv',
+      importedAt: Date.now(),
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('csv-import-preview')).toBeInTheDocument();
+      expect(importButton).not.toBeDisabled();
+    });
+  });
+
+  it('CSV Worker 失败时展示可恢复的错误信息', async () => {
+    vi.mocked(parseCsvWordlistAsync).mockRejectedValueOnce(new Error('worker unavailable'));
+    vi.stubGlobal('FileReader', class {
+      onload: ((e: { target: { result: string } }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      readAsText(_file: File) {
+        this.onload?.({ target: { result: 'lemma,pos,translation,cefr' } });
+      }
+    });
+
+    const { container } = render(<WordlistPage onGoHome={() => {}} />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File(['test'], 'broken.csv')] },
+    });
+
+    expect(await screen.findByText('CSV 解析失败: worker unavailable')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '导入 CSV 词库' })).not.toBeDisabled();
   });
 
   it('T12: 词库列表项使用 CSS module class, 无 inline style', async () => {

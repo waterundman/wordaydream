@@ -12,8 +12,8 @@
  *
  * v0.4.0-harmony Stage 4 (D4): 新增 parseCsvWordlistAsync, 将 CPU 密集的
  * papaparse 解析移至 Web Worker (src/workers/csvParser.worker.ts).
- * - 旧 sync API parseCsvWordlist 保留 (WordlistPage 同步调用, 不能改签名)
- * - 新 async API 走 Worker, 主线程 0 阻塞
+ * - 旧 sync API parseCsvWordlist 作为兼容与 Worker 不可用时的 fallback 保留
+ * - WordlistPage 使用 async API 走 Worker, 主线程不承担 CSV 解析
  * - Worker 不可用 (jsdom / 老浏览器) 时 fallback 到主线程动态 import papaparse
  */
 // v0.4.0-harmony Stage 3 (D3): papaparse 改为动态 import (TMA), 不阻塞首屏.
@@ -238,6 +238,17 @@ const _csvPendingRequests = new Map<number, {
   reject: (error: Error) => void;
 }>();
 
+function disableCsvWorker(error: Error): void {
+  const worker = _csvWorker;
+  _csvWorker = null;
+  _csvWorkerUnsupported = true;
+  worker?.terminate();
+  for (const [id, pending] of _csvPendingRequests) {
+    _csvPendingRequests.delete(id);
+    pending.reject(error);
+  }
+}
+
 /**
  * 获取 (惰性创建) CSV Worker 单例
  *
@@ -274,12 +285,7 @@ function getCsvWorker(): Worker | null {
     _csvWorker.onerror = (err) => {
       // Worker 整体崩溃, reject 所有 pending 请求
       console.warn('[csvLoader] Worker error, falling back to main thread:', err);
-      for (const [id, pending] of _csvPendingRequests) {
-        _csvPendingRequests.delete(id);
-        pending.reject(new Error('CSV worker crashed'));
-      }
-      _csvWorker = null;
-      _csvWorkerUnsupported = true;
+      disableCsvWorker(new Error('CSV worker crashed'));
     };
     return _csvWorker;
   } catch (e) {
@@ -323,8 +329,7 @@ export async function parseCsvWordlistAsync(
   return new Promise<CsvImportResult>((resolve, reject) => {
     // 超时保护 (30s): 避免 Worker 卡死时主线程永远 pending
     const timeout = setTimeout(() => {
-      _csvPendingRequests.delete(id);
-      reject(new Error('CSV worker timeout (30s)'));
+      disableCsvWorker(new Error('CSV worker timeout (30s)'));
     }, 30000);
 
     _csvPendingRequests.set(id, {

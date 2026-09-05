@@ -28,7 +28,7 @@
  */
 
 import type { GenerateOptions } from './provider';
-import { getLLMConfig } from '../config/llmConfig';
+import { getLLMConfig, requireLLMProxyUrl } from '../config/llmConfig';
 import { parseSSEStream } from './llmStream';
 
 /**
@@ -228,13 +228,13 @@ async function runStream(
 
   let response: Response;
   try {
-    response = await fetch(config.proxyUrl, {
+    response = await fetch(requireLLMProxyUrl(config.proxyUrl), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
       signal,
     });
-  } catch (error) {
+  } catch {
     // 网络错误 → mock fallback
     if (signal.aborted) {
       finalize.complete();

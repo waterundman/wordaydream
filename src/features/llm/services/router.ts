@@ -42,27 +42,16 @@ import type { GenerateOptions, ExpectJson } from './provider';
 import type { LLMResponse, LLMSettings } from '../../../types';
 import { MockLLMProvider } from './mockProvider';
 import {
-  parseLLMResponse,
   parseLLMResponseAsync,
   type WorkerSchemaName,
-  PassagePayloadSchema,
-  EvaluationPayloadSchema,
-  DifficultyPayloadSchema,
-  GlossPayloadSchema,
-} from './jsonParser';
+} from './llmJsonWorkerClient';
 import { useSettingsStore } from '../../settings/store/useSettingsStore';
 import { useToastStore } from '../../../store/useToastStore';
 // v1.4.0 Stage 1: factory 内部 routeDeepSeek 已切到 deepseekGenerate 函数
 import { getProvider as getFactoryProvider, getProviderName, resetProviderCache as resetFactoryCache } from './providerFactory';
-import { getLLMConfig } from '../config/llmConfig';
+import { getLLMConfig, requireLLMProxyUrl } from '../config/llmConfig';
 // v1.4.1 Stage 2: 离线模式 store (auto-fallback on navigator.onLine === false)
 import { useOfflineModeStore } from '../store/offlineMode';
-// v0.4.0-harmony Stage 3 (D3): zod 改为动态 import (TMA), 不阻塞首屏.
-// zod 仅在 getSchemaForExpectJson('generic') 路径需要, 加载到 data-parsers chunk 中.
-// import type 仅提供 z 命名空间 (zType.ZodType), 编译时完全擦除, 不影响 bundle.
-// zType 别名避免与运行时 const { z } 冲突 (TS2440).
-import type { z as zType } from 'zod';
-const { z } = await import('zod');
 
 /**
  * v2.2.4 Stage 2 (D2-2): 安全派发持久通知.
@@ -107,47 +96,9 @@ function log(level: 'info' | 'warn' | 'error', message: string) {
 }
 
 /**
- * v2.1.1 Stage 2 (D1): 根据 expectJson 类型选择对应的 zod schema.
- *
- * 映射:
- * - true / 'passage' -> PassagePayloadSchema (向后兼容: true 等价 'passage')
- * - 'evaluation' -> EvaluationPayloadSchema
- * - 'difficulty' -> DifficultyPayloadSchema
- * - 'gloss' -> GlossPayloadSchema
- * - 'generic' -> 宽松 schema (z.object({}).passthrough(), 接受任意 JSON object)
- * - false / undefined -> undefined (不走 JSON 解析路径)
- *
- * 返回 undefined 表示调用方不应走 JSON 解析路径 (走 retryWithBackoff).
- */
-function getSchemaForExpectJson(
-  expectJson: ExpectJson | undefined
-// eslint-disable-next-line typescript/no-explicit-any -- ZodType<Input> 逆变
-): zType.ZodType<any> | undefined {
-  switch (expectJson) {
-    case true:
-    case 'passage':
-      return PassagePayloadSchema;
-    case 'evaluation':
-      return EvaluationPayloadSchema;
-    case 'difficulty':
-      return DifficultyPayloadSchema;
-    case 'gloss':
-      return GlossPayloadSchema;
-    case 'generic':
-      // 宽松校验: 接受任意 JSON object, 不强制字段
-      return z.object({}).passthrough();
-    case false:
-    case undefined:
-      return undefined;
-    default:
-      return undefined;
-  }
-}
-
-/**
  * v0.4.0-harmony Stage 4 (D4): ExpectJson -> WorkerSchemaName 映射
  *
- * 用于 parseLLMResponseAsync 调用. 与 getSchemaForExpectJson 平行:
+ * 用于 parseLLMResponseAsync 调用:
  * - true / 'passage' -> 'passage'
  * - 'evaluation' -> 'evaluation'
  * - 'difficulty' -> 'difficulty'
@@ -390,15 +341,9 @@ async function generateWithJsonRetry(
   // 注意: provider 本身不读 expectedLanguage, 仅 router 内 parse 阶段使用.
   const expectedLanguage = options.expectedLanguage;
 
-  // v2.1.1 Stage 2 (D1): 根据 expectJson 类型选择 schema.
-  // expectJson=true / 'passage' / 'evaluation' / 'difficulty' / 'gloss' / 'generic'
-  // 均走 JSON 解析路径, 但使用不同的 zod schema 校验.
-  const schema = getSchemaForExpectJson(options.expectJson);
-
-  // v0.4.0-harmony Stage 4 (D4): 取 Worker schema name (与 schema 平行).
+  // v0.4.0-harmony Stage 4 (D4): 取 Worker schema name.
   // Worker 可用时走 parseLLMResponseAsync (CPU 密集校验在 worker 线程),
   // Worker 不可用时 fallback 到 sync parseLLMResponse (主线程执行).
-  // schema 仍保留用于 getSchemaForExpectJson 的副作用 (确保 zod 已加载), 以及 fallback 路径.
   const workerSchemaName = getWorkerSchemaNameForExpectJson(options.expectJson) ?? 'passage';
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -534,7 +479,7 @@ export async function generateWithFallback(
   // v2.1.1 Stage 2 (D1): expectJson 类型化, 任何 truthy 值 (true / 'passage' /
   // 'evaluation' / 'difficulty' / 'gloss' / 'generic') 均走 JSON parse-retry 流程.
   // false / undefined 走原 retryWithBackoff (网络重试) 路径.
-  // getSchemaForExpectJson 在 generateWithJsonRetry 内部映射 schema.
+  // generateWithJsonRetry 将 expectJson 映射为 Worker schema 名称.
   if (options.expectJson) {
     // v1.2.0: JSON 重试次数从 settings.jsonMaxAttempts 读取 (默认 3, clamp 1-5)
     const jsonMaxAttempts = resolveJsonMaxAttempts(settings, options);
@@ -604,7 +549,7 @@ export async function testProviderConnection(
   try {
     const config = getLLMConfig();
     // v1.4.0 Stage 1: 通过 Edge Function 探测, 不再 new v1.2.0 class-based provider
-    const response = await fetch(config.proxyUrl, {
+    const response = await fetch(requireLLMProxyUrl(config.proxyUrl), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

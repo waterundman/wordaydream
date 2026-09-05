@@ -18,6 +18,11 @@
 
 name: Lighthouse CI
 
+# v2.4.0 fix: 同 ref 新 push 取消旧 run, 避免排队浪费 runner
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   # PR 触发 (可选, 默认关闭, 避免每次 PR 都跑 3 次 lighthouse)
   pull_request:
@@ -54,6 +59,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Read app version from package.json
+        id: appver
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Build (mock provider, 避免真实 API key 触发)
         run: npm run build
         env:
@@ -61,7 +70,8 @@ jobs:
           VITE_LLM_PROXY_URL: 'http://localhost:8888/.netlify/edge-functions/llm-proxy'
           VITE_LLM_GRAYSCALE: '0'
           VITE_OFFLINE_FALLBACK: 'true'
-          VITE_APP_VERSION: '1.5.1'
+          # v2.4.0 fix: 从 package.json 动态读取, 替换硬编码 '1.5.1' (与实际版本脱节)
+          VITE_APP_VERSION: ${{ steps.appver.outputs.version }}
 
       # v2.4.0 fix: 直接用 @lhci/cli (已在 devDependencies), 不再依赖 treosh/lighthouse-ci-action.
       # 原 action (v11) 2+ 年未更新, 与 Lighthouse 11 兼容性差, 且 configPath 期望 LHCI config

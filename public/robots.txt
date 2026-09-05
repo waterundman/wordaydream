@@ -1,0 +1,8 @@
+# Wordaydream robots.txt
+# v2.4.0 CI fix: Lighthouse SEO category 要求 robots.txt 有效 (audit: robots-txt),
+# 缺失时 seo 分数 < 85, CI assertion 失败.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://wordaydream.netlify.app/sitemap.xml

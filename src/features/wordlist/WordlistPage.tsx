@@ -25,7 +25,7 @@ import { useReadingSessionStore } from '../reading/store/useReadingSessionStore'
 import { useWordlistStore, type WordStatus } from './store/useWordlistStore';
 import { loadWordlist, getCachedWordlist, type WordlistEntry } from '../../data/wordlists';
 import {
-  parseCsvWordlist,
+  parseCsvWordlistAsync,
   generateCsvTemplate,
   type CsvImportResult,
 } from '../../data/wordlists/csvLoader';
@@ -74,9 +74,11 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
 
   // v2.2.0 Stage 2 (D2): CSV 导入状态
   const csvInputRef = useRef<HTMLInputElement>(null);
+  const csvParseRequestRef = useRef(0);
   const [importPreview, setImportPreview] = useState<CsvImportResult | null>(null);
   const [myWordlists, setMyWordlists] = useState<StoredCsvWordlist[]>([]);
   const [csvError, setCsvError] = useState<string | null>(null);
+  const [isCsvParsing, setIsCsvParsing] = useState(false);
 
   const isFreeMode = difficulty === 5;
 
@@ -183,6 +185,11 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
     refreshMyWordlists();
   }, [refreshMyWordlists]);
 
+  useEffect(() => () => {
+    // 使组件卸载前发出的 FileReader / Worker 回调失效，避免迟到的状态写入。
+    csvParseRequestRef.current += 1;
+  }, []);
+
   const handleDownloadTemplate = useCallback(() => {
     const csv = generateCsvTemplate();
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -200,16 +207,49 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      const requestId = ++csvParseRequestRef.current;
+      setIsCsvParsing(true);
+      setCsvError(null);
+      setImportPreview(null);
+
+      const finishWithError = (message: string) => {
+        if (requestId !== csvParseRequestRef.current) return;
+        setCsvError(message);
+        setIsCsvParsing(false);
+      };
+
       const reader = new FileReader();
       reader.onload = (event) => {
-        const content = event.target?.result as string;
-        const result = parseCsvWordlist(content, file.name);
-        setImportPreview(result);
+        const content = event.target?.result;
+        if (typeof content !== 'string') {
+          finishWithError('文件读取失败');
+          return;
+        }
+
+        void parseCsvWordlistAsync(content, file.name).then(
+          (result) => {
+            if (requestId !== csvParseRequestRef.current) return;
+            setImportPreview(result);
+            setIsCsvParsing(false);
+          },
+          (error: unknown) => {
+            const detail = error instanceof Error ? error.message : String(error);
+            finishWithError(`CSV 解析失败: ${detail}`);
+          },
+        );
       };
       reader.onerror = () => {
-        setCsvError('文件读取失败');
+        finishWithError('文件读取失败');
       };
-      reader.readAsText(file);
+      reader.onabort = () => {
+        finishWithError('文件读取已取消');
+      };
+      try {
+        reader.readAsText(file);
+      } catch (error: unknown) {
+        const detail = error instanceof Error ? error.message : String(error);
+        finishWithError(`文件读取失败: ${detail}`);
+      }
       // 重置 input 以允许重复选择同一文件
       e.target.value = '';
     },
@@ -356,6 +396,8 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
           className={styles.exportBtn}
           onClick={() => csvInputRef.current?.click()}
           type="button"
+          disabled={isCsvParsing}
+          aria-busy={isCsvParsing}
           aria-label="导入 CSV 词库"
         >
           <svg
@@ -373,7 +415,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          导入 CSV
+          {isCsvParsing ? '正在解析…' : '导入 CSV'}
         </button>
         <button
           className={styles.exportBtn}
@@ -404,6 +446,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
           type="file"
           accept=".csv"
           onChange={handleCsvFileSelect}
+          disabled={isCsvParsing}
           className={styles.csvFileInput}
           aria-hidden="true"
         />

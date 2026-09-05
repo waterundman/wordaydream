@@ -34,11 +34,22 @@
         ]
       }
     ],
-    "metadata": [
+    "extensionAbilities": [
       {
-        "name": "ohos.extension.form",
-        "resource": "$profile:form_config"
-      },
+        "name": "ReviewCardFormAbility",
+        "srcEntry": "./ets/widget/ReviewCardFormAbility.ets",
+        "label": "$string:share_card_label",
+        "description": "$string:share_card_desc",
+        "type": "form",
+        "metadata": [
+          {
+            "name": "ohos.extension.form",
+            "resource": "$profile:form_config"
+          }
+        ]
+      }
+    ],
+    "metadata": [
       {
         "name": "ohos.extension.share",
         "resource": "$profile:share_card"
@@ -59,13 +70,7 @@
         }
       },
       {
-        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING",
-        "usedScene": {
-          "abilities": [
-            "EntryAbility"
-          ],
-          "when": "always"
-        }
+        "name": "ohos.permission.INTERNET"
       }
     ]
   }

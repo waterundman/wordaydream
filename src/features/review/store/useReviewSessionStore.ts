@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MemoryCard, Rating, AnswerEvaluation, Language } from '../../../types';
 import { useMemoryStore } from '../store/useMemoryStore';
-import { evaluateAnswer } from '../../evaluation/services/evaluateAnswer';
 import { SIMPLE_REMEDY_TEMPLATES_EN, SIMPLE_REMEDY_TEMPLATES_DE } from '../../llm/services/mockProvider';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
@@ -17,7 +16,6 @@ export interface ReviewCardResult {
   evaluation: AnswerEvaluation | null;
   answeredAt: number;
 }
-
 export interface ReviewStats {
   total: number;
   correct: number;
@@ -68,6 +66,7 @@ function buildFallbackContext(card: MemoryCard, language: Language): string {
 }
 
 const SCHEMA_VERSION = 1;
+let evaluationRequestGeneration = 0;
 
 export const useReviewSessionStore = create<ReviewSessionState>()(
   persist(
@@ -86,6 +85,7 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
       cardContexts: {},
 
       startReview: (language) => {
+        evaluationRequestGeneration += 1;
         const lang = language ?? get().language;
         const dueCards = useMemoryStore.getState().getDueCards(lang);
         if (dueCards.length === 0) {
@@ -143,8 +143,12 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
         if (!userAnswer) return null;
 
         set({ isEvaluating: true, evaluation: null });
+        const requestGeneration = ++evaluationRequestGeneration;
 
         try {
+          const { evaluateAnswer } = await import(
+            '../../evaluation/services/evaluateAnswer'
+          );
           const language = state.language;
           const evaluation = await evaluateAnswer(
             userAnswer,
@@ -152,6 +156,16 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
             currentCard.objectiveDifficulty,
             language
           );
+
+          const latestState = get();
+          if (
+            requestGeneration !== evaluationRequestGeneration
+            || latestState.mode !== 'reviewing'
+            || latestState.isPaused
+            || latestState.queue[latestState.currentIndex]?.id !== currentCard.id
+          ) {
+            return null;
+          }
 
           set({
             evaluation,
@@ -175,7 +189,14 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
           return evaluation;
         } catch (err) {
           console.warn('[reviewSession] submit failed:', err);
-          set({ isEvaluating: false });
+          const latestState = get();
+          if (
+            requestGeneration === evaluationRequestGeneration
+            && latestState.mode === 'reviewing'
+            && latestState.queue[latestState.currentIndex]?.id === currentCard.id
+          ) {
+            set({ isEvaluating: false });
+          }
           return null;
         }
       },
@@ -208,10 +229,11 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
       },
 
       nextCard: () => {
+        evaluationRequestGeneration += 1;
         const { currentIndex, queue } = get();
         const nextIdx = currentIndex + 1;
         if (nextIdx >= queue.length) {
-          set({ mode: 'completed' });
+          set({ mode: 'completed', isEvaluating: false });
 
           // Stage 2: 复习会话结束, 评估成就。
           // perfect = 至少答过一题且零错误 (wrong === 0);
@@ -231,10 +253,14 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
         }
       },
 
-      pauseReview: () => set({ isPaused: true }),
+      pauseReview: () => {
+        evaluationRequestGeneration += 1;
+        set({ isPaused: true, isEvaluating: false });
+      },
       resumeReview: () => set({ isPaused: false }),
 
       exitReview: () => {
+        evaluationRequestGeneration += 1;
         set({
           mode: 'idle',
           queue: [],
@@ -376,5 +402,3 @@ export function resolveContextSentence(
 
   return buildFallbackContext(card, language);
 }
-
-

@@ -1,9 +1,16 @@
-import { defineConfig, type Plugin, loadEnv } from 'vite'
+import { defineConfig, type Plugin, type ViteDevServer, loadEnv } from 'vite'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { compression } from 'vite-plugin-compression2'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { fileURLToPath, URL } from 'node:url'
+import {
+  HARMONY_PROXY_DISABLED,
+  HARMONY_PROXY_ENV_NAME,
+  hardenHarmonyCsp,
+  parseHarmonyProxyUrl,
+} from './src/config/harmonyCsp.js'
 
 // https://vite.dev/config/
 //
@@ -57,6 +64,16 @@ function harmonyPwaStubPlugin(): Plugin {
   }
 }
 
+function harmonyCspPlugin(proxyOrigin: string | undefined): Plugin {
+  return {
+    name: 'harmony-csp-connect-src',
+    enforce: 'pre',
+    transformIndexHtml(html: string): string {
+      return hardenHarmonyCsp(html, proxyOrigin)
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const isHarmony: boolean = mode === 'harmony'
 
@@ -68,10 +85,23 @@ export default defineConfig(({ mode }) => {
   // loadEnv 会自动加载: .env + .env.[mode] + .env.local + .env.[mode].local
   // 这里 prefix='' 让所有变量 (不仅 VITE_ 前缀) 都加载, 但只读 VITE_LLM_PROXY_URL_HARMONY.
   const harmonyEnv = isHarmony ? loadEnv(mode, process.cwd(), '') : {}
-  const harmonyProxyUrl: string | undefined = harmonyEnv.VITE_LLM_PROXY_URL_HARMONY
+  const harmonyProxyValue: string | undefined = harmonyEnv.VITE_LLM_PROXY_URL_HARMONY
+  const harmonyProxyConfig =
+    isHarmony && harmonyProxyValue?.trim()
+      ? parseHarmonyProxyUrl(harmonyProxyValue)
+      : undefined
+  if (isHarmony && !harmonyProxyConfig) {
+    console.warn(
+      `[harmony] ${HARMONY_PROXY_ENV_NAME} is not set; disabling the Harmony LLM proxy instead of inheriting the Web endpoint`,
+    )
+  }
   const harmonyDefine: Record<string, string> | undefined =
-    isHarmony && harmonyProxyUrl
-      ? { 'import.meta.env.VITE_LLM_PROXY_URL': JSON.stringify(harmonyProxyUrl) }
+    isHarmony
+      ? {
+          'import.meta.env.VITE_LLM_PROXY_URL': JSON.stringify(
+            harmonyProxyConfig?.proxyUrl ?? HARMONY_PROXY_DISABLED,
+          ),
+        }
       : undefined
 
   return {
@@ -93,11 +123,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3001,
       // v2.3.1: dev server 直接挂载 api/llm-proxy.ts, 前端 /api/llm-proxy 走本地
-      configureServer(server) {
+      configureServer(server: ViteDevServer) {
         // 动态加载 serverless function (Node.js (req, res) 格式)
         import('./api/llm-proxy.ts').then((mod) => {
           const handler = mod.default;
-          server.middlewares.use('/api/llm-proxy', async (req, res) => {
+          server.middlewares.use('/api/llm-proxy', async (req: IncomingMessage, res: ServerResponse) => {
             // 兼容 connect 中间件 (req, res) 签名
             // Vite dev server 的 middlewares 是 connect 实例, req/res 与 Node.js http 一致
             // 用 as unknown as 链转换, 避免 no-explicit-any (oxlint error)
@@ -121,6 +151,7 @@ export default defineConfig(({ mode }) => {
       // 同时为 lazy chunk (路由级 React.lazy / 动态 import) 提供 polyfill,
       // 兼容不支持 import() polyfill 的旧浏览器.
       modulePreload: { polyfill: true },
+      cssCodeSplit: true,
       // v0.3.0-harmony Stage 3: manualChunks 4 chunk (R-PERF-3 缓解)
       // 拆分 vendor 以提升缓存命中率 + 并行加载, 调整 chunk 边界减少重复打包.
       // 函数形式 (rolldown 要求: Vite 8 内置 rolldown 不支持对象形式, 仅接受 function).
@@ -169,7 +200,10 @@ export default defineConfig(({ mode }) => {
       // manifest 的绝对路径 start_url 也不适用于 rawfile 协议.
       // 改用 harmonyPwaStubPlugin 提供 no-op 的 virtual:pwa-register,
       // 让 src/main.tsx 中的 import 解析成功, catch 块永不触发.
-      ...(isHarmony ? [harmonyPwaStubPlugin()] : [
+      ...(isHarmony ? [
+        harmonyPwaStubPlugin(),
+        harmonyCspPlugin(harmonyProxyConfig?.origin),
+      ] : [
         VitePWA({
           registerType: 'autoUpdate',
           includeAssets: ['favicon.svg', 'icons.svg'],
@@ -224,15 +258,16 @@ export default defineConfig(({ mode }) => {
           },
         }),
       ]),
-      // v0.3.0-harmony Stage 3: Brotli + Gzip 双压缩 (R-PERF-2 缓解)
-      // 单实例多算法同时生成 .br + .gz, deleteOriginalAssets=false 保留原文件作为 fallback.
-      // ArkWeb Chromium M114 不支持 Brotli 时, nginx 自动协商降级 gzip.
-      // (R-PERF-1: vite-plugin-compression 0.5.1 与 Vite 8 路径不兼容, 降级 compression2)
-      compression({
-        algorithms: ['brotliCompress', 'gzip'],
-        threshold: 10240,
-        deleteOriginalAssets: false,
-      }),
+      // Brotli/Gzip sidecars require HTTP Content-Encoding negotiation. Keep
+      // them for the regular web deployment, but do not package unusable
+      // duplicates into Harmony rawfile resources.
+      ...(isHarmony ? [] : [
+        compression({
+          algorithms: ['brotliCompress', 'gzip'],
+          threshold: 10240,
+          deleteOriginalAssets: false,
+        }),
+      ]),
       // v0.3.0-harmony Stage 3: chunk 体积分析 (R-PERF-3 缓解)
       // open=false (CI 环境, 不自动打开浏览器), sunburst 模板可视化 chunk 边界
       visualizer({

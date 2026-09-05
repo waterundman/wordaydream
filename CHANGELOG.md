@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] — 2026-08-05
+
+### 鸿蒙端移植 (v0.1.0-harmony Phase 5 minor bump)
+
+- platform 抽象层: `src/platform/` (detect / harmonyBridge / speechSynthesis / swRegistration 等), Web 与 ArkWeb 双端统一接口
+- 鸿蒙 ArkTS 侧: harmony/ 工程 (bridge / MemoryCardStore / TTS / 通知 / 卡片 Widget)
+- 设置通知能力接入 (harmonyNotificationSafety / notifications 设置面板)
+- LLM JSON 解析 + 校验下沉 Web Worker (llmJsonWorker / csvParser.worker)
+- 词表系统 v2 (priority / topic / semanticConflicts) + 德语词表 A2/B1/B2
+- CI: 修复版本断言测试 (删除过时 src/package.test.ts), workflow 配置修复
+
 ## [2.2.4] — 2026-07-XX
 
 ### 全量代码审查与质量提升

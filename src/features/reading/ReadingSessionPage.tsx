@@ -98,6 +98,7 @@ export function ReadingSessionPage() {
   const prevCorrectIdsRef = useRef<Set<string>>(new Set());
   const sessionInitializedRef = useRef(false);
 
+  const nativeSpeechRequestRef = useRef(0);
   const wordlistProgress = useWordlistStore((s) => s.progress);
   const linearMode = useWordlistStore((s) => s.linearMode);
   const dailyGoal = useWordlistStore((s) => s.dailyGoal);
@@ -142,6 +143,7 @@ export function ReadingSessionPage() {
     if (!ttsSupported) return;
 
     if (isPlaying) {
+      nativeSpeechRequestRef.current += 1;
       if (nativeBridge) {
         try {
           nativeBridge.stopSpeech();
@@ -165,11 +167,21 @@ export function ReadingSessionPage() {
 
     if (nativeBridge) {
       // Harmony 原生路径
+      const requestId = ++nativeSpeechRequestRef.current;
       setIsPlaying(true);
-      void nativeBridge.speak(payload).catch(() => {
-        // fire-and-forget 兜底: 异常时重置 isPlaying 状态
-        setIsPlaying(false);
-      });
+      const clearNativePlayingState = (): void => {
+        if (nativeSpeechRequestRef.current === requestId) {
+          setIsPlaying(false);
+        }
+      };
+      try {
+        void nativeBridge.speak(payload).then(
+          clearNativePlayingState,
+          clearNativePlayingState,
+        );
+      } catch {
+        clearNativePlayingState();
+      }
     } else {
       // Web SpeechSynthesis fallback 路径
       setWebSpeechSynthesisEndCallback(() => setIsPlaying(false));
@@ -289,6 +301,7 @@ export function ReadingSessionPage() {
   // 组件卸载时停止朗读 (v0.3.0-harmony Stage 2: 双路径清理)
   useEffect(() => {
     return () => {
+      nativeSpeechRequestRef.current += 1;
       const bridge = detectPlatform().getNativeBridge();
       if (bridge) {
         try {

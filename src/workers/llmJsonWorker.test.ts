@@ -8,6 +8,7 @@
  * - T04 [worker-crash]: Worker onerror 后, 下次调用降级到 fallback
  * - T05 [parity]: Worker 路径与 sync 路径对相同 LLM JSON 返回等价 ParseResult
  * - T06 [schema-routing]: 不同 schemaName (passage/evaluation/gloss) 都能正确路由
+ * - T08 [timeout]: 超时后终止故障 Worker，后续调用稳定降级
  *
  * 测试策略:
  * - jsdom 默认无 Worker, T01 直接走 fallback
@@ -17,10 +18,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   parseLLMResponse,
+} from '../features/llm/services/jsonParser';
+import {
   parseLLMResponseAsync,
   _resetLlmJsonWorkerForTesting,
   type WorkerSchemaName,
-} from '../features/llm/services/jsonParser';
+} from '../features/llm/services/llmJsonWorkerClient';
 import { useAnalyticsStore } from '../features/analytics/store/useAnalyticsStore';
 
 /**
@@ -261,5 +264,22 @@ describe('v0.4.0-harmony Stage 4: parseLLMResponseAsync (LLM JSON Worker)', () =
     // 主线程 onmessage 内代为埋点
     const afterCount = useAnalyticsStore.getState().llmRepairCount;
     expect(afterCount).toBe(1);
+  });
+
+  it('T08 [timeout]: 超时后终止 Worker，并让后续调用降级', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('Worker', MockWorker);
+
+    const promise = parseLLMResponseAsync(PASSAGE_JSON, 'passage');
+    const rejection = expect(promise).rejects.toThrow('LLM JSON worker timeout (60s)');
+    const mock = MockWorker.lastInstance;
+    await vi.advanceTimersByTimeAsync(60000);
+    await rejection;
+
+    expect(mock?.terminated).toBe(true);
+    const fallback = await parseLLMResponseAsync(PASSAGE_JSON, 'passage');
+    expect(fallback.ok).toBe(true);
+    expect(MockWorker.lastInstance).toBe(mock);
+    vi.useRealTimers();
   });
 });

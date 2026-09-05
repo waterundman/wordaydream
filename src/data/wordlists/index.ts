@@ -34,19 +34,22 @@ export interface Wordlist {
 }
 
 // 按需加载器映射: key = `${language}:${difficulty}`
+// 注: JSON 模块的推导类型是宽类型 (language: string / difficulty: number),
+//     无法直接满足 Wordlist 契约 (Language union / DifficultyLevel 1-5);
+//     词表 JSON 由生成脚本保证结构, 此处统一 as 收窄.
 const wordlistLoaders: Record<string, () => Promise<{ default: Wordlist }>> = {
-  'en:1': () => import('./en/a1.json'),
-  'en:2': () => import('./en/a2.json'),
-  'en:3': () => import('./en/b1.json'),
-  'en:4': () => import('./en/b2.json'),
+  'en:1': () => import('./en/a1.json') as Promise<{ default: Wordlist }>,
+  'en:2': () => import('./en/a2.json') as Promise<{ default: Wordlist }>,
+  'en:3': () => import('./en/b1.json') as Promise<{ default: Wordlist }>,
+  'en:4': () => import('./en/b2.json') as Promise<{ default: Wordlist }>,
   // v1.6.1 Stage 3: 德语 A1 词表落地 (A2-B2 留 v1.6.2)
-  'de:1': () => import('./de/a1.json'),
+  'de:1': () => import('./de/a1.json') as Promise<{ default: Wordlist }>,
   // v1.9.0 Stage 1: 德语 A2 词表落地 (B1-B2 留后续版本)
-  'de:2': () => import('./de/a2.json'),
+  'de:2': () => import('./de/a2.json') as Promise<{ default: Wordlist }>,
   // v1.9.0 Stage 3: 德语 B1 词表落地 (B2 留后续版本)
-  'de:3': () => import('./de/b1.json'),
+  'de:3': () => import('./de/b1.json') as Promise<{ default: Wordlist }>,
   // v1.9.0 Stage 3: 德语 B2 词表落地 (C1 留不落地)
-  'de:4': () => import('./de/b2.json'),
+  'de:4': () => import('./de/b2.json') as Promise<{ default: Wordlist }>,
   // v2.2.0 Stage 2 (D2): CSV 批量导入词表 (动态条目, 从 IndexedDB 合并所有 CSV)
   // 用 { default: ... } 包装以匹配 Record 类型契约 (loadWordlist 访问 module.default)
   'custom:csv': async () => {

@@ -13,7 +13,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getLLMConfig, resetLLMConfig } from './llmConfig';
+import { HARMONY_PROXY_DISABLED } from '../../../config/harmonyCsp';
+import { getLLMConfig, requireLLMProxyUrl, resetLLMConfig } from './llmConfig';
 
 describe('llmConfig (v1.3.0 Stage 2 — T01..T02)', () => {
   // 测试涉及的 env 字段
@@ -74,5 +75,12 @@ describe('llmConfig (v1.3.0 Stage 2 — T01..T02)', () => {
     expect(config.temperature).toBe(0.7);
     expect(config.retryAttempts).toBe(3);
     expect(config.timeoutMs).toBe(30000);
+  });
+
+  it('T03 [critical]: Harmony 禁用标记不会回退到 Web 代理默认值', () => {
+    stubAllEnv({ VITE_LLM_PROXY_URL: HARMONY_PROXY_DISABLED });
+
+    expect(getLLMConfig().proxyUrl).toBe('');
+    expect(() => requireLLMProxyUrl('')).toThrow('LLM proxy is not configured');
   });
 });
