@@ -31,6 +31,24 @@ const TAG: string = 'CardDataProvider';
 const PREFS_NAME: string = 'wordaydream_prefs';
 const LANGUAGE_KEY: string = 'app_language';
 
+/**
+ * 服务卡片渲染消费的 FormBindingData 字段 shape (与 ReviewCardWidget 的
+ * @LocalStorageProp 字段一一对应). 单一事实来源: ReviewCardFormAbility 与
+ * FormRefresher 共用此接口, 保证 updateForm 写入的字段与卡片渲染一致.
+ *
+ * 字段: dueCount / nextWord / lastUpdated / language / reviewedCount / totalCount
+ *   + formDimension? (仅首次 add 时带入, 其余刷新可省略).
+ */
+export interface ReviewCardFormData {
+  dueCount: number;
+  nextWord: string;
+  lastUpdated: number;
+  language: string;
+  reviewedCount: number;
+  totalCount: number;
+  formDimension?: number;
+}
+
 export class CardDataProvider {
   private static instance: CardDataProvider | null = null;
   private context: common.Context | null = null;
@@ -258,5 +276,36 @@ export class CardDataProvider {
       );
       return [];
     }
+  }
+
+  /**
+   * Stage 2: 组装服务卡片 FormBindingData (供 refreshForm 与 refreshAllForms 共用).
+   *
+   * 复用既有查询: 到期数 / 语言 / 今日统计 / 最近到期卡片的 lemma.
+   * 所有查询异常均被各方法自身兜底 (返回 0 / null / 'en' / 默认统计), 因此
+   * 这里组装的数据始终安全可用.
+   *
+   * @param dimension 可选卡片尺寸, 仅在首次 add 时一并下发.
+   * @returns ReviewCardFormData (与 ReviewCardWidget 消费字段一致).
+   */
+  async getWidgetFormData(dimension?: number): Promise<ReviewCardFormData> {
+    const dueCount: number = await this.getDueCardsCountForWidget();
+    const language: string = await this.getLanguage();
+    const todayStats: TodayReviewStats =
+      await this.getTodayReviewStatsForWidget();
+    const nextCard: MemoryCardRecord | null =
+      await this.getNextDueCardForWidget();
+    const data: ReviewCardFormData = {
+      dueCount,
+      nextWord: nextCard === null ? '' : nextCard.lemma,
+      lastUpdated: Date.now(),
+      language,
+      reviewedCount: todayStats.reviewedCount,
+      totalCount: todayStats.totalCount,
+    };
+    if (dimension !== undefined) {
+      data.formDimension = dimension;
+    }
+    return data;
   }
 }

@@ -134,8 +134,9 @@ export default function localUnitTest() {
       const methodNames: string[] =
         BRIDGE_SYNC_METHODS.concat(BRIDGE_ASYNC_METHODS);
       expect(BRIDGE_SYNC_METHODS.length).assertEqual(4);
-      expect(BRIDGE_ASYNC_METHODS.length).assertEqual(12);
-      expect(methodNames.length).assertEqual(16);
+      expect(BRIDGE_ASYNC_METHODS.length).assertEqual(13);
+      expect(methodNames.length).assertEqual(17);
+      expect(BRIDGE_ASYNC_METHODS.includes('notifyReviewCompleted')).assertTrue();
       expect(BRIDGE_SYNC_METHODS.includes('triggerHapticFeedback')).assertTrue();
       expect(BRIDGE_SYNC_METHODS.includes('stopSpeech')).assertTrue();
       expect(BRIDGE_SYNC_METHODS.includes('notifyWebReady')).assertTrue();

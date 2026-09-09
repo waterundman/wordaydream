@@ -106,6 +106,23 @@ export interface SpeechEngineInfo {
 }
 
 /**
+ * Stage 2 (v0.5.0-harmony): notifyReviewCompleted 返回结果.
+ *
+ * 字段与 ArkTS NotifyReviewCompletedResult (harmony/entry/.../bridge/types.ets) 对应.
+ * - ok: 是否成功触发刷新 (或静默降级).
+ * - noop: 非鸿蒙 / 无桥环境的安全 no-op 标记 (Web 端返回 {ok:true, noop:true}).
+ * - reason: 失败原因 (ok=false 时携带).
+ */
+export interface NotifyReviewCompletedResult {
+  /** 是否成功 (或已安全 no-op). */
+  ok: boolean;
+  /** 是否为非鸿蒙 / 无桥环境的安全 no-op (不触发原生刷新). */
+  noop?: boolean;
+  /** 失败原因 (ok=false 时携带). */
+  reason?: string;
+}
+
+/**
  * ArkTS 注入的原生 bridge.
  * 方法签名遵循 Stage 1 registerJavaScriptProxy 的 BRIDGE_METHODS 列表,
  * 返回值类型为 Stage 3 目标异步签名 (Stage 1 占位返回同步值, TS 侧按异步消费).
@@ -185,6 +202,13 @@ export interface HarmonyBridge {
    * 调用 TextToSpeechService.getInstance().getEngines(). 异常返回空数组 (不抛异常).
    */
   getSpeechEngines(): Promise<SpeechEngineInfo[]>;
+  /**
+   * Stage 2 (v0.5.0-harmony): 复习完成后主动刷新所有已持久化的服务卡片.
+   *
+   * 由 useReviewSessionStore.completeReview 完成路径 fire-and-forget 调用.
+   * 可选: 非鸿蒙 / 旧版原生桥可能未注入, Web 侧以 no-op 安全降级.
+   */
+  notifyReviewCompleted?(): Promise<NotifyReviewCompletedResult>;
 }
 
 /**
@@ -210,5 +234,41 @@ declare global {
      * 未挂载时 ArkTS 侧通过 `typeof === 'function'` 守卫保留启动请求.
      */
     handleHarmonyLaunch?: (query: string) => void;
+  }
+}
+
+import { detectPlatform } from './detect';
+
+/**
+ * Stage 2 (v0.5.0-harmony): 复习完成后主动刷新服务卡片 (Web 侧入口).
+ *
+ * 非鸿蒙 / 无原生桥环境安全 no-op: 直接返回 {ok:true, noop:true}, 绝不抛错,
+ * 不影响复习主流程. 鸿蒙且原生桥提供 notifyReviewCompleted 时, 委派原生侧
+ * FormRefresher.refreshAllForms 主动刷新所有已持久化 formId 的服务卡片.
+ *
+ * 返回约定与 ArkTS NotifyReviewCompletedResult 对齐: {ok:true} 或 {ok:false, reason}.
+ * 任何形式的同步 / 异步异常均被捕获并转为 {ok:false, reason}, 不向上传播.
+ */
+export async function notifyReviewCompleted(): Promise<NotifyReviewCompletedResult> {
+  try {
+    const cap = detectPlatform();
+    const bridge = cap.getNativeBridge();
+    if (
+      !cap.isHarmonyOS() ||
+      bridge === null ||
+      typeof bridge.notifyReviewCompleted !== 'function'
+    ) {
+      // 非鸿蒙 / 无桥: 安全 no-op.
+      return { ok: true, noop: true };
+    }
+    const res = await bridge.notifyReviewCompleted();
+    if (res && typeof res.ok === 'boolean') {
+      return res.ok ? { ok: true } : { ok: false, reason: res.reason };
+    }
+    return { ok: true };
+  } catch (e) {
+    const reason: string = e instanceof Error ? e.message : String(e);
+    console.warn('[harmonyBridge] notifyReviewCompleted failed:', reason);
+    return { ok: false, reason };
   }
 }

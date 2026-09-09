@@ -27,6 +27,7 @@ export const BRIDGE_ASYNC_METHODS: string[] = [
   'speak',
   'isSpeechSupported',
   'getSpeechEngines',
+  'notifyReviewCompleted',
 ];
 
 /** AppStorage key for the controller shared with native launch dispatch. */

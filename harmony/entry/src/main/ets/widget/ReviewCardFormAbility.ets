@@ -2,23 +2,13 @@ import { formBindingData, FormExtensionAbility, formInfo, formProvider } from '@
 import { Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { MemoryCardRecord, TodayReviewStats } from '../data/MemoryCardSchema';
-import { CardDataProvider } from './CardDataProvider';
+import { CardDataProvider, ReviewCardFormData } from './CardDataProvider';
+import { FormIdStore } from './FormIdStore';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'ReviewCardFormAbility';
 const DIMENSION_2_2: number = formInfo.FormDimension.Dimension_2_2;
 const DIMENSION_2_4: number = formInfo.FormDimension.Dimension_2_4;
-
-interface ReviewCardFormData {
-  dueCount: number;
-  nextWord: string;
-  lastUpdated: number;
-  language: string;
-  reviewedCount: number;
-  totalCount: number;
-  formDimension?: number;
-}
 
 /**
  * 服务卡片提供方。
@@ -35,6 +25,9 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
     const formId: string = this.readFormId(want);
     if (formId.length > 0) {
       this.formDimensions.set(formId, dimension);
+      // Stage 2: 持久化 formId, 供复习完成后主动刷新闭环使用.
+      FormIdStore.getInstance().initialize(this.context);
+      void FormIdStore.getInstance().saveFormId(formId, this.context);
       // onAddForm 必须同步返回；随后异步推送真实 RDB 数据。
       this.refreshForm(formId, dimension);
     }
@@ -42,6 +35,10 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
   }
 
   onUpdateForm(formId: string): void {
+    if (formId.length > 0) {
+      // Stage 2: 刷新时确保 formId 已持久化 (兜底 onCreate 遗漏).
+      void FormIdStore.getInstance().saveFormId(formId, this.context);
+    }
     this.refreshForm(formId, this.formDimensions.get(formId));
   }
 
@@ -66,6 +63,8 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
 
   onRemoveForm(formId: string): void {
     this.formDimensions.delete(formId);
+    // Stage 2: 移除 formId, 避免主动刷新时命中已删除的卡片.
+    void FormIdStore.getInstance().removeFormId(formId);
   }
 
   onAcquireFormState(_want: Want): formInfo.FormState {
@@ -103,23 +102,8 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
   private async refreshForm(formId: string, dimension?: number): Promise<void> {
     try {
       this.provider.setContext(this.context);
-      const dueCount: number = await this.provider.getDueCardsCountForWidget();
-      const language: string = await this.provider.getLanguage();
-      const todayStats: TodayReviewStats =
-        await this.provider.getTodayReviewStatsForWidget();
-      const nextCard: MemoryCardRecord | null =
-        await this.provider.getNextDueCardForWidget();
-      const data: ReviewCardFormData = {
-        dueCount,
-        nextWord: nextCard === null ? '' : nextCard.lemma,
-        lastUpdated: Date.now(),
-        language,
-        reviewedCount: todayStats.reviewedCount,
-        totalCount: todayStats.totalCount,
-      };
-      if (dimension !== undefined) {
-        data.formDimension = dimension;
-      }
+      const data: ReviewCardFormData =
+        await this.provider.getWidgetFormData(dimension);
       await formProvider.updateForm(
         formId,
         formBindingData.createFormBindingData(data)

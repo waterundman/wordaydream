@@ -7,6 +7,7 @@ import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { buildAchievementContext } from '../../achievements/services/buildContext';
 import { useAppModeStore } from '../../../hooks/useAppModeStore';
+import { notifyReviewCompleted } from '../../../platform/harmonyBridge';
 
 export type ReviewMode = 'idle' | 'reviewing' | 'completed';
 
@@ -226,6 +227,15 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
           results: finalResults,
           showRatingBar: false,
         });
+
+        // Stage 2 (v0.5.0-harmony): 复习会话全部完成时主动刷新服务卡片.
+        // 仅在当前卡是队列最后一张时触发一次 (会话完成点), 避免每张卡评分都刷新.
+        // fire-and-forget, 异常仅日志, 绝不阻塞 / 影响复习主流程.
+        if (queue.length > 0 && currentIndex === queue.length - 1) {
+          void notifyReviewCompleted().catch((e: unknown) => {
+            console.warn('[reviewSession] notifyReviewCompleted failed:', e);
+          });
+        }
       },
 
       nextCard: () => {

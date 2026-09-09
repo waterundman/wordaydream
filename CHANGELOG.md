@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] — 2026-09-09
+
+### 鸿蒙端 v0.5.0-harmony (Stage 0-2, 进行中)
+
+- 版本策略统一: 根包 `2.5.0` ↔ 鸿蒙 `0.5.0` (major 偏移 2, patch 一致), AppScope versionCode 1000010; 新增 `check:versions` 校验脚本并接入 CI (netlify-deploy ci job, Test 前置)
+- 服务卡主动刷新闭环: formId 持久化 (`FormIdStore.ets`, Preferences) + `FormRefresher.refreshAllForms()` (RDB 统计 → formProvider.updateForm, 失败静默降级) + HarmonyBridge 新增异步方法 `notifyReviewCompleted`; Web 侧 `completeReview` 会话完成点 fire-and-forget 触发 (无桥环境 no-op)
+- ArkTS 注释清理: 移除早期 Stage 编号标记 (7 文件, 仅注释)
+- harmony 构建产物剔除 robots.txt (harmonyStripRobotsPlugin, closeBundle)
+
 ## [2.3.0] — 2026-08-05
 
 ### 鸿蒙端移植 (v0.1.0-harmony Phase 5 minor bump)

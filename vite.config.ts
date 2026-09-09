@@ -5,6 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { compression } from 'vite-plugin-compression2'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { fileURLToPath, URL } from 'node:url'
+import { rm } from 'node:fs/promises'
+import { join } from 'node:path'
 import {
   HARMONY_PROXY_DISABLED,
   HARMONY_PROXY_ENV_NAME,
@@ -70,6 +72,36 @@ function harmonyCspPlugin(proxyOrigin: string | undefined): Plugin {
     enforce: 'pre',
     transformIndexHtml(html: string): string {
       return hardenHarmonyCsp(html, proxyOrigin)
+    },
+  }
+}
+
+/**
+ * v0.5.0-harmony Stage 2: harmony 模式下从 rawfile 产物移除 robots.txt.
+ *
+ * public/robots.txt 是 Web 端 SEO 文件, 不在 ArkWeb rawfile 策略允许范围内
+ * (仅 assets/ / icons/ 目录及 favicon.svg / icons.svg / index.html 例外),
+ * 会触发 verify-harmony-build 的 "outside the ArkWeb rawfile policy" 失败.
+ *
+ * 保留默认 publicDir 拷贝 (确保 CSS 中 /assets/ url 正常重写为相对路径),
+ * 仅在 build 收尾 (closeBundle, post) 删除 robots.txt. Web 模式不挂载本插件.
+ */
+function harmonyStripRobotsPlugin(): Plugin {
+  let outDirAbs: string = ''
+  return {
+    name: 'harmony-strip-robots',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      outDirAbs = join(config.root ?? process.cwd(), config.build.outDir)
+    },
+    async closeBundle() {
+      const target: string = join(outDirAbs, 'robots.txt')
+      try {
+        await rm(target, { force: true })
+      } catch {
+        // 文件不存在时忽略
+      }
     },
   }
 }
@@ -203,6 +235,7 @@ export default defineConfig(({ mode }) => {
       ...(isHarmony ? [
         harmonyPwaStubPlugin(),
         harmonyCspPlugin(harmonyProxyConfig?.origin),
+        harmonyStripRobotsPlugin(),
       ] : [
         VitePWA({
           registerType: 'autoUpdate',
