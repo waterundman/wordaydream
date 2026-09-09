@@ -25,7 +25,7 @@ Wordaydream 的鸿蒙端不是 ArkUI 全量重写，而是一个 **HarmonyOS 6.0
 | DevEco Node | `18.20.1` |
 | Hvigor | `6.22.7` |
 | ohpm | `6.0.1` |
-| 应用版本 | 单一版本真源（仓库根包 `2.5.0=harmony major+2`）；AppScope `0.5.0`、entry `0.5.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验 |
+| 应用版本 | 单一版本真源（仓库根包 `2.6.0=harmony major+2`）；AppScope `0.6.0`、entry `0.6.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验 |
 | 原生权限 | `ohos.permission.INTERNET`、`ohos.permission.VIBRATE` |
 | 签名 | `signingConfigs` 为空；当前只能生成 unsigned HAP |
 | 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；最新 content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过 |
@@ -57,7 +57,7 @@ React/Vite source (src/)
 | 冷/热启动分发 | 已实现，运行验证通过 | `onCreate` / `onNewWant` 共用入口；原生队列等待 Web 显式 ready，Web 端再用持久 FIFO 等待 RDB 恢复。模拟器已实时捕获 `onNewWant -> queued -> dispatched remaining=0`。 |
 | `action=startReview` | 已实现，部分运行验证 | 分享、服务卡或通知可唤起复习；会等待原生卡片恢复并选择可用语言。当前无到期卡片的模拟器热启动保持首页且无异常，尚未覆盖有到期卡片的实际跳转。 |
 | `action=debugSeed`（运行验证） | 已实现（仅 debug 构建） | `hdc shell aa start --ps query action=debugSeed` 在原生 RDB 预置 5 张到期卡（3 en + 2 de，due=now-1h，幂等）；`applicationInfo.debug` 守卫使 release 构建直接跳过，且该 query 不在 Web 派发白名单内。配套 `scripts/harmony/seed-and-verify.mjs` 自动断言 RDB 恢复 → FIFO → 复习页日志链。 |
-| `action=openCard` | 未闭环 | 查询解析和校验存在，但产品尚无定向卡片界面；目前明确提示不支持。 |
+| `action=openCard` | 已闭环 | 2*4 卡片词位区点击 → 携带 `action=openCard&cardId=<id>` 拉起 App → 复习会话 `jumpToCard` 定位（Web 域层 openCard 行为表 + 原生 `nextCardId` 同源推送）；模拟器运行验证待办（用户暂缓，模拟器在线时执行）。 |
 | 服务卡 | 已实现主动刷新闭环，跨进程待运行验证 | 正规 `FormExtensionAbility` 支持创建、系统更新、尺寸变化和移除；`FormIdStore` 持久化 formId 集合，复习完成后 `notifyReviewCompleted` 经 `FormRefresher.refreshAllForms` 主动 `updateForm` 推送最新到期/今日统计（失败静默降级）。跨进程实际刷新行为待模拟器/真机验证。 |
 | 元服务分享入口 | 已实现配置，待设备验收 | `share_card.json` 指向 `pages/Index`，默认触发 `action=startReview`。 |
 | 到期通知 | 权限产品流程已实现 | 已到期请求可发布普通本地通知并携带复习 Want；设置面板通知开关首次开启时经 `requestNotificationPermission` 触发系统授权弹窗（granted/denied/error 三态），denied/error 时 UI 显示引导提示。 |
@@ -176,7 +176,7 @@ FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true`
 3. 服务卡跨进程主动刷新实际验证（代码闭环已就绪：notifyReviewCompleted → FormRefresher → updateForm）；配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
 4. 申请 `reminderAgent` 开放能力和签名 Profile 后验证 `ReminderAgentService` 的发布/去重/取消/恢复策略（代码已就绪，无权益期间保持安全跳过）。
 5. 提供真实 Harmony LLM 代理环境，验证代理 URL、CSP、TLS、超时与弱网行为。
-6. `action=openCard` 定向卡片界面（未闭环项）。
+6. openCard 代码闭环已完成；模拟器运行验证待办（用户暂缓，模拟器在线时执行）。
 7. 持续清理仍带早期历史痕迹的文档；根包 / AppScope 版本口径已统一并由 CI 强制。
 
 ## 8. 状态维护规则

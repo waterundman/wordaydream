@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] — 2026-09-09
+
+### 鸿蒙端 v0.6.0-harmony (Stage 3: 版本统一 + 文档回填)
+
+- 鸿蒙服务卡片 openCard 定向闭环: 2*4 卡片词位区点击 → 携带 `action=openCard&cardId=<id>` 拉起 App → 复习会话定位到目标卡
+- Web 域层: `dispatchHarmonyLaunchAction` openCard 行为表 (在队列定位 / reviewing 跳转不重启 / 不在队列降级常规流 / 无到期卡提示); `useReviewSessionStore` 新增 `jumpToCard`
+- 原生侧: `CardDataProvider` 新增 `nextCardId` (与 `nextWord` 同源); `ReviewCardWidget` 词位区可点击 (空数据回退 `startReview`)
+- 全量质量门（vitest/tsc/lint/build:harmony/hap build）于验证阶段执行
+
 ## [2.5.0] — 2026-09-09
 
 ### 鸿蒙端 v0.5.0-harmony (Stage 0-4)

@@ -5,7 +5,7 @@
  *
  * 版本口径规则（单一真源 = 仓库根包 package.json 的 web 版本）：
  *   - web 版本与 harmony 版本映射：web.major.minor = harmony.major.minor + 2
- *     （即 web 2.5.0 ↔ harmony 0.5.0）
+ *     （即 web 2.6.0 ↔ harmony 0.6.0）
  *   - patch 必须一致：web.patch === harmony.patch
  *   - harmony 侧各文件（AppScope / entry / build-profile）之间必须对齐。
  *
