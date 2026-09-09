@@ -44,6 +44,14 @@ interface ReviewSessionState {
   cardContexts: Record<string, string>;
 
   startReview: (language?: Language) => void;
+  /**
+   * v0.6.0-harmony Stage 1: 会话内定向定位到指定卡片。
+   * 仅 mode === 'reviewing' 且 cardId 在 queue 中时生效：跳 currentIndex 并重置
+   * 当前卡瞬时状态（userAnswer/evaluation/isEvaluating/isPaused/showRatingBar），
+   * 返回 true。其余情况返回 false 且不修改任何状态。
+   * 绝不触碰 results / startedAt / cardContexts，不触发 streak / 成就逻辑。
+   */
+  jumpToCard: (cardId: string) => boolean;
   setUserAnswer: (answer: string) => void;
   submitAnswer: (answer?: string) => Promise<AnswerEvaluation | null>;
   completeReview: (rating: Rating) => void;
@@ -131,6 +139,29 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
         // v1.5.3 fix V3-P2-005: 用 buildAchievementContext 传真实数据, 之前全 0/空.
         useStreakStore.getState().recordDay();
         useAchievementStore.getState().checkAndUnlock(buildAchievementContext(false));
+      },
+
+      jumpToCard: (cardId) => {
+        const state = get();
+        // 仅复习中且目标在队列中才定位；其余情况不修改任何状态，直接返回 false。
+        if (state.mode !== 'reviewing') {
+          return false;
+        }
+        const targetIndex = state.queue.findIndex((card) => card.id === cardId);
+        if (targetIndex === -1) {
+          return false;
+        }
+        // 重置当前卡瞬时交互状态，但绝不触碰 results / startedAt / cardContexts，
+        // 也不触发 streak / 成就逻辑（与 startReview 不同，这是会话内跳转）。
+        set({
+          currentIndex: targetIndex,
+          userAnswer: '',
+          evaluation: null,
+          isEvaluating: false,
+          isPaused: false,
+          showRatingBar: false,
+        });
+        return true;
       },
 
       setUserAnswer: (answer) => set({ userAnswer: answer }),

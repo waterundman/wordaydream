@@ -16,6 +16,7 @@ interface ReviewLaunchState {
   mode: ReviewMode;
   language: Language;
   startReview: (language?: Language) => void;
+  jumpToCard: (cardId: string) => boolean;
 }
 
 interface ReadingLaunchState {
@@ -38,21 +39,18 @@ const defaultDependencies: HarmonyLaunchDependencies = {
   waitForMemoryRestore: waitForNativeMemoryRestore,
 };
 
-export function dispatchHarmonyLaunchAction(
-  action: HarmonyLaunchAction,
-  dependencies: HarmonyLaunchDependencies = defaultDependencies,
-): void {
-  if (action.type === 'openCard') {
-    dependencies.showWarning('暂不支持从鸿蒙卡片直接打开指定单词');
-    return;
-  }
-
+/**
+ * 常规复习启动流程（startReview 分支 / openCard 场景 A 共用）。
+ *
+ * 1. 取语言：reading lastConfig.language ?? reviewState.language
+ * 2. 调 startReview，无到期卡则换另一语言重试
+ * 3. 返回是否成功进入 reviewing 态
+ *
+ * 调用方需自行判断 mode —— 本流程仅在 mode === 'idle' 时用于启动新会话
+ * （startReview 自身已处理"无 due 卡则维持 idle"的语义）。
+ */
+function startRegularReviewSession(dependencies: HarmonyLaunchDependencies): boolean {
   const reviewState = dependencies.getReviewState();
-  if (reviewState.mode !== 'idle') {
-    dependencies.setAppMode('review');
-    return;
-  }
-
   const language =
     dependencies.getReadingState().lastConfig?.language ?? reviewState.language;
   reviewState.startReview(language);
@@ -62,12 +60,74 @@ export function dispatchHarmonyLaunchAction(
     dependencies.getReviewState().startReview(fallbackLanguage);
   }
 
-  if (dependencies.getReviewState().mode === 'reviewing') {
+  return dependencies.getReviewState().mode === 'reviewing';
+}
+
+/**
+ * openCard 定向卡片落地（SPEC §3 + §5）。
+ *
+ * - 场景 B/C：已在复习会话中 → 直接 jumpToCard，不重启会话。
+ *   - 成功：切到复习页。
+ *   - 失败（目标不在本次队列）：提示"该词不在本次复习队列中"并保持现有会话，仍切到复习页。
+ * - 场景 A：非 reviewing（idle/completed）→ 先常规启动复习；
+ *   - 启动失败（无到期卡）：提示"暂无到期复习卡片"。
+ *   - 启动成功但目标未到期/不存在：降级常规复习并提示
+ *     "该词当前不在复习队列，已开始常规复习"，切到复习页。
+ */
+function handleOpenCardLaunch(
+  cardId: string,
+  dependencies: HarmonyLaunchDependencies,
+): void {
+  const reviewState = dependencies.getReviewState();
+
+  if (reviewState.mode === 'reviewing') {
+    // 场景 B / C：会话内定位，不重启
+    if (reviewState.jumpToCard(cardId)) {
+      dependencies.setAppMode('review');
+    } else {
+      // 场景 C：目标不在本次复习队列，保持现有会话
+      dependencies.showWarning('该词不在本次复习队列中');
+      dependencies.setAppMode('review');
+    }
+    return;
+  }
+
+  // 场景 A：非 reviewing → 先常规启动复习
+  if (!startRegularReviewSession(dependencies)) {
+    dependencies.showWarning('暂无到期复习卡片');
+    return;
+  }
+
+  // 已进入 reviewing，尝试定位目标卡
+  if (dependencies.getReviewState().jumpToCard(cardId)) {
+    dependencies.setAppMode('review');
+  } else {
+    // 目标未到期 / 不存在于本次队列 → 降级为常规复习
+    dependencies.showWarning('该词当前不在复习队列，已开始常规复习');
+    dependencies.setAppMode('review');
+  }
+}
+
+export function dispatchHarmonyLaunchAction(
+  action: HarmonyLaunchAction,
+  dependencies: HarmonyLaunchDependencies = defaultDependencies,
+): void {
+  if (action.type === 'openCard') {
+    handleOpenCardLaunch(action.cardId, dependencies);
+    return;
+  }
+
+  // startReview 分支：已在会话中直接切页；否则走常规启动流程
+  if (dependencies.getReviewState().mode !== 'idle') {
     dependencies.setAppMode('review');
     return;
   }
 
-  dependencies.showWarning('暂无到期复习卡片');
+  if (startRegularReviewSession(dependencies)) {
+    dependencies.setAppMode('review');
+  } else {
+    dependencies.showWarning('暂无到期复习卡片');
+  }
 }
 
 export function installHarmonyLaunchHandling(

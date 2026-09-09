@@ -15,6 +15,7 @@ interface DependencyOptions {
   restorePromise?: Promise<void>;
   availableLanguage?: Language;
   throwOnFirstStart?: boolean;
+  jumpToCardResult?: boolean;
 }
 
 function createDependencies(options: DependencyOptions = {}) {
@@ -32,6 +33,7 @@ function createDependencies(options: DependencyOptions = {}) {
       mode = 'reviewing';
     }
   });
+  const jumpToCard = vi.fn(() => options.jumpToCardResult ?? false);
   const setAppMode = vi.fn();
   const showWarning = vi.fn();
 
@@ -40,6 +42,7 @@ function createDependencies(options: DependencyOptions = {}) {
       mode,
       language: reviewLanguage,
       startReview,
+      jumpToCard,
     }),
     getReadingState: () => ({
       lastConfig:
@@ -53,7 +56,7 @@ function createDependencies(options: DependencyOptions = {}) {
     waitForMemoryRestore: () => options.restorePromise ?? Promise.resolve(),
   };
 
-  return { dependencies, setAppMode, showWarning, startReview };
+  return { dependencies, setAppMode, showWarning, startReview, jumpToCard };
 }
 
 describe('dispatchHarmonyLaunchAction', () => {
@@ -110,8 +113,22 @@ describe('dispatchHarmonyLaunchAction', () => {
     },
   );
 
-  it('reports the intentionally unsupported targeted-card action', () => {
-    const setup = createDependencies();
+  it('T01 [mock]: openCard 且目标在 due 启动队列 → mode=reviewing 且 jumpToCard 被调用', () => {
+    const setup = createDependencies({ startSucceeds: true, jumpToCardResult: true });
+
+    dispatchHarmonyLaunchAction(
+      { type: 'openCard', cardId: 'card-123' },
+      setup.dependencies,
+    );
+
+    expect(setup.startReview).toHaveBeenCalled();
+    expect(setup.jumpToCard).toHaveBeenCalledWith('card-123');
+    expect(setup.setAppMode).toHaveBeenCalledWith('review');
+    expect(setup.showWarning).not.toHaveBeenCalled();
+  });
+
+  it('T03 [mock]: reviewing 中 openCard 目标不在队列 → warning 且 setAppMode', () => {
+    const setup = createDependencies({ mode: 'reviewing', jumpToCardResult: false });
 
     dispatchHarmonyLaunchAction(
       { type: 'openCard', cardId: 'card-123' },
@@ -119,10 +136,56 @@ describe('dispatchHarmonyLaunchAction', () => {
     );
 
     expect(setup.startReview).not.toHaveBeenCalled();
-    expect(setup.setAppMode).not.toHaveBeenCalled();
-    expect(setup.showWarning).toHaveBeenCalledWith(
-      '暂不支持从鸿蒙卡片直接打开指定单词',
+    expect(setup.jumpToCard).toHaveBeenCalledWith('card-123');
+    expect(setup.showWarning).toHaveBeenCalledWith('该词不在本次复习队列中');
+    expect(setup.setAppMode).toHaveBeenCalledWith('review');
+  });
+
+  it('T04 [mock]: openCard 目标未到期/不存在 → 降级常规流 warning', () => {
+    const setup = createDependencies({ startSucceeds: true, jumpToCardResult: false });
+
+    dispatchHarmonyLaunchAction(
+      { type: 'openCard', cardId: 'card-123' },
+      setup.dependencies,
     );
+
+    expect(setup.startReview).toHaveBeenCalled();
+    expect(setup.jumpToCard).toHaveBeenCalledWith('card-123');
+    expect(setup.showWarning).toHaveBeenCalledWith('该词当前不在复习队列，已开始常规复习');
+    expect(setup.setAppMode).toHaveBeenCalledWith('review');
+  });
+
+  it('T05 [mock]: openCard 且无到期卡 → warning 暂无到期复习卡片，mode 保持 idle', () => {
+    const setup = createDependencies({ startSucceeds: false });
+
+    dispatchHarmonyLaunchAction(
+      { type: 'openCard', cardId: 'card-123' },
+      setup.dependencies,
+    );
+
+    expect(setup.startReview).toHaveBeenCalled();
+    expect(setup.jumpToCard).not.toHaveBeenCalled();
+    expect(setup.setAppMode).not.toHaveBeenCalled();
+    expect(setup.showWarning).toHaveBeenCalledWith('暂无到期复习卡片');
+  });
+  it('T07 [mock]: 队列顺序消费 startReview + openCard 两个 query 按序派发', async () => {
+    const setup = createDependencies({ mode: 'idle', startSucceeds: true, jumpToCardResult: true });
+    const cleanup = installHarmonyLaunchHandling(setup.dependencies);
+
+    try {
+      window.handleHarmonyLaunch?.('action=startReview');
+      window.handleHarmonyLaunch?.('action=openCard&cardId=card-123');
+
+      await vi.waitFor(() => {
+        expect(setup.startReview).toHaveBeenCalledTimes(1);
+      });
+      expect(setup.jumpToCard).toHaveBeenCalledWith('card-123');
+      expect(setup.jumpToCard).toHaveBeenCalledTimes(1);
+      expect(setup.setAppMode).toHaveBeenCalledTimes(2);
+      expect(setup.setAppMode).toHaveBeenCalledWith('review');
+    } finally {
+      cleanup();
+    }
   });
   it('continues with the next launch after one action throws', async () => {
     const setup = createDependencies({ throwOnFirstStart: true });
