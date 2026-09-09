@@ -28,6 +28,7 @@ const storage: LocalStorage = new LocalStorage();
 struct ReviewCardWidget {
   @LocalStorageProp('dueCount') dueCount: number = 0;
   @LocalStorageProp('nextWord') nextWord: string = '';
+  @LocalStorageProp('nextCardId') nextCardId: string = '';
   @LocalStorageProp('lastUpdated') lastUpdated: number = 0;
   @LocalStorageProp('language') language: string = 'en';
   @LocalStorageProp('formDimension') dimension: number = DIMENSION_2_2;
@@ -44,6 +45,23 @@ struct ReviewCardWidget {
       'abilityName': 'EntryAbility',
       'params': { 'query': 'action=startReview' },
     });
+  }
+
+  /**
+   * 触发打开指定卡片 (router action -> EntryAbility).
+   * nextCardId 非空时携带 action=openCard&cardId=<nextCardId> 拉起 EntryAbility;
+   * 为空 (无到期卡 / 数据未就绪) 时回退到 triggerReview (action=startReview).
+   */
+  private triggerOpenCard(): void {
+    if (this.nextCardId.length > 0) {
+      postCardAction(this, {
+        'action': 'router',
+        'abilityName': 'EntryAbility',
+        'params': { 'query': 'action=openCard&cardId=' + this.nextCardId },
+      });
+    } else {
+      this.triggerReview();
+    }
   }
 
   /**
@@ -223,6 +241,9 @@ struct ReviewCardWidget {
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start)
           .margin({ top: 12 })
+          .onClick(() => {
+            this.triggerOpenCard();
+          })
 
           Column() {
             this.ProgressRing()

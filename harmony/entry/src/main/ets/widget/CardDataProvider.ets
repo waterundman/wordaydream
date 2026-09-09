@@ -42,6 +42,7 @@ const LANGUAGE_KEY: string = 'app_language';
 export interface ReviewCardFormData {
   dueCount: number;
   nextWord: string;
+  nextCardId: string;
   lastUpdated: number;
   language: string;
   reviewedCount: number;
@@ -298,6 +299,7 @@ export class CardDataProvider {
     const data: ReviewCardFormData = {
       dueCount,
       nextWord: nextCard === null ? '' : nextCard.lemma,
+      nextCardId: nextCard === null ? '' : nextCard.id,
       lastUpdated: Date.now(),
       language,
       reviewedCount: todayStats.reviewedCount,

@@ -91,6 +91,7 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
     return {
       dueCount: 0,
       nextWord: '',
+      nextCardId: '',
       lastUpdated: 0,
       language: 'en',
       reviewedCount: 0,
