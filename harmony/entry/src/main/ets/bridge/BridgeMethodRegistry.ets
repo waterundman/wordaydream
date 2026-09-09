@@ -28,6 +28,9 @@ export const BRIDGE_ASYNC_METHODS: string[] = [
   'isSpeechSupported',
   'getSpeechEngines',
   'notifyReviewCompleted',
+  'requestNotificationPermission',
+  'scheduleReviewReminder',
+  'cancelReviewReminder',
 ];
 
 /** AppStorage key for the controller shared with native launch dispatch. */

@@ -51,6 +51,9 @@ const SPEECH_RATE_WHITELIST: number[] = [0.5, 1.0, 1.5, 2.0];
 /** TTS language 合法枚举. */
 const SPEECH_LANGUAGE_WHITELIST: string[] = ['de-DE', 'en-US'];
 
+/** reminderAgent 定时提醒: 最大调度提前量 (1 年), 防止异常远期时间堆积. */
+const REMINDER_MAX_LEAD_MS: number = 366 * 24 * 60 * 60 * 1000;
+
 /**
  * ArkWeb origin 白名单正则列表 (安全加固).
  *
@@ -279,5 +282,40 @@ export class BridgeInputValidator {
       return false;
     }
     return SPEECH_LANGUAGE_WHITELIST.includes(language);
+  }
+
+  /**
+   * 校验 reminderAgent 定时提醒触发时间 (v0.5.0-harmony Stage 3).
+   *
+   * 规则: 必须为未来时间 (triggerAt > nowMs) 且提前量 <= 1 年.
+   * 过去时间被拒绝 — 防止"未来提醒"被误当作立即通知发布 (安全契约).
+   *
+   * @param triggerAt 期望触发时间戳 (ms, epoch).
+   * @param nowMs 当前时间戳 (ms, epoch); 传入 -1 时内部取 Date.now().
+   */
+  static validateReminderTime(triggerAt: number, nowMs: number): boolean {
+    if (typeof triggerAt !== 'number' || !isFinite(triggerAt)) {
+      return false;
+    }
+    const now: number = nowMs >= 0 ? nowMs : Date.now();
+    if (triggerAt <= now) {
+      return false;
+    }
+    return triggerAt - now <= REMINDER_MAX_LEAD_MS;
+  }
+
+  /**
+   * 校验 reminderId (非空且长度 <= 128, 字符集为安全标识符).
+   *
+   * @param reminderId Web 侧传入的提醒标识 (如 review-daily).
+   */
+  static validateReminderId(reminderId: string): boolean {
+    if (typeof reminderId !== 'string') {
+      return false;
+    }
+    if (reminderId.length === 0 || reminderId.length > CARD_ID_MAX_LENGTH) {
+      return false;
+    }
+    return /^[a-zA-Z0-9._-]+$/.test(reminderId);
   }
 }

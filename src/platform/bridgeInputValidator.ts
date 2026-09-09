@@ -229,3 +229,43 @@ export function validateSpeechLanguage(language: string): boolean {
   }
   return SPEECH_LANGUAGE_WHITELIST.includes(language);
 }
+
+/** Stage 3 v0.5.0-harmony: reminderAgent 最大调度提前量 (1 年). */
+const REMINDER_MAX_LEAD_MS = 366 * 24 * 60 * 60 * 1000;
+
+/**
+ * Stage 3 v0.5.0-harmony: 校验 reminderAgent 定时提醒触发时间.
+ *
+ * 规则: 必须为未来时间 (triggerAt > nowMs) 且提前量 <= 1 年.
+ * 过去时间被拒绝 — 防止"未来提醒"被误当作立即通知发布 (安全契约).
+ * 与 ArkTS BridgeInputValidator.validateReminderTime 签名一一对应.
+ *
+ * @param triggerAt 期望触发时间戳 (ms, epoch).
+ * @param nowMs 当前时间戳 (ms, epoch); 传入 -1 时内部取 Date.now().
+ */
+export function validateReminderTime(triggerAt: number, nowMs: number): boolean {
+  if (typeof triggerAt !== 'number' || !Number.isFinite(triggerAt)) {
+    return false;
+  }
+  const now = nowMs >= 0 ? nowMs : Date.now();
+  if (triggerAt <= now) {
+    return false;
+  }
+  return triggerAt - now <= REMINDER_MAX_LEAD_MS;
+}
+
+/**
+ * Stage 3 v0.5.0-harmony: 校验 reminderId (非空且长度 <= 128, 安全标识符).
+ * 与 ArkTS BridgeInputValidator.validateReminderId 签名一一对应.
+ *
+ * @param reminderId Web 侧传入的提醒标识 (如 review-daily).
+ */
+export function validateReminderId(reminderId: string): boolean {
+  if (typeof reminderId !== 'string') {
+    return false;
+  }
+  if (reminderId.length === 0 || reminderId.length > CARD_ID_MAX_LENGTH) {
+    return false;
+  }
+  return /^[a-zA-Z0-9._-]+$/.test(reminderId);
+}

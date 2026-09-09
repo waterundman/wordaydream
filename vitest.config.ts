@@ -53,6 +53,9 @@ export default defineConfig({
       // v0.5.0-harmony Stage 1: 覆盖 scripts 下的版本对齐校验单测 (.mjs)
       'scripts/**/*.{test,spec}.{ts,tsx,mjs}',
     ],
+    // v0.5.0-harmony Stage 3: 排除 node --test 套件 (vitest 收集会报 "No test suite found").
+    // 它们由各自 npm script (node --test) 运行, 不属于 vitest 收集范围.
+    exclude: ['scripts/hvigor-output.test.mjs', 'scripts/verify-harmony-build.test.mjs'],
     css: false,
     pool: 'threads',
   },

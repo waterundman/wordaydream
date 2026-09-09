@@ -37,11 +37,19 @@ import { webview } from '@kit.ArkWeb';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
-import type { ReminderPayload, NotifyReviewCompletedResult } from './types';
+import type {
+  ReminderPayload,
+  NotifyReviewCompletedResult,
+  NotificationPermissionResult,
+  NotificationPermissionState,
+  ScheduleReminderResult,
+  CancelReminderResult,
+} from './types';
 import { FormRefresher } from '../widget/FormRefresher';
 import type { MemoryCardRecord, TodayReviewStats } from '../data/MemoryCardSchema';
 import { MemoryCardStore } from '../data/MemoryCardStore';
 import { NotificationService, NotificationWindow } from '../notification/NotificationService';
+import { ReminderAgentService } from '../notification/ReminderAgentService';
 import { BridgeInputValidator } from './BridgeInputValidator';
 import {
   WEB_CONTROLLER_STORAGE_KEY,
@@ -958,6 +966,101 @@ export class HarmonyBridge {
         DOMAIN,
         TAG,
         'notifyReviewCompleted failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+      return { ok: false, reason: err.message };
+    }
+  }
+
+  /**
+   * Stage 3: 请求通知权限 (三态: granted / denied / error).
+   *
+   * 由 Web 设置面板通知开关首次开启时调用. 委托
+   * NotificationService.requestEnableNotification (requestEnableNotification
+   * 为运行时用户授权 API, 无需 manifest 权限声明). 异常转为 error 态不抛错.
+   */
+  async requestNotificationPermission(): Promise<NotificationPermissionResult> {
+    try {
+      const ctx: common.UIAbilityContext = this.context as common.UIAbilityContext;
+      const state: NotificationPermissionState = await NotificationService.getInstance()
+        .requestEnableNotification(ctx);
+      return { state: state };
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.error(
+        DOMAIN,
+        TAG,
+        'requestNotificationPermission failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+      return { state: 'error', reason: err.message };
+    }
+  }
+
+  /**
+   * Stage 3: 调度 reminderAgent 定时提醒 (无权益安全降级).
+   *
+   * 校验先行: reminderId 白名单 + triggerAt 必须为未来时间 (过去时间拒绝,
+   * 防止"未来提醒"被误发布). 委托 ReminderAgentService.publishReminder —
+   * 权益不可用时 {skipped:true}, 绝不真实发布 (安全契约).
+   */
+  async scheduleReviewReminder(
+    reminderId: string,
+    triggerAt: number
+  ): Promise<ScheduleReminderResult> {
+    try {
+      if (!BridgeInputValidator.validateReminderId(reminderId)) {
+        hilog.warn(DOMAIN, TAG, 'scheduleReviewReminder rejected: invalid reminderId');
+        return { skipped: true, reason: 'invalid reminderId' };
+      }
+      if (!BridgeInputValidator.validateReminderTime(triggerAt, Date.now())) {
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'scheduleReviewReminder rejected: triggerAt not in future, reminderId=%{public}s',
+          reminderId
+        );
+        return { skipped: true, reason: 'triggerAt must be a future time' };
+      }
+      await ReminderAgentService.getInstance().initialize(this.context);
+      return await ReminderAgentService.getInstance().publishReminder(
+        reminderId,
+        triggerAt,
+        'Wordaydream',
+        '复习提醒'
+      );
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.error(
+        DOMAIN,
+        TAG,
+        'scheduleReviewReminder failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+      return { skipped: true, reason: err.message };
+    }
+  }
+
+  /**
+   * Stage 3: 取消 reminderAgent 定时提醒 (幂等: 不存在视为成功).
+   */
+  async cancelReviewReminder(reminderId: string): Promise<CancelReminderResult> {
+    try {
+      if (!BridgeInputValidator.validateReminderId(reminderId)) {
+        hilog.warn(DOMAIN, TAG, 'cancelReviewReminder rejected: invalid reminderId');
+        return { ok: false, reason: 'invalid reminderId' };
+      }
+      await ReminderAgentService.getInstance().initialize(this.context);
+      return await ReminderAgentService.getInstance().cancelReminder(reminderId);
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.error(
+        DOMAIN,
+        TAG,
+        'cancelReviewReminder failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );

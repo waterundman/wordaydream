@@ -8,6 +8,7 @@ import type { LLMProvider } from '../../../types';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useToastStore } from '../../../store/useToastStore';
 import { detectPlatform } from '../../../platform/detect';
+import { requestNotificationPermission } from '../../../platform/harmonyBridge';
 import {
   isOptimizationAvailable,
   optimizeFsrsWeights,
@@ -556,6 +557,8 @@ export function NotificationsSection() {
   const supportsNotifications = detectPlatform().supportsNotifications();
   const notifications = useSettingsStore((s) => s.notifications);
   const setNotifications = useSettingsStore((s) => s.setNotifications);
+  // Stage 3 v0.5.0-harmony: 首次开启时触发原生通知权限请求; denied/error 时引导用户.
+  const [permissionHint, setPermissionHint] = useState<string | null>(null);
 
   if (!supportsNotifications) {
     return null;
@@ -565,6 +568,27 @@ export function NotificationsSection() {
     const next = { enabled: !notifications.enabled };
     setNotifications(next);
     persistNotifications({ ...notifications, ...next });
+    // Stage 3: 开启动作 (false -> true) 时请求系统通知授权 (fire-and-forget);
+    // 三态结果中 granted 静默, denied / error 显示引导提示. 无桥 no-op 不提示.
+    if (next.enabled) {
+      setPermissionHint(null);
+      void requestNotificationPermission()
+        .then((res) => {
+          if (res.noop === true) {
+            return;
+          }
+          if (res.state === 'denied') {
+            setPermissionHint('通知权限被拒绝, 请在系统设置中开启后重试.');
+          } else if (res.state === 'error') {
+            setPermissionHint('通知权限请求失败, 请稍后重试.');
+          }
+        })
+        .catch(() => {
+          // fire-and-forget: 失败静默, 不阻塞开关 UI.
+        });
+    } else {
+      setPermissionHint(null);
+    }
   };
 
   const handleStartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -600,6 +624,12 @@ export function NotificationsSection() {
           aria-checked={notifications.enabled}
         />
       </div>
+
+      {permissionHint !== null && (
+        <p className={styles.hint} data-testid="notification-permission-hint" role="alert">
+          {permissionHint}
+        </p>
+      )}
 
       <div className={styles.row}>
         <div className={styles.field}>

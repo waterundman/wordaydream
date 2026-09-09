@@ -3,6 +3,7 @@ import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { HarmonyBridge } from '../bridge/HarmonyBridge';
+import { ReminderAgentService } from '../notification/ReminderAgentService';
 import { TextToSpeechService } from '../tts/TextToSpeechService';
 
 const DOMAIN: number = 0x0001;
@@ -27,6 +28,46 @@ export default class EntryAbility extends UIAbility {
   onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onCreate');
     this.handleLaunchWant(want);
+    // Stage 3: 启动时对账恢复 reminderAgent 定时提醒 (fire-and-forget).
+    // 仅在权益可用时实际补发; 无权益时内部安全跳过 (isSupported 探测缓存).
+    this.restoreRemindersOnStartup();
+  }
+
+  /** Stage 3: reminderAgent 提醒启动对账 (幂等, 全程 try/catch 兜底). */
+  private restoreRemindersOnStartup(): void {
+    try {
+      const ctx: common.Context = this.context as common.Context;
+      ReminderAgentService.getInstance()
+        .initialize(ctx)
+        .then(async (): Promise<void> => {
+          const outcome = await ReminderAgentService.getInstance().restoreOnStartup();
+          hilog.info(
+            DOMAIN,
+            TAG,
+            'restoreRemindersOnStartup: ok=%{public}d restored=%{public}d skipped=%{public}d',
+            outcome.ok ? 1 : 0,
+            outcome.restored,
+            outcome.skipped ? 1 : 0
+          );
+        })
+        .catch((e: BusinessError) => {
+          hilog.warn(
+            DOMAIN,
+            TAG,
+            'restoreRemindersOnStartup failed (non-fatal): code=%{public}d msg=%{public}s',
+            e.code,
+            e.message
+          );
+        });
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'restoreRemindersOnStartup init failed (non-fatal): msg=%{public}s',
+        err.message
+      );
+    }
   }
 
   /**

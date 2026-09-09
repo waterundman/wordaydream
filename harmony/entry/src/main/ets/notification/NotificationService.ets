@@ -21,6 +21,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { common, wantAgent, Want, WantAgent } from '@kit.AbilityKit';
 import { getReviewReminderText, NotificationText } from './templates';
+import type { NotificationPermissionState } from '../bridge/types';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'NotificationService';
@@ -213,24 +214,38 @@ export class NotificationService {
   }
 
   /**
-   * 请求通知权限 (弹窗引导用户授权).
-   * 返回 true 表示已授权, false 表示用户拒绝或异常.
+   * 请求通知权限 (弹窗引导用户授权) — 三态结果 (v0.5.0-harmony Stage 3).
+   *
+   * - granted: 用户已授权 (含此前已授权的场景).
+   * - denied: 用户在弹窗中拒绝.
+   * - error: 系统调用异常 (context 无效等).
+   *
+   * 返回值经 HarmonyBridge.requestNotificationPermission 透传给 Web 设置面板,
+   * denied 时由 Web 端给出跳转系统设置的引导提示.
    */
-  async requestPermission(context: common.UIAbilityContext): Promise<boolean> {
+  async requestEnableNotification(
+    context: common.UIAbilityContext
+  ): Promise<NotificationPermissionState> {
     try {
       await notificationManager.requestEnableNotification(context);
-      hilog.info(DOMAIN, TAG, 'requestPermission: granted');
-      return true;
+      hilog.info(DOMAIN, TAG, 'requestEnableNotification: granted');
+      return 'granted';
     } catch (e) {
       const err: BusinessError = e as BusinessError;
+      // 用户拒绝授权时 requestEnableNotification 以 BusinessError 抛出,
+      // 错误码 1600004 (NOTIFICATION_ENABLED) 视为 denied, 其余视为 error.
+      if (err.code === 1600004) {
+        hilog.info(DOMAIN, TAG, 'requestEnableNotification: denied by user');
+        return 'denied';
+      }
       hilog.error(
         DOMAIN,
         TAG,
-        'requestPermission failed: code=%{public}d msg=%{public}s',
+        'requestEnableNotification failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );
-      return false;
+      return 'error';
     }
   }
 

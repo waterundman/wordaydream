@@ -123,6 +123,41 @@ export interface NotifyReviewCompletedResult {
 }
 
 /**
+ * Stage 3 (v0.5.0-harmony): 通知权限请求结果.
+ *
+ * 字段与 ArkTS NotificationPermissionResult (bridge/types.ets) 对应:
+ * - state: granted / denied / error 三态.
+ * - noop: 非鸿蒙 / 无桥环境的安全 no-op 标记 (Web 端返回 granted + noop).
+ * - reason: denied/error 时的补充说明.
+ */
+export interface NotificationPermissionResult {
+  state: 'granted' | 'denied' | 'error';
+  noop?: boolean;
+  reason?: string;
+}
+
+/**
+ * Stage 3 (v0.5.0-harmony): reminderAgent 定时提醒调度结果.
+ *
+ * 字段与 ArkTS ScheduleReminderResult (bridge/types.ets) 对应. 安全降级契约:
+ * 无桥 no-op 返回 {skipped:true, noop:true}; 权益不可用原生返回
+ * {skipped:true, reason}, 绝不真实发布.
+ */
+export interface ScheduleReminderResult {
+  skipped: boolean;
+  noop?: boolean;
+  reason?: string;
+  systemReminderId?: number;
+}
+
+/** Stage 3 (v0.5.0-harmony): 取消定时提醒结果 (幂等, 不存在视为成功). */
+export interface CancelReminderResult {
+  ok: boolean;
+  noop?: boolean;
+  reason?: string;
+}
+
+/**
  * ArkTS 注入的原生 bridge.
  * 方法签名遵循 Stage 1 registerJavaScriptProxy 的 BRIDGE_METHODS 列表,
  * 返回值类型为 Stage 3 目标异步签名 (Stage 1 占位返回同步值, TS 侧按异步消费).
@@ -209,6 +244,26 @@ export interface HarmonyBridge {
    * 可选: 非鸿蒙 / 旧版原生桥可能未注入, Web 侧以 no-op 安全降级.
    */
   notifyReviewCompleted?(): Promise<NotifyReviewCompletedResult>;
+  /**
+   * Stage 3 (v0.5.0-harmony): 请求通知权限 (三态 granted / denied / error).
+   *
+   * 由设置面板通知开关首次开启时调用. 可选: 旧版原生桥可能未注入.
+   */
+  requestNotificationPermission?(): Promise<NotificationPermissionResult>;
+  /**
+   * Stage 3 (v0.5.0-harmony): 调度 reminderAgent 定时提醒.
+   *
+   * reminderId 为 Web 侧标识 (安全标识符字符集); triggerAt 必须为未来时间.
+   * 权益不可用时原生返回 {skipped:true, reason} (安全降级契约).
+   */
+  scheduleReviewReminder?(
+    reminderId: string,
+    triggerAt: number
+  ): Promise<ScheduleReminderResult>;
+  /**
+   * Stage 3 (v0.5.0-harmony): 取消 reminderAgent 定时提醒 (幂等).
+   */
+  cancelReviewReminder?(reminderId: string): Promise<CancelReminderResult>;
 }
 
 /**
@@ -269,6 +324,95 @@ export async function notifyReviewCompleted(): Promise<NotifyReviewCompletedResu
   } catch (e) {
     const reason: string = e instanceof Error ? e.message : String(e);
     console.warn('[harmonyBridge] notifyReviewCompleted failed:', reason);
+    return { ok: false, reason };
+  }
+}
+
+/**
+ * Stage 3 (v0.5.0-harmony): 请求通知权限 (Web 侧入口).
+ *
+ * 非鸿蒙 / 无原生桥环境安全 no-op: 返回 {state:'granted', noop:true} (视为
+ * Web 端无需授权), 绝不抛错. denied/error 由调用方 (设置面板) 决定引导提示.
+ */
+export async function requestNotificationPermission(): Promise<NotificationPermissionResult> {
+  try {
+    const cap = detectPlatform();
+    const bridge = cap.getNativeBridge();
+    if (
+      !cap.isHarmonyOS() ||
+      bridge === null ||
+      typeof bridge.requestNotificationPermission !== 'function'
+    ) {
+      return { state: 'granted', noop: true };
+    }
+    const res = await bridge.requestNotificationPermission();
+    if (res && typeof res.state === 'string') {
+      return res;
+    }
+    return { state: 'granted' };
+  } catch (e) {
+    const reason: string = e instanceof Error ? e.message : String(e);
+    console.warn('[harmonyBridge] requestNotificationPermission failed:', reason);
+    return { state: 'error', reason };
+  }
+}
+
+/**
+ * Stage 3 (v0.5.0-harmony): 调度 reminderAgent 定时提醒 (Web 侧入口).
+ *
+ * 非鸿蒙 / 无原生桥环境安全 no-op: 返回 {skipped:true, noop:true}.
+ * 原生权益不可用时同样返回 skipped — 安全降级契约, 绝不真实发布.
+ */
+export async function scheduleReviewReminder(
+  reminderId: string,
+  triggerAt: number
+): Promise<ScheduleReminderResult> {
+  try {
+    const cap = detectPlatform();
+    const bridge = cap.getNativeBridge();
+    if (
+      !cap.isHarmonyOS() ||
+      bridge === null ||
+      typeof bridge.scheduleReviewReminder !== 'function'
+    ) {
+      return { skipped: true, noop: true };
+    }
+    const res = await bridge.scheduleReviewReminder(reminderId, triggerAt);
+    if (res && typeof res.skipped === 'boolean') {
+      return res;
+    }
+    return { skipped: true };
+  } catch (e) {
+    const reason: string = e instanceof Error ? e.message : String(e);
+    console.warn('[harmonyBridge] scheduleReviewReminder failed:', reason);
+    return { skipped: true, reason };
+  }
+}
+
+/**
+ * Stage 3 (v0.5.0-harmony): 取消 reminderAgent 定时提醒 (Web 侧入口).
+ *
+ * 非鸿蒙 / 无原生桥环境安全 no-op: 返回 {ok:true, noop:true} (幂等成功).
+ */
+export async function cancelReviewReminder(reminderId: string): Promise<CancelReminderResult> {
+  try {
+    const cap = detectPlatform();
+    const bridge = cap.getNativeBridge();
+    if (
+      !cap.isHarmonyOS() ||
+      bridge === null ||
+      typeof bridge.cancelReviewReminder !== 'function'
+    ) {
+      return { ok: true, noop: true };
+    }
+    const res = await bridge.cancelReviewReminder(reminderId);
+    if (res && typeof res.ok === 'boolean') {
+      return res;
+    }
+    return { ok: true };
+  } catch (e) {
+    const reason: string = e instanceof Error ? e.message : String(e);
+    console.warn('[harmonyBridge] cancelReviewReminder failed:', reason);
     return { ok: false, reason };
   }
 }
