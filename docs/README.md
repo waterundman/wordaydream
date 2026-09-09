@@ -63,10 +63,9 @@
 
 | 文档 | 说明 |
 |------|------|
-| [CODE_REVIEW_REPORT.md](reports/CODE_REVIEW_REPORT.md) | 初版代码审查 |
-| [CODE_REVIEW_REPORT_V2.md](reports/CODE_REVIEW_REPORT_V2.md) | V2 审查 |
-| [CODE_REVIEW_REPORT_V3.md](reports/CODE_REVIEW_REPORT_V3.md) | V3 审查：14 项修复回归验证 |
 | [CODE_REVIEW_REPORT_V4.md](reports/CODE_REVIEW_REPORT_V4.md) | V4 审查：V3 修复回归 + 持久化迁移 + PWA/SW (最新) |
+
+初版审查报告 (V1–V3) 已归档至 [archive/](archive/)。
 
 ### E2E 测试报告
 
@@ -80,3 +79,17 @@
 | [E2E_REPORT_v150.md](reports/E2E_REPORT_v150.md) | v1.5.0 E2E |
 | [E2E_REPORT_v151.md](reports/E2E_REPORT_v151.md) | v1.5.1 E2E |
 | [E2E_REPORT_v152.md](reports/E2E_REPORT_v152.md) | v1.5.2 E2E (最新, 30/30 contracts PASS) |
+
+---
+
+## 历史归档 (archive/)
+
+早期版本的过程文档，仅供追溯，不再维护：
+
+| 目录 | 内容 |
+|------|------|
+| [archive/bayesian/](archive/bayesian/) | v0.1.0–v0.3.0-harmony、v2.3.0 的 Bayesian 规划/状态/历史记录 |
+| [archive/release/](archive/release/) | v0.2.0–v0.3.0-harmony 的发布清单、性能基线、技术路径、审计报告、INDEX |
+| [archive/CODE_REVIEW_REPORT*.md](archive/) | 初版代码审查报告 (V1–V3，最新为 [V4](reports/CODE_REVIEW_REPORT_V4.md)) |
+
+> 一次性数据修复/生成脚本 (v0.3.0 时代) 已随仓库清理移除，其产出结果均已体现在对应文档中。
