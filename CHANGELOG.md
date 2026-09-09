@@ -7,12 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.5.0] — 2026-09-09
 
-### 鸿蒙端 v0.5.0-harmony (Stage 0-2, 进行中)
+### 鸿蒙端 v0.5.0-harmony (Stage 0-4)
 
 - 版本策略统一: 根包 `2.5.0` ↔ 鸿蒙 `0.5.0` (major 偏移 2, patch 一致), AppScope versionCode 1000010; 新增 `check:versions` 校验脚本并接入 CI (netlify-deploy ci job, Test 前置)
 - 服务卡主动刷新闭环: formId 持久化 (`FormIdStore.ets`, Preferences) + `FormRefresher.refreshAllForms()` (RDB 统计 → formProvider.updateForm, 失败静默降级) + HarmonyBridge 新增异步方法 `notifyReviewCompleted`; Web 侧 `completeReview` 会话完成点 fire-and-forget 触发 (无桥环境 no-op)
-- ArkTS 注释清理: 移除早期 Stage 编号标记 (7 文件, 仅注释)
-- harmony 构建产物剔除 robots.txt (harmonyStripRobotsPlugin, closeBundle)
+- 通知权限产品流程: `requestEnableNotification` 三态 (granted/denied/error) + Bridge `requestNotificationPermission`; 设置面板通知开关首次开启时触发权限请求, denied/error 显示引导提示
+- reminderAgent 代码准备: `ReminderAgentService.ets` (发布去重 / 取消 / 启动对账恢复), Bridge `scheduleReviewReminder` / `cancelReviewReminder` (过去时间在桥接层拒绝); **无权益安全降级契约不变** — 权益未开通时 {skipped:true} 绝不真实发布
+- 运行验证自动化: 原生 `action=debugSeed` 入口 (仅 debuggable 构建, 外部 intent 白名单不可达) 向 RDB 预置 5 张到期卡; `scripts/harmony/seed-and-verify.mjs` (hdc 安装→冷启动→日志断言 A1-A5→报告) 与 `collect-perf.mjs` (冷启动耗时 + PSS); 模拟器不在线时 SKIP 不阻塞
+- 构建防御: `assemble-harmony-hap.mjs` realpathSync 规范化 cwd (hvigor 对盘符大小写敏感); harmony 构建产物剔除 robots.txt
+- 工程清理: json5 显式 devDependencies; vitest include 排除 node --test 套件; ArkTS 注释移除早期 Stage 编号标记 (7 文件)
+
+#### 测试
+- 1246/1246 PASS (116 文件; Stage 2-4 新增 68 项: 版本对齐 3 + 桥接/通知 34 + seed 守卫/脚本 31)
+- tsc 0 errors; lint 0 errors; build:harmony 校验 7/7; build:harmony:hap BUILD SUCCESSFUL (unsigned HAP)
 
 ## [2.3.0] — 2026-08-05
 

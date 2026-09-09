@@ -1,6 +1,6 @@
 # Wordaydream 鸿蒙版本当前状态
 
-> 更新日期：2026-08-13
+> 更新日期：2026-09-09
 > 本文档描述当前工作树，作为鸿蒙实现、验证证据和后续工作的权威入口。`README.md` 中原有的 “Stage 1 / API 12” 内容是早期历史记录，不代表当前工程状态。
 
 ## 1. 当前结论
@@ -56,11 +56,12 @@ React/Vite source (src/)
 | 振动 | 已实现，待真机验收 | 通过同步桥接触发，模块已声明 VIBRATE；模拟器不能证明真实触觉反馈。 |
 | 冷/热启动分发 | 已实现，运行验证通过 | `onCreate` / `onNewWant` 共用入口；原生队列等待 Web 显式 ready，Web 端再用持久 FIFO 等待 RDB 恢复。模拟器已实时捕获 `onNewWant -> queued -> dispatched remaining=0`。 |
 | `action=startReview` | 已实现，部分运行验证 | 分享、服务卡或通知可唤起复习；会等待原生卡片恢复并选择可用语言。当前无到期卡片的模拟器热启动保持首页且无异常，尚未覆盖有到期卡片的实际跳转。 |
+| `action=debugSeed`（运行验证） | 已实现（仅 debug 构建） | `hdc shell aa start --ps query action=debugSeed` 在原生 RDB 预置 5 张到期卡（3 en + 2 de，due=now-1h，幂等）；`applicationInfo.debug` 守卫使 release 构建直接跳过，且该 query 不在 Web 派发白名单内。配套 `scripts/harmony/seed-and-verify.mjs` 自动断言 RDB 恢复 → FIFO → 复习页日志链。 |
 | `action=openCard` | 未闭环 | 查询解析和校验存在，但产品尚无定向卡片界面；目前明确提示不支持。 |
-| 服务卡 | 已实现基础生命周期，未完全闭环 | 正规 `FormExtensionAbility` 支持创建、系统更新、尺寸变化和移除；显示 RDB 到期/今日统计。复习完成后的主动即时刷新和跨进程策略尚未得到运行验证。 |
+| 服务卡 | 已实现主动刷新闭环，跨进程待运行验证 | 正规 `FormExtensionAbility` 支持创建、系统更新、尺寸变化和移除；`FormIdStore` 持久化 formId 集合，复习完成后 `notifyReviewCompleted` 经 `FormRefresher.refreshAllForms` 主动 `updateForm` 推送最新到期/今日统计（失败静默降级）。跨进程实际刷新行为待模拟器/真机验证。 |
 | 元服务分享入口 | 已实现配置，待设备验收 | `share_card.json` 指向 `pages/Index`，默认触发 `action=startReview`。 |
-| 到期通知 | 受限 | 已到期请求可发布普通本地通知并携带复习 Want；尚未建立完整的权限请求产品流程。 |
-| 未来定时提醒 | 安全降级 | 未配置 `reminderAgent` 开放能力、`PUBLISH_AGENT_REMINDER` 与签名 Profile 时，未来通知会被跳过，避免错误地立即发布。 |
+| 到期通知 | 权限产品流程已实现 | 已到期请求可发布普通本地通知并携带复习 Want；设置面板通知开关首次开启时经 `requestNotificationPermission` 触发系统授权弹窗（granted/denied/error 三态），denied/error 时 UI 显示引导提示。 |
+| 未来定时提醒 | 安全降级 + 代码就绪 | `ReminderAgentService` 已封装发布去重、取消与启动对账恢复（`getAllValidReminders` 对账，过期条目自动清理）；未配置 `reminderAgent` 开放能力、`PUBLISH_AGENT_REMINDER` 与签名 Profile 时，`isSupported()` 探测失败 → 全部 API 返回 `{skipped:true}`，未来通知/提醒继续被安全跳过，绝不误发布。权益开通后即插即用。 |
 | 远程 LLM | 受配置限制 | 模块已有 INTERNET 权限，Harmony 构建会从同一 URL 注入前端代理地址和 CSP origin；仓库当前没有 `.env.harmony`，所以远程代理尚未形成可运行配置。 |
 | PWA / Service Worker | 不适用 | Harmony 构建主动禁用 PWA 和 HTTP `.br` / `.gz` sidecar；ArkWeb 使用 HAP 内 rawfile，不依赖 Web 服务器语义。 |
 
@@ -87,13 +88,15 @@ React/Vite source (src/)
 
 | 检查 | 结果 |
 |---|---|
-| `npm run typecheck` | 通过 |
-| `npm run test:run` | 108 个测试文件、1178 项测试全部通过；第二轮新增改动另有定向测试通过 |
-| `npm run lint` | 0 个错误；28 条现存警告 |
+| `npm run typecheck` | 通过（tsc 0 errors） |
+| `npm run test:run` | 118 个测试文件、1246 项测试全部通过（v0.5.0-harmony Stage 0-4 新增 68 项） |
+| `npm run lint` | 0 个错误；23 条现存警告 |
+| `npm run check:versions` | 通过（四处版本口径一致，已接入 CI） |
 | `npm run build` | 普通 Web 生产构建通过，仍保留代码分包、module Worker 与 PWA |
-| 虚拟同源定向测试 | 3 个测试文件、29 项测试通过；覆盖 origin/path/MIME、双编码穿越和源码接线契约 |
+| 虚拟同源定向测试 | 通过（origin/path/MIME、双编码穿越和源码接线契约） |
 | Harmony 构建验证器 | 7/7 通过；要求标准 ESM 入口、modulepreload、两个 module Worker、多 JS/CSS 分包、严格 CSP，并从 `index.html` 遍历依赖图拒绝缺失或不可达产物 |
 | HAP 日志识别器 | 3/3 通过；能识别带 ANSI 颜色的成功与失败日志 |
+| 桥接注册表快照 | 同步 4 / 异步 16（Stage 3 新增 requestNotificationPermission / scheduleReviewReminder / cancelReviewReminder），Web 与原生两侧测试镜像同步 |
 
 这些测试覆盖 Web 业务回归以及 Harmony 的桥接契约、Manifest、启动队列、CSP、静态资源、通知安全守卫、TTS 镜像和服务卡数据契约，但不能替代 Harmony 运行时测试。
 
@@ -111,7 +114,8 @@ npm run build:harmony:hap
 - `build:harmony` 生成 rawfile Web 资源后，检查标准 ESM 入口、modulepreload、CSP、根绝对资源路径、两个 Worker、依赖图可达性、丢失资源、source map 和 `.br` / `.gz` sidecar。
 - `build:harmony:hap` 使用 `D:\DevEco Studio` 的工具链编译 API 22 HAP，并要求日志明确出现成功结果和实际 HAP 文件。
 - 2026-08-13 00:07 对包含 content-ready ACK 与 12 秒失败/重试保护的最新工作树完整执行 `npm run build:harmony:hap`，进程退出码为 0；`CompileArkTS`、`PackageHap` 与 packing 均通过，Hvigor 明确报告 `BUILD SUCCESSFUL`。
-- 当前产物为 `harmony/entry/build/default/outputs/default/entry-default-unsigned.hap`，修改时间 2026-08-13 00:07:35，大小 3,245,173 bytes，SHA-256 为 `6883ADBA6231628297C0CF2320783290312E7E2C6A7B460C573D2630968C255E`。该产物仍未签名，但已成功覆盖安装到 API 22 模拟器并完成冷/热启动复验。
+- 2026-09-09 v0.5.0-harmony Stage 0-4 完整执行 `npm run build:harmony:hap`：Hvigor `BUILD SUCCESSFUL`，产物 `harmony/entry/build/default/outputs/default/entry-default-unsigned.hap`（3,845,446 bytes）。构建包装器新增 realpathSync 规范化 cwd —— hvigor 对盘符大小写敏感（`w:\` 报 "Path not found"，`W:\` 正常），现从任意大小写 cwd 启动均可构建。
+- 当前产物仍未签名，但可覆盖安装到 API 22 模拟器（模拟器在线时执行 seed-and-verify 自动验证）。
 - 构建包装器的 ANSI 控制符归一化已修复，相关测试 3/3 通过，不再因带颜色的成功日志产生假阴性。
 
 ### API 22 模拟器运行证据
@@ -139,9 +143,23 @@ npm run build:harmony:hap
 npm run typecheck
 npm run test:run
 npm run lint
+npm run check:versions
 npm run build:harmony
 npm run build:harmony:hap
 ```
+
+模拟器在线时的运行验证自动化（v0.5.0-harmony Stage 4）：
+
+```powershell
+$hdc = "D:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
+node scripts/harmony/seed-and-verify.mjs --hdc $hdc --out seed-report.json
+node scripts/harmony/collect-perf.mjs --hdc $hdc --out perf-report.json
+```
+
+`seed-and-verify` 会安装最新 HAP、以 `action=debugSeed` 冷启动预置 5 张到期卡，
+轮询 hilog 断言验证链（RDB seed → Page begin → content ready → getAllCards →
+FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true` 且退出码 0。
+`collect-perf` 采集冷启动耗时与进程 PSS 基线。
 
 然后在 DevEco Studio 中打开 `harmony/`，配置有效调试签名，选择 HarmonyOS 6.0.2 / API 22 设备运行。连接状态可用下列命令检查：
 
@@ -153,13 +171,13 @@ npm run build:harmony:hap
 
 ## 7. 下一轮优先级
 
-1. 在模拟器预置到期卡片，正向验证 RDB 恢复、Web ready ACK、冷/热启动 FIFO 消费和实际进入复习页；补齐稳定的运行日志采集。
-2. 在 API 22 模拟器实际触发 CSV 与 LLM module Worker，并与此前 classic 基线比较首屏、主进程加 renderer 的总 PSS 和大输入交互延迟。
-3. 配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
-4. 持久化有效 formId，并用系统支持的方式完成“复习状态变化后主动刷新服务卡”闭环。
-5. 申请 `reminderAgent` 开放能力和签名 Profile 后，实现去重、更新、取消与恢复策略；在此之前保持未来提醒安全跳过。
-6. 提供真实 Harmony LLM 代理环境，验证代理 URL、CSP、TLS、超时与弱网行为。
-7. 统一根包、Harmony AppScope 和发布包的版本策略，并逐步清理仍带早期 Stage 编号或乱码的源码注释/历史文档。
+1. 启动 API 22 模拟器后运行 `node scripts/harmony/seed-and-verify.mjs`：正向验证 RDB 恢复、Web ready ACK、冷/热启动 FIFO 消费和实际进入复习页（脚本已就绪，模拟器在线即出报告）。
+2. 运行 `collect-perf.mjs` 采集冷启动耗时与 PSS 基线；后续补 CSV/LLM Worker 的 uitest 交互级性能对比。
+3. 服务卡跨进程主动刷新实际验证（代码闭环已就绪：notifyReviewCompleted → FormRefresher → updateForm）；配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
+4. 申请 `reminderAgent` 开放能力和签名 Profile 后验证 `ReminderAgentService` 的发布/去重/取消/恢复策略（代码已就绪，无权益期间保持安全跳过）。
+5. 提供真实 Harmony LLM 代理环境，验证代理 URL、CSP、TLS、超时与弱网行为。
+6. `action=openCard` 定向卡片界面（未闭环项）。
+7. 持续清理仍带早期历史痕迹的文档；根包 / AppScope 版本口径已统一并由 CI 强制。
 
 ## 8. 状态维护规则
 
