@@ -4,6 +4,11 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { HarmonyBridge } from '../bridge/HarmonyBridge';
 import { ReminderAgentService } from '../notification/ReminderAgentService';
+import { MemoryCardStore } from '../data/MemoryCardStore';
+import {
+  DEBUG_SEED_QUERY,
+  seedDebugCardsForRun,
+} from '../data/DebugSeedCards';
 import { TextToSpeechService } from '../tts/TextToSpeechService';
 
 const DOMAIN: number = 0x0001;
@@ -34,8 +39,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   /** Stage 3: reminderAgent 提醒启动对账 (幂等, 全程 try/catch 兜底). */
-  private restoreRemindersOnStartup(): void {
-    try {
+  private restoreRemindersOnStartup(): void {    try {
       const ctx: common.Context = this.context as common.Context;
       ReminderAgentService.getInstance()
         .initialize(ctx)
@@ -65,6 +69,58 @@ export default class EntryAbility extends UIAbility {
         DOMAIN,
         TAG,
         'restoreRemindersOnStartup init failed (non-fatal): msg=%{public}s',
+        err.message
+      );
+    }
+  }
+
+  /**
+   * Stage 4: 运行验证 seed (仅 debuggable 构建).
+   *
+   * hdc shell aa start --ps query action=debugSeed 触发; release 构建或
+   * store 初始化失败时安全跳过. 卡片写入 RDB 后, Web 端既有 getAllCards
+   * 恢复链路自然拿到 seed 数据, 无需 Web 侧改动.
+   */
+  private seedDebugCards(): void {
+    try {
+      const appInfo = this.context.applicationInfo;
+      const debuggable: boolean = appInfo !== undefined && appInfo.debug === true;
+      if (!debuggable) {
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'seedDebugCards skipped: not a debuggable build'
+        );
+        return;
+      }
+      const ctx: common.Context = this.context as common.Context;
+      const store: MemoryCardStore = MemoryCardStore.getInstance();
+      store.initialize(ctx)
+        .then(async (): Promise<void> => {
+          const result = await seedDebugCardsForRun(store, Date.now());
+          hilog.info(
+            DOMAIN,
+            TAG,
+            'seedDebugCards done: skipped=%{public}d inserted=%{public}d',
+            result.skipped ? 1 : 0,
+            result.inserted
+          );
+        })
+        .catch((e: BusinessError) => {
+          hilog.warn(
+            DOMAIN,
+            TAG,
+            'seedDebugCards failed (non-fatal): code=%{public}d msg=%{public}s',
+            e.code,
+            e.message
+          );
+        });
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'seedDebugCards init failed (non-fatal): msg=%{public}s',
         err.message
       );
     }
@@ -119,6 +175,16 @@ export default class EntryAbility extends UIAbility {
         'handleLaunchWant: dispatching query=%{public}s',
         query
       );
+
+      // Stage 4: 运行验证 seed 入口 (仅 debuggable 构建).
+      // 'action=debugSeed' 不在 LAUNCH_QUERY_REGEX 白名单内, 无法到达 Web 派发;
+      // 此处在原生层拦截, 向 RDB 预置 5 张到期卡, 供运行验证脚本正向验证
+      // RDB 恢复 -> FIFO 消费 -> 复习页链路. release 构建直接跳过.
+      if (query === DEBUG_SEED_QUERY) {
+        this.seedDebugCards();
+        return;
+      }
+
       // HarmonyBridge.handleHarmonyLaunch 内部从 AppStorage 读取
       // webController (由 Index.ets onControllerAttached 注入), 并通过
       // runJavaScript 派发到 window.handleHarmonyLaunch.

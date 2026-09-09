@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync, realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +7,9 @@ import { inspectHvigorOutput } from './hvigor-output.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, '..');
-const harmonyRoot = join(projectRoot, 'harmony');
+// realpathSync 规范化盘符大小写: hvigor 对 cwd 大小写敏感 (w:\ 报 "Path not found",
+// W:\ 正常), 而 npm 从 Git Bash (cd /w/wordaydream) 启动时 process.cwd() 可能是小写.
+const harmonyRoot = realpathSync(join(projectRoot, 'harmony'));
 const studioHome =
   process.env.DEVECO_STUDIO_HOME || 'D:\\DevEco Studio';
 const executableName = process.platform === 'win32' ? 'node.exe' : 'node';
