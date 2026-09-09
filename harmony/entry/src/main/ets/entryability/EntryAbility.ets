@@ -165,9 +165,9 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(DOMAIN, TAG, 'loadContent success');
-      // Stage 3: HarmonyBridge 注册已移至 Index.ets 的 Web 组件
+      // HarmonyBridge 注册已移至 Index.ets 的 Web 组件
       // onControllerAttached 回调, 确保 controller 与 Web 组件共享后再调用
-      // registerJavaScriptProxy (修复 Stage 1 遗留的 controller 未共享导致
+      // registerJavaScriptProxy (修复 controller 未共享导致
       // registerJavaScriptProxy 静默失败问题).
       // Stage 5: onControllerAttached 同时把 controller 写入 AppStorage,
       //   供 EntryAbility.onNewWant -> HarmonyBridge.handleHarmonyLaunch 使用.

@@ -50,6 +50,8 @@ export default defineConfig({
       'src/**/*.{test,spec}.{ts,tsx}',
       'src/__integration__/**/*.{test,spec}.{ts,tsx}',
       'netlify/edge-functions/**/*.{test,spec}.{ts,tsx}',
+      // v0.5.0-harmony Stage 1: 覆盖 scripts 下的版本对齐校验单测 (.mjs)
+      'scripts/**/*.{test,spec}.{ts,tsx,mjs}',
     ],
     css: false,
     pool: 'threads',

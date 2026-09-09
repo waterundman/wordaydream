@@ -174,7 +174,7 @@ export const COLUMN_LIST: string[] = [
 ];
 
 /**
- * 今日复习统计 (Stage 3 新增, 供服务卡片进度环 + Web 端 dashboard 展示).
+ * 今日复习统计 (供服务卡片进度环 + Web 端 dashboard 展示).
  *
  * 字段与 Web 端 src/platform/harmonyBridge.ts 的 TodayReviewStatsBridge 接口一一对应,
  * 通过 JSBridge 序列化无字段丢失 (3 个 number 字段, JSON 安全).

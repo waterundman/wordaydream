@@ -307,7 +307,7 @@ export class MemoryCardStore {
   }
 
   /**
-   * 查询全部卡片 (按 due 升序, Stage 3 新增).
+   * 查询全部卡片 (按 due 升序).
    *
    * 用于 Web 端 onRehydrateStorage 从鸿蒙 relationalStore 恢复卡片 (R-1 闭环).
    * 异常返回空数组.
@@ -349,7 +349,7 @@ export class MemoryCardStore {
   }
 
   /**
-   * 查询最近复习过的卡片 (lastReviewAt > 0, 按 lastReviewAt 降序, LIMIT ?, Stage 3 新增).
+   * 查询最近复习过的卡片 (lastReviewAt > 0, 按 lastReviewAt 降序, LIMIT ?).
    *
    * 用于 Web 端 dashboard 展示最近复习记录. 异常返回空数组.
    */
@@ -391,7 +391,7 @@ export class MemoryCardStore {
   }
 
   /**
-   * 查询今日复习统计 (Stage 3 新增, 优化: 3 次查询合并为 1 次子查询).
+   * 查询今日复习统计 (优化: 3 次查询合并为 1 次子查询).
    *
    * 单条 SQL 用子查询同时计算 3 个 COUNT, 减少到 1 次 querySql 调用:
    * - dueCount: WHERE due <= now (待复习)
@@ -468,7 +468,7 @@ export class MemoryCardStore {
   }
 
   /**
-   * 按 ID 查询单张卡片 (Stage 3 新增).
+   * 按 ID 查询单张卡片.
    *
    * 用于 Web 端定向恢复指定卡片 (如 deep link 打开卡片). 异常返回 null.
    */

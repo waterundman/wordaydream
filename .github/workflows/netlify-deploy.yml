@@ -53,6 +53,10 @@ jobs:
         # v1.5.2 fix M14: lint 改为 required, 失败即阻塞 CI (移除 || echo 容错)
         run: npm run lint
 
+      - name: Check version alignment
+        # v0.5.0-harmony Stage 1: 单一版本真源校验, 在测试前阻止版本口径漂移
+        run: npm run check:versions
+
       - name: Test
         run: npm run test:run
 

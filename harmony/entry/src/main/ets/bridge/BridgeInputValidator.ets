@@ -1,5 +1,5 @@
 /**
- * BridgeInputValidator (v0.2.0-harmony Stage 2)
+ * BridgeInputValidator (v0.2.0-harmony)
  *
  * JSBridge 输入校验纯函数模块 (论文驱动 arXiv:1410.7756 — HTML5 hybrid app 安全加固).
  *
@@ -42,17 +42,17 @@ const PREFERENCES_VALUE_MAX_LENGTH: number = 8192;
 const OBJECTIVE_DIFFICULTY_MIN: number = 1;
 const OBJECTIVE_DIFFICULTY_MAX: number = 5;
 
-/** Stage 1 v0.3.0-harmony: TTS 文本长度上限. */
+/** TTS 文本长度上限. */
 const SPEECH_TEXT_MAX_LENGTH: number = 4096;
 
-/** Stage 1 v0.3.0-harmony: TTS rate 合法枚举 (4 档). */
+/** TTS rate 合法枚举 (4 档). */
 const SPEECH_RATE_WHITELIST: number[] = [0.5, 1.0, 1.5, 2.0];
 
-/** Stage 1 v0.3.0-harmony: TTS language 合法枚举. */
+/** TTS language 合法枚举. */
 const SPEECH_LANGUAGE_WHITELIST: string[] = ['de-DE', 'en-US'];
 
 /**
- * ArkWeb origin 白名单正则列表 (Stage 2 安全加固).
+ * ArkWeb origin 白名单正则列表 (安全加固).
  *
  * 镜像 harmony/server/llm-proxy.js:53-59 的 origin 白名单模式.
  * 仅允许 localhost / 127.0.0.1 / arkweb:// / *.hapogo.com / file:// origin.
@@ -217,7 +217,7 @@ export class BridgeInputValidator {
   }
 
   /**
-   * 校验 ArkWeb origin 是否在白名单内 (Stage 2 安全加固).
+   * 校验 ArkWeb origin 是否在白名单内 (安全加固).
    *
    * 镜像 harmony/server/llm-proxy.js:53-59. 供 Index.ets 在
    * registerJavaScriptProxy 之前调用, 防止非预期 origin 注入恶意 JS.
@@ -237,7 +237,7 @@ export class BridgeInputValidator {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 校验 TTS 文本.
+   * 校验 TTS 文本.
    *
    * 规则: typeof string && length > 0 && length <= 4096.
    *
@@ -254,7 +254,7 @@ export class BridgeInputValidator {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 校验 TTS 语速.
+   * 校验 TTS 语速.
    *
    * 规则: rate ∈ {0.5, 1.0, 1.5, 2.0} (4 档枚举).
    *
@@ -268,7 +268,7 @@ export class BridgeInputValidator {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 校验 TTS 语言.
+   * 校验 TTS 语言.
    *
    * 规则: language ∈ {'de-DE', 'en-US'}.
    *

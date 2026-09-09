@@ -1,5 +1,5 @@
 /**
- * TextToSpeechService (v0.3.0-harmony Stage 1)
+ * TextToSpeechService (v0.3.0-harmony)
  *
  * 封装 @ohos.textToSpeech Kit, 提供鸿蒙原生 TTS 朗读能力.
  *

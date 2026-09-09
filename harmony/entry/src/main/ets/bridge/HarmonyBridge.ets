@@ -1,5 +1,5 @@
 /**
- * HarmonyBridge (v0.1.0-harmony Stage 3)
+ * HarmonyBridge (v0.1.0-harmony)
  *
  * ArkTS 侧通过 registerJavaScriptProxy 注入到 window.harmonyBridge 的原生 bridge.
  * 方法签名与 src/platform/harmonyBridge.ts 的 HarmonyBridge TS interface 一一对应:
@@ -10,7 +10,7 @@
  *   - triggerHapticFeedback(intensity: string): void
  *   - handleHarmonyLaunch(query: string): void  (Stage 5)
  *
- * Stage 3 实现状态:
+ * 实现状态:
  * - getDueCardsCount: 占位返回 0 (Stage 6 已实现真实 relationalStore 读取)
  * - registerReminder: 占位 hilog.info (Stage 7 实现真实 notificationManager.publish)
  * - readPreferences / writePreferences: 真实 @ohos.data.preferences 调用
@@ -37,7 +37,8 @@ import { webview } from '@kit.ArkWeb';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
-import type { ReminderPayload } from './types';
+import type { ReminderPayload, NotifyReviewCompletedResult } from './types';
+import { FormRefresher } from '../widget/FormRefresher';
 import type { MemoryCardRecord, TodayReviewStats } from '../data/MemoryCardSchema';
 import { MemoryCardStore } from '../data/MemoryCardStore';
 import { NotificationService, NotificationWindow } from '../notification/NotificationService';
@@ -239,7 +240,7 @@ export class HarmonyBridge {
 
   /**
    * 读取 preferences 键值 (返回 null 表示键不存在).
-   * Stage 3: 真实 @ohos.data.preferences 调用.
+   * 真实 @ohos.data.preferences 调用.
    */
   async readPreferences(key: string): Promise<string | null> {
     try {
@@ -289,7 +290,7 @@ export class HarmonyBridge {
 
   /**
    * 写入 preferences 键值.
-   * Stage 3: 真实 @ohos.data.preferences 调用.
+   * 真实 @ohos.data.preferences 调用.
    */
   async writePreferences(key: string, value: string): Promise<void> {
     try {
@@ -330,9 +331,9 @@ export class HarmonyBridge {
 
   /**
    * 触发触觉反馈 (线性马达振动).
-   * Stage 3: 真实 @ohos.vibrator 调用.
+   * 真实 @ohos.vibrator 调用.
    *
-   * 注意: 需要 ohos.permission.VIBRATE 权限 (Stage 1 module.json5 未声明,
+   * 注意: 需要 ohos.permission.VIBRATE 权限 (module.json5 未声明,
    *   缺权限时 vibrator.startVibration 抛 SecurityException, 由 catch 兜底为空值返回).
    *   intensity: 'light' | 'medium' | 'heavy' -> 映射振动持续时间 (ms).
    */
@@ -598,7 +599,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 3: Web → 鸿蒙 relationalStore 镜像 (upsert).
+   * Web → 鸿蒙 relationalStore 镜像 (upsert).
    *
    * 1. 校验 16 字段 (BridgeInputValidator.validateCardRecord), 失败 hilog.warn + return.
    * 2. 调用 MemoryCardStore.upsertCard (Stage 6 已有方法, INSERT OR REPLACE).
@@ -637,7 +638,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 3: Web → 鸿蒙 relationalStore 镜像 (delete).
+   * Web → 鸿蒙 relationalStore 镜像 (delete).
    *
    * Web 传入的键是 MemoryCard Map key (lexemeGroupId), 并非 RDB 主键 id.
    * 1. 校验 lexemeGroupId (复用 ID 格式校验), 失败 hilog.warn + return.
@@ -675,7 +676,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 3: 鸿蒙 → Web 卡片恢复 (R-1 闭环核心).
+   * 鸿蒙 → Web 卡片恢复 (R-1 闭环核心).
    *
    * 返回所有卡片 (按 due 升序), 供 Web 端 onRehydrateStorage 在
    * localStorage 为空时调用恢复. 异常返回空数组.
@@ -706,10 +707,10 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 3: 查询最近复习过的卡片 (Web 端 dashboard 展示).
+   * 查询最近复习过的卡片 (Web 端 dashboard 展示).
    *
    * 1. 校验 limit: Number.isInteger(limit) && limit > 0 && limit <= 100, 失败返回 [].
-   * 2. 调用 MemoryCardStore.getRecentlyReviewedCards(limit) (Stage 3 新增).
+   * 2. 调用 MemoryCardStore.getRecentlyReviewedCards(limit) (新增).
    * 3. 异常返回空数组.
    */
   async getRecentlyReviewedCards(limit: number): Promise<MemoryCardRecord[]> {
@@ -752,9 +753,9 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 3: 查询今日复习统计 (服务卡片进度环 + Web dashboard).
+   * 查询今日复习统计 (服务卡片进度环 + Web dashboard).
    *
-   * 调用 MemoryCardStore.getTodayReviewStats(Date.now()) (Stage 3 新增).
+   * 调用 MemoryCardStore.getTodayReviewStats(Date.now()) (新增).
    * 异常返回默认 stats {dueCount:0, reviewedCount:0, totalCount:0}.
    */
   async getTodayReviewStats(): Promise<TodayReviewStats> {
@@ -790,7 +791,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 朗读文本 (命令型异步).
+   * 朗读文本 (命令型异步).
    *
    * 流程:
    * 1. 三段校验 (validateSpeechText / validateSpeechLanguage / validateSpeechRate),
@@ -856,7 +857,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 立即停止朗读.
+   * 立即停止朗读.
    *
    * 同步调用 TextToSpeechService.getInstance().stop().
    * try/catch 兜底, 异常 hilog.warn + return (fire-and-forget).
@@ -878,7 +879,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 查询原生 TTS 引擎是否可用.
+   * 查询原生 TTS 引擎是否可用.
    *
    * 调用 TextToSpeechService.getInstance().isSupported().
    * try/catch 兜底, 异常 return false (不抛到 Web).
@@ -908,7 +909,7 @@ export class HarmonyBridge {
   }
 
   /**
-   * Stage 1 v0.3.0-harmony: 列出可用 TTS 引擎.
+   * 列出可用 TTS 引擎.
    *
    * 调用 TextToSpeechService.getInstance().getEngines().
    * try/catch 兜底, 异常 return [] (不抛到 Web).
@@ -934,6 +935,33 @@ export class HarmonyBridge {
         err.message
       );
       return [];
+    }
+  }
+
+  /**
+   * Stage 2: 复习完成后主动刷新所有已持久化的服务卡片.
+   *
+   * 由 Web 侧 useReviewSessionStore.completeReview 完成路径 fire-and-forget 调用.
+   * 委托 FormRefresher.refreshAllForms 读 RDB + 持久化 formId 集合并 updateForm.
+   * FormRefresher 内部已对所有异常静默降级 (无 formId / 全部失败均不抛错).
+   *
+   * 返回约定: 成功 {ok:true}; refreshAllForms 抛错 {ok:false, reason}.
+   */
+  async notifyReviewCompleted(): Promise<NotifyReviewCompletedResult> {
+    try {
+      await FormRefresher.getInstance().refreshAllForms(this.context);
+      hilog.info(DOMAIN, TAG, 'notifyReviewCompleted -> refreshed all forms');
+      return { ok: true };
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.error(
+        DOMAIN,
+        TAG,
+        'notifyReviewCompleted failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+      return { ok: false, reason: err.message };
     }
   }
 }

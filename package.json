@@ -1,7 +1,7 @@
 {
   "name": "wordaydream",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:versions": "node scripts/check-version-alignment.mjs"
   },
   "dependencies": {
     "@open-spaced-repetition/binding": "^0.5.0",
