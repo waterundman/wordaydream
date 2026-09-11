@@ -40,11 +40,11 @@ const SHORTCUT_CATEGORIES: { name: string; items: ShortcutItem[] }[] = [
 ];
 
 function KeyCombo({ keys }: { keys: string }) {
-  const tokens = keys.split(/(\s[+\/]\s)/);
+  const tokens = keys.split(/(\s[+/]\s)/);
   return (
     <span className={styles.kbdGroup}>
       {tokens.map((t, i) => {
-        if (t.match(/^\s[+\/]\s$/)) {
+        if (t.match(/^\s[+/]\s$/)) {
           return (
             <span key={i} className={styles.sep}>
               {t.trim()}

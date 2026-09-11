@@ -2,7 +2,6 @@ import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
   useReviewSessionStore,
   resolveContextSentence,
-  type ReviewCardResult,
 } from '../store/useReviewSessionStore';
 import { RatingBar } from './RatingBar';
 import { EmptyState } from '../../../components/EmptyState';
@@ -475,6 +474,8 @@ function ReviewCompletedView({
   // previousMode='reading' → 双 CTA (继续阅读 + 返回主页); 否则 → 单按钮 (返回主舞台).
   const previousMode = useAppModeStore((s) => s.previousMode);
   const showContinueReading = previousMode === 'reading';
+  // v0.9.0 Stage 2: 完成页区块跳转 wordlist (错词本链接 / 到期前瞻) 共用 setMode.
+  const setMode = useAppModeStore((s) => s.setMode);
 
   // v1.5.3 fix V4-P3-004: 从订阅的 results 派生 stats, 不再调 getState().getStats().
   // 之前 getState() 非响应式 + getStats() 每次返回新对象, 导致 useMemo 永远失效.
@@ -501,7 +502,9 @@ function ReviewCompletedView({
   // 防御处理: ReviewCardResult 仅含 cardId, 不含 lemma —— 若某 wrong 条目的 cardId
   // 在 queue 中找不到 (理论上不应发生; 最常见于页面刷新后 queue 被清空但 results 已持久化),
   // 则该条目无法取得 lemma 进行渲染, 直接跳过 (不渲染、不影响其余条目).
-  // 即刷新后 queue 为空 → 所有 wrong 条目均被跳过 → 整个错词区块不渲染, 属预期防御行为.
+  // 注意 (v0.9.0 Stage 2 修正): 旧实现在 wrongReviewItems 全空时让区块整体消失, 造成
+  // "计数说有错、区块却消失" 的不一致. 现区块渲染条件改为 hasWrong (见下方), 本处仅决定
+  // 区块内是渲染列表还是刷新态提示行. 此处仍按防御逻辑跳过无法反查的条目.
   const wrongReviewItems = useMemo(() => {
     const byId = new Map<string, MemoryCard>();
     for (const card of queue) byId.set(card.id, card);
@@ -515,6 +518,15 @@ function ReviewCompletedView({
     items.sort((a, b) => b.answeredAt - a.answeredAt);
     return items;
   }, [results, queue]);
+
+  // v0.9.0 Stage 2 (§3.4 收敛): 错词区块渲染条件从 "wrongReviewItems 非空" 升级为
+  // "results 含 wrong 条目". 原因: 刷新态下 queue 被清空 → 反查失败 → wrongReviewItems
+  // 为空, 但 results 仍含 wrong, 旧条件会让区块整体消失, 产生 "计数说有错、区块却消失"
+  // 的不一致. 新条件保证区块始终渲染, 内容按 wrongReviewItems 是否非空分两态 (见 JSX).
+  const hasWrong = useMemo(
+    () => results.some((r) => r.evaluation?.grade === 'wrong'),
+    [results],
+  );
 
   // v0.8.0-harmony Stage 2 (§3/§5): 到期前瞻 (只读, 纯展示).
   // 口径实现说明 (SPEC 实现期锁定): 采用"累计口径", 与卡片页 dueCount 语义一致 ——
@@ -582,36 +594,58 @@ function ReviewCompletedView({
           </div>
         </div>
 
-        {wrongReviewItems.length > 0 && (
+        {hasWrong && (
           <section className={styles.completedWrongReview} aria-label="本次错词回顾">
             <p className={styles.completedSectionTitle}>本次错词回顾</p>
-            <ul className={styles.completedWrongList}>
-              {wrongReviewItems.map(({ cardId, card }) => (
-                <li key={cardId} className={styles.completedWrongItem}>
-                  <div className={styles.completedWrongHead}>
-                    <span className={styles.completedWrongLemma}>{card.lemma}</span>
-                    <span className={styles.completedWrongLang}>
-                      {card.language === 'de' ? '德语' : '英语'}
-                    </span>
-                  </div>
-                  <p className={styles.completedWrongContext}>
-                    {resolveContextSentence(card, language, cardContexts[card.id])}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            {wrongReviewItems.length > 0 ? (
+              <ul className={styles.completedWrongList}>
+                {wrongReviewItems.map(({ cardId, card }) => (
+                  <li key={cardId} className={styles.completedWrongItem}>
+                    <div className={styles.completedWrongHead}>
+                      <span className={styles.completedWrongLemma}>{card.lemma}</span>
+                      <span className={styles.completedWrongLang}>
+                        {card.language === 'de' ? '德语' : '英语'}
+                      </span>
+                    </div>
+                    <p className={styles.completedWrongContext}>
+                      {resolveContextSentence(card, language, cardContexts[card.id])}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              // 刷新态: queue 已清空, 反查失败 → 无错词明细可渲染, 给出 wordlist 跳转提示.
+              <p className={styles.completedWrongRefreshHint}>
+                刷新后本次错词明细不可用，历史错词见{' '}
+                <button
+                  type="button"
+                  className={styles.completedWrongLink}
+                  onClick={() => setMode('wordlist')}
+                >
+                  错词本
+                </button>
+              </p>
+            )}
           </section>
         )}
 
         <section className={styles.completedDueForecast} aria-label="到期前瞻">
           <p className={styles.completedSectionTitle}>到期前瞻</p>
           <div className={styles.completedDueRow}>
-            <span className={styles.completedDueItem}>
+            <button
+              type="button"
+              className={styles.completedDueItem}
+              onClick={() => setMode('wordlist')}
+            >
               明天到期 <strong>{dueForecast.tomorrow}</strong> 张
-            </span>
-            <span className={styles.completedDueItem}>
+            </button>
+            <button
+              type="button"
+              className={styles.completedDueItem}
+              onClick={() => setMode('wordlist')}
+            >
               未来 7 天到期 <strong>{dueForecast.next7}</strong> 张
-            </span>
+            </button>
           </div>
         </section>
 

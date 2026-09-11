@@ -2,6 +2,12 @@
   "modelVersion": "5.0.0",
   "name": "wordaydream",
   "version": "0.3.0",
+  // 语义说明 (v0.9.0 Stage 2 查证留痕): 本文件为 OHPM *项目级 (workspace) 描述符* 的 version,
+  // 即 hvigor/ohpm 工程版本, **不是应用包版本**. 应用包版本的真源在 harmony/AppScope/app.json5
+  // (versionName/versionCode) 与 harmony/entry/oh-package.json5, 二者由 scripts/check-version-alignment.mjs
+  // 校验对齐 (web.major.minor = harmony.major.minor + 2). 本文件自 v2.4.0 初始移植起从未 bump,
+  // 且未被纳入对齐集合, 故保持 0.3.0 不动, 防止未来误判为应用包版本而错误对齐.
+
   "description": "Wordaydream HarmonyOS NEXT shell (Web container + native bridge).",
   "main": "",
   "license": "MIT",
