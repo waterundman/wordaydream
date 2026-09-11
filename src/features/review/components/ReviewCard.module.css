@@ -271,6 +271,21 @@
   animation: fadeIn var(--transition-fast);
 }
 
+/* v0.8.0-harmony Stage 1: 评分键盘流可发现性提示.
+   仅桌面语境展示 (触摸/粗指针设备隐藏, 键盘流无意义). */
+.ratingHint {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  letter-spacing: var(--tracking-wide);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .ratingHint {
+    display: none;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

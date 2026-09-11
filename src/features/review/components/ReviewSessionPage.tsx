@@ -1,16 +1,19 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
   useReviewSessionStore,
   resolveContextSentence,
+  type ReviewCardResult,
 } from '../store/useReviewSessionStore';
 import { RatingBar } from './RatingBar';
 import { EmptyState } from '../../../components/EmptyState';
 import { useGlobalShortcuts } from '../../reading/hooks/useGlobalShortcuts';
 import { useAppModeStore } from '../../../hooks/useAppModeStore';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import { useMemoryStore } from '../store/useMemoryStore';
+import { useStreakStore } from '../../streak/store/useStreakStore';
 import styles from './ReviewSessionPage.module.css';
 import cardStyles from './ReviewCard.module.css';
-import type { Rating, Language } from '../../../types';
+import type { Rating, Language, MemoryCard } from '../../../types';
 
 export function ReviewSessionPage() {
   const {
@@ -35,11 +38,31 @@ export function ReviewSessionPage() {
     exitReview,
   } = useReviewSessionStore();
 
+  // v0.8.0-harmony Stage 1: 评分键 (1-4 → again/hard/good/easy) 在复习会话作用域注册.
+  // 触发条件: mode==='reviewing' (enabled) 且 showRatingBar && !isPaused (ratingEnabled)
+  // 且焦点不在可编辑元素上 (useGlobalShortcuts 内部 isEditableTarget 守卫).
+  // 评分路径与按钮 onClick 完全等价: 直接 completeReview(rating), 不新增 store action.
+  const handleRate = useCallback(
+    (rating: Rating) => {
+      completeReview(rating);
+      // v1.5.3 fix V4-P3-002: 设置新 timer 前先清旧 timer, 避免覆盖后泄漏.
+      if (nextCardTimerRef.current !== null) {
+        clearTimeout(nextCardTimerRef.current);
+      }
+      nextCardTimerRef.current = setTimeout(() => {
+        nextCardTimerRef.current = null;
+        nextCard();
+      }, 50);
+    },
+    [completeReview, nextCard],
+  );
+
   useGlobalShortcuts({
     enabled: mode === 'reviewing',
-    ratingEnabled: false,
+    ratingEnabled: showRatingBar && !isPaused,
     handlers: {
       onEscape: () => exitReview(),
+      onRate: handleRate,
     },
   });
 
@@ -204,17 +227,7 @@ export function ReviewSessionPage() {
           showRatingBar={showRatingBar}
           onAnswerChange={setUserAnswer}
           onSubmit={() => submitAnswer()}
-          onRate={(rating: Rating) => {
-            completeReview(rating);
-            // v1.5.3 fix V4-P3-002: 设置新 timer 前先清旧 timer, 避免覆盖后泄漏.
-            if (nextCardTimerRef.current !== null) {
-              clearTimeout(nextCardTimerRef.current);
-            }
-            nextCardTimerRef.current = setTimeout(() => {
-              nextCardTimerRef.current = null;
-              nextCard();
-            }, 50);
-          }}
+          onRate={handleRate}
           onSkip={nextCard}
         />
       )}
@@ -363,6 +376,7 @@ function ReviewCard({
 
       {showRatingBar && evaluation && (
         <div className={cardStyles.ratingBlock}>
+          <p className={cardStyles.ratingHint}>评分可用数字键 1-4</p>
           <RatingBar
             cardId={cardId}
             onRate={onRate}
@@ -450,6 +464,13 @@ function ReviewCompletedView({
   onExit: () => void;
 }) {
   const results = useReviewSessionStore((s) => s.results);
+  // v0.8.0-harmony Stage 2: completed 态下 queue 仍在会话内可读 (不持久化, 仅会话内存),
+  // 用于按 results.cardId 反查错词的 MemoryCard (取 lemma / language 给错词回顾渲染).
+  const queue = useReviewSessionStore((s) => s.queue);
+  const cardContexts = useReviewSessionStore((s) => s.cardContexts);
+  const language = useReviewSessionStore((s) => s.language);
+  // v0.8.0-harmony Stage 2: streak 展示 (只读), 订阅当前连击天数.
+  const currentStreak = useStreakStore((s) => s.currentStreak);
   // v2.1.0 Stage 1 (Contract 62): 订阅 previousMode, 决定渲染双 CTA 还是单按钮.
   // previousMode='reading' → 双 CTA (继续阅读 + 返回主页); 否则 → 单按钮 (返回主舞台).
   const previousMode = useAppModeStore((s) => s.previousMode);
@@ -473,6 +494,44 @@ function ReviewCompletedView({
     stats.accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
     return stats;
   }, [results]);
+
+  // v0.8.0-harmony Stage 2 (§3/§5): 错词回顾 (只读).
+  // 数据: results 中 evaluation.grade==='wrong' 的条目, 按 answeredAt 倒序 (最近答错在前).
+  // 反查: 按 result.cardId 在会话内 queue 中找 MemoryCard.
+  // 防御处理: ReviewCardResult 仅含 cardId, 不含 lemma —— 若某 wrong 条目的 cardId
+  // 在 queue 中找不到 (理论上不应发生; 最常见于页面刷新后 queue 被清空但 results 已持久化),
+  // 则该条目无法取得 lemma 进行渲染, 直接跳过 (不渲染、不影响其余条目).
+  // 即刷新后 queue 为空 → 所有 wrong 条目均被跳过 → 整个错词区块不渲染, 属预期防御行为.
+  const wrongReviewItems = useMemo(() => {
+    const byId = new Map<string, MemoryCard>();
+    for (const card of queue) byId.set(card.id, card);
+    const items: { cardId: string; card: MemoryCard; answeredAt: number }[] = [];
+    for (const r of results) {
+      if (r.evaluation?.grade !== 'wrong') continue;
+      const card = byId.get(r.cardId);
+      if (!card) continue; // 防御: 队列中找不到该 cardId, 跳过 (无 lemma 可渲染)
+      items.push({ cardId: r.cardId, card, answeredAt: r.answeredAt });
+    }
+    items.sort((a, b) => b.answeredAt - a.answeredAt);
+    return items;
+  }, [results, queue]);
+
+  // v0.8.0-harmony Stage 2 (§3/§5): 到期前瞻 (只读, 纯展示).
+  // 口径实现说明 (SPEC 实现期锁定): 采用"累计口径", 与卡片页 dueCount 语义一致 ——
+  //   明天 = getDueCards(undefined, now+1d) 中 due <= now+1d 的卡片数
+  //         (含已过期/今天到期 + 未来 1 天内的到期)
+  //   7 天 = getDueCards(undefined, now+7d) 中 due <= now+7d 的卡片数
+  //         (含"明天口径"内的全部 + 第 2~7 天到期的, 即 7 天是 1 天的超集)
+  // getDueCards 返回原样 MemoryCard[] (map key 即 lexemeGroupId, 已天然按词元组去重,
+  // 无需再按 lexemeGroup 去重). 数字取整展示, 无点击交互.
+  // 在 completed 态为静态快照, 仅挂载时计算一次 (deps=[]).
+  const dueForecast = useMemo(() => {
+    const now = Date.now();
+    const tomorrow = useMemoryStore.getState().getDueCards(undefined, now + 86400e3).length;
+    const next7 = useMemoryStore.getState().getDueCards(undefined, now + 7 * 86400e3).length;
+    return { tomorrow, next7 };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -522,6 +581,43 @@ function ReviewCompletedView({
             </span>
           </div>
         </div>
+
+        {wrongReviewItems.length > 0 && (
+          <section className={styles.completedWrongReview} aria-label="本次错词回顾">
+            <p className={styles.completedSectionTitle}>本次错词回顾</p>
+            <ul className={styles.completedWrongList}>
+              {wrongReviewItems.map(({ cardId, card }) => (
+                <li key={cardId} className={styles.completedWrongItem}>
+                  <div className={styles.completedWrongHead}>
+                    <span className={styles.completedWrongLemma}>{card.lemma}</span>
+                    <span className={styles.completedWrongLang}>
+                      {card.language === 'de' ? '德语' : '英语'}
+                    </span>
+                  </div>
+                  <p className={styles.completedWrongContext}>
+                    {resolveContextSentence(card, language, cardContexts[card.id])}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className={styles.completedDueForecast} aria-label="到期前瞻">
+          <p className={styles.completedSectionTitle}>到期前瞻</p>
+          <div className={styles.completedDueRow}>
+            <span className={styles.completedDueItem}>
+              明天到期 <strong>{dueForecast.tomorrow}</strong> 张
+            </span>
+            <span className={styles.completedDueItem}>
+              未来 7 天到期 <strong>{dueForecast.next7}</strong> 张
+            </span>
+          </div>
+        </section>
+
+        <p className={styles.completedStreak}>
+          连续学习 <strong>{currentStreak}</strong> 天
+        </p>
 
         {showContinueReading ? (
           <div className={styles.completedActions}>
