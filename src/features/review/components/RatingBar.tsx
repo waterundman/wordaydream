@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useMemoryStore } from '../store/useMemoryStore';
+import { isEditableTarget } from '../../reading/hooks/useGlobalShortcuts';
 import styles from './RatingBar.module.css';
 import type { Rating } from '../../../types';
 
@@ -53,22 +54,11 @@ export function RatingBar({ cardId, onRate }: Props) {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const isInput =
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable);
-      if (isInput) return;
-
-      if (e.key >= '1' && e.key <= '4') {
-        const index = parseInt(e.key, 10) - 1;
-        if (index < RATING_ORDER.length) {
-          e.preventDefault();
-          onRate(RATING_ORDER[index]);
-        }
-        return;
-      }
+      // 1-4 评分键已统一由会话作用域的 useGlobalShortcuts 处理,
+      // 这里仅负责评分栏内部的焦点导航 (←/→ 移动, Enter/Space 评分当前聚焦项),
+      // 避免在 window 上重复监听导致 completeReview 被触发两次.
+      // 可编辑目标 (输入框等) 内忽略导航键, 交还浏览器默认行为.
+      if (isEditableTarget(e.target)) return;
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
