@@ -25,7 +25,7 @@ Wordaydream 的鸿蒙端不是 ArkUI 全量重写，而是一个 **HarmonyOS 6.0
 | DevEco Node | `18.20.1` |
 | Hvigor | `6.22.7` |
 | ohpm | `6.0.1` |
-| 应用版本 | 单一版本真源（仓库根包 `2.8.0=harmony major+2`）；AppScope `0.8.0`、entry `0.8.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验 |
+| 应用版本 | 单一版本真源（仓库根包 `2.9.0=harmony major+2`）；AppScope `0.9.0`、entry `0.9.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验 |
 | 原生权限 | `ohos.permission.INTERNET`、`ohos.permission.VIBRATE` |
 | 签名 | `signingConfigs` 为空；当前只能生成 unsigned HAP |
 | 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；最新 content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过 |

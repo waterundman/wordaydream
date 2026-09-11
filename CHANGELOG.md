@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] — 2026-09-11
+
+### Web 错词本持久化 + 完成页收尾 + 工程清理 (Stage 3: 版本 bump + 文档回填)
+
+- Web 错词本：跨会话持久化（key `wordaydream:wrong-words`），复习答错（`evaluation.grade=wrong`）自动入账并 `upsert`（`wrongCount` / `lastWrongAt`），500 条 FIFO 上限淘汰最旧；wordlist 页新增「错词本」区块（倒序展示 / 相对时间 / 空态 / 已删除词降级隐藏），v1 仅只读浏览不重练
+- Web 完成页收尾：刷新态下错词回顾区加消歧提示并跳转错词本；到期前瞻条目可点击跳转词表页（键盘可达，按钮语义）
+- 工程小项：lint warning 由 24 条降至 21 条（`no-unused-vars` / `no-useless-escape` 清理）；根 `harmony/oh-package.json5` 经查证为 OHPM 工程级（workspace）版本描述符、非应用包版本，补充语义注释说明其不纳入应用版本对齐集合
+- 鸿蒙端：无功能变更，仅版本对齐维护（web = harmony + 2 单一真源；AppScope / entry `0.9.0`、versionCode `1000030`）；自动测试沿用既有 Web / 桥接回归套件，未做模拟器或真机运行验证
+
 ## [2.8.0] — 2026-09-11
 
 ### Web 复习体验深化 + 鸿蒙端 v0.8.0-harmony 版本对齐 (Stage 3: 版本 bump + 文档回填)
