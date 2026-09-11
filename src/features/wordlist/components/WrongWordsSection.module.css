@@ -1,0 +1,122 @@
+/* WrongWordsSection (v0.9.0 Stage 1: 错词本)
+ *
+ * 沿用 WordlistPage 的 warm white paper 配色与 tokens.css CSS 变量,
+ * 视觉风格与"我的词库"区块保持一致 (同层级 block, 非 Tab).
+ * 0 emoji, 状态用纯文本 + SVG 之外以色彩区分.
+ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-bg-elevated, #ffffff);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  font-family: var(--font-serif, Georgia, serif);
+  color: var(--color-ink, #1c1917);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs, 0.75rem);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-error-strong, #b91c1c);
+  border-radius: var(--radius-lg, 0.75rem);
+}
+
+.empty {
+  padding: var(--space-3) var(--space-1);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--color-bg-subtle, #f5f2ed);
+}
+
+.lemma {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: var(--text-base, 1rem);
+  font-weight: 500;
+  color: var(--color-text-primary, #1c1917);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lemmaDeleted {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-style: italic;
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.lang {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide, 0.02em);
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #4a4540);
+  background: var(--color-bg-hover, #f5f2ed);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+.meta {
+  flex-shrink: 0;
+  font-size: var(--text-xs, 0.75rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-error-strong, #b91c1c);
+}
+
+.time {
+  flex-shrink: 0;
+  font-size: var(--text-xs, 0.75rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section,
+  .item {
+    transition: none;
+  }
+}

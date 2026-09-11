@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MemoryCard, Rating, AnswerEvaluation, Language } from '../../../types';
 import { useMemoryStore } from '../store/useMemoryStore';
+import { useWrongWordsStore } from './useWrongWordsStore';
 import { SIMPLE_REMEDY_TEMPLATES_EN, SIMPLE_REMEDY_TEMPLATES_DE } from '../../llm/services/mockProvider';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
@@ -234,7 +235,10 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
       },
 
       completeReview: (rating) => {
-        const { queue, currentIndex, results } = get();
+        // 注意: evaluation 是当前卡 (queue[currentIndex]) 在 submitAnswer 时落下,
+        // 一直保留到 nextCard 才清空; completeReview 在二者之间调用, 故此处 evaluation
+        // 即"当前被评分卡片"的作答判定, 与 v0.8.0 完成页错词口径同源。
+        const { queue, currentIndex, results, evaluation } = get();
         const card = queue[currentIndex];
         if (!card) return;
 
@@ -258,6 +262,21 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
           results: finalResults,
           showRatingBar: false,
         });
+
+        // v0.9.0 Stage 1: 答错自动入账错词本 (跨会话持久化).
+        // 口径选择: 以 evaluation?.grade === 'wrong' 判定入账 (与 v0.8.0 完成页"本次错词回顾"
+        // 同源, 保证两处错词口径一致). 不取 rating === 'again':
+        //  - partial(拼写部分正确) 不算错词 (完成页同样不计入);
+        //  - 用户可在答错后改评 'again'/'hard', rating 不直接反映本次作答判定,
+        //    而 grade 是评估器对本次作答的最终判定, 更贴合"答错"语义.
+        // 包裹 try/catch: 错词本写入 (localStorage 序列化/配额) 失败绝不阻塞复习主流程.
+        if (evaluation?.grade === 'wrong') {
+          try {
+            useWrongWordsStore.getState().recordWrong(card, Date.now());
+          } catch {
+            // 静默: 存储不可用 / 序列化失败, 不影响复习
+          }
+        }
 
         // Stage 2 (v0.5.0-harmony): 复习会话全部完成时主动刷新服务卡片.
         // 仅在当前卡是队列最后一张时触发一次 (会话完成点), 避免每张卡评分都刷新.
