@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] — 2026-09-11
+
+### Web 复习体验深化 + 鸿蒙端 v0.8.0-harmony 版本对齐 (Stage 3: 版本 bump + 文档回填)
+
+- Web 复习键盘流：数字键 `1-4` 评分（again / hard / good / easy，沿用 Anki 惯例），并加门控 `showRatingBar` / 暂停态 / 焦点守卫（输入框聚焦时数字键归属文本输入）；评分按钮新增快捷键角标与提示文案；统一会话级键盘监听，消除 `RatingBar` 重复触发
+- Web 复习完成页深化：错词回顾（只读、会话内）便于即时复盘；到期前瞻按「明天 / 未来 7 天」累计口径展示；连续学习天数展示
+- 鸿蒙端：无功能变更，仅版本对齐维护（web = harmony + 2 单一真源；AppScope / entry `0.8.0`、versionCode `1000025`）；自动测试沿用既有 Web / 桥接回归套件，未做模拟器或真机运行验证
+
 ## [2.7.0] — 2026-09-11
 
 ### 鸿蒙端 v0.7.0-harmony (Stage 3: 版本 bump + 文档回填)
