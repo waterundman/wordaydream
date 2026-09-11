@@ -314,6 +314,110 @@
   margin-top: 0;
 }
 
+/* v0.8.0-harmony Stage 2: completed 段扩展区块 (错词回顾 / 到期前瞻 / streak) */
+.completedSectionTitle {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-3);
+  text-align: center;
+}
+
+.completedWrongReview {
+  text-align: left;
+  max-width: 36rem;
+  width: 100%;
+}
+
+.completedWrongList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.completedWrongItem {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-wrong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.completedWrongHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.completedWrongLemma {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.completedWrongLang {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  padding: var(--space-0) var(--space-2);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.completedWrongContext {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.completedDueForecast {
+  text-align: center;
+  max-width: 36rem;
+  width: 100%;
+}
+
+.completedDueRow {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.completedDueItem {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+}
+
+.completedDueItem strong {
+  margin: 0 var(--space-1);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.completedStreak {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.completedStreak strong {
+  margin: 0 var(--space-1);
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-lg);
+}
+
 @media (max-width: 767px) {
   .header {
     flex-direction: column;
