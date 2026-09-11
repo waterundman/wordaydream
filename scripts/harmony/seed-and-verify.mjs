@@ -32,6 +32,7 @@ export function parseArgs(argv) {
     bundle: DEFAULT_BUNDLE,
     timeoutMs: DEFAULT_TIMEOUT_MS,
     out: null,
+    openCard: 'debug-seed-1',
     help: false,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -43,6 +44,13 @@ export function parseArgs(argv) {
       case '--bundle': args.bundle = next; i++; break;
       case '--timeout': args.timeoutMs = Number(next) || DEFAULT_TIMEOUT_MS; i++; break;
       case '--out': args.out = next; i++; break;
+      case '--open-card':
+        // 空串 (--open-card "") = 跳过 openCard 阶段的标记
+        if (next !== undefined && !next.startsWith('--')) {
+          args.openCard = next;
+          i++;
+        }
+        break;
       case '--help': case '-h': args.help = true; break;
       default: break;
     }
@@ -64,14 +72,40 @@ export function buildSkipReport(reason, args) {
   };
 }
 
-/** 断言关键词 (运行日志证据链, 顺序即验证链顺序). */
+/** 断言关键词 (运行日志证据链, 顺序即验证链顺序). level 缺省 = critical (向后兼容). */
 export const ASSERTION_KEYWORDS = [
-  { id: 'A1', keyword: 'seedDebugCards done', desc: '原生 RDB 预置 5 张到期卡完成' },
-  { id: 'A2', keyword: 'Page begin', desc: 'ArkWeb 虚拟 HTTPS 入口开始加载' },
-  { id: 'A3', keyword: 'Web content ready', desc: 'React content-ready ACK 到达' },
-  { id: 'A4', keyword: 'getAllCards=', desc: 'RDB 恢复链路执行 (卡片数上报)' },
-  { id: 'A5', keyword: 'queued', desc: '启动请求进入原生 FIFO 队列' },
+  { id: 'A1', keyword: 'seedDebugCards done', desc: '原生 RDB 预置 5 张到期卡完成', level: 'critical' },
+  { id: 'A2', keyword: 'Page begin', desc: 'ArkWeb 虚拟 HTTPS 入口开始加载', level: 'critical' },
+  { id: 'A3', keyword: 'Web content ready', desc: 'React content-ready ACK 到达', level: 'critical' },
+  { id: 'A4', keyword: 'getAllCards=', desc: 'RDB 恢复链路执行 (卡片数上报)', level: 'critical' },
+  { id: 'A5', keyword: 'queued', desc: '启动请求进入原生 FIFO 队列', level: 'critical' },
 ];
+
+/** openCard 阶段断言 (seed 冷启动链全命中后独立执行与评估). */
+export const OPEN_CARD_ASSERTIONS = [
+  {
+    id: 'A6',
+    keyword: 'dispatching query=action=openCard',
+    desc: '原生 onNewWant 派发 openCard (来自 EntryAbility hilog)',
+    level: 'critical',
+  },
+  {
+    id: 'A7',
+    keyword: '[harmonyLaunch] openCard',
+    desc: 'Web 域层 openCard 处理日志 (located/fallback/keep-session 任一命中即过)',
+    level: 'soft',
+  },
+];
+
+/** 断言是否为 critical (level 缺省 = critical, 向后兼容). */
+export function isCritical(assertion) {
+  return assertion.level !== 'soft';
+}
+
+/** openCard 阶段是否启用 (openCard 为空串 = 跳过标记). */
+export function openCardEnabled(args) {
+  return args.openCard !== '' && args.openCard != null;
+}
 
 /** 单条日志断言评估 (纯函数, 供单测): 关键词在日志窗口中是否出现. */
 export function evaluateAssertion(keyword, logWindow) {
@@ -92,19 +126,38 @@ function runHdc(hdc, argsList, timeoutMs) {
   };
 }
 
-function collectReport(args, steps, assertionResults, startedAt) {
-  const ok = assertionResults.every((a) => a.passed);
+export function collectReport(args, steps, seedAssertions, startedAt, options = {}) {
+  const openCardAssertions = options.openCardAssertions ?? null;
+  const openCardQuery = options.openCardQuery ?? null;
+  // ok 仅由 critical 断言决定 (level 缺省 = critical); soft 失败不影响
+  const allCritical = [...seedAssertions, ...(openCardAssertions ?? [])]
+    .filter(isCritical)
+    .every((a) => a.passed);
   const report = {
     skipped: false,
-    ok,
+    ok: allCritical,
     steps,
-    assertions: assertionResults,
+    assertions: seedAssertions,
+    openCardQuery,
+    openCardAssertions,
     hap: args.hap,
     bundle: args.bundle,
     timeoutMs: args.timeoutMs,
     generatedAt: new Date(startedAt).toISOString(),
   };
   return report;
+}
+
+/** 生成证据片段 (命中关键词前后窗口), 纯函数供单测. */
+export function buildEvidence(logWindow, assertions) {
+  const ev = {};
+  for (const a of assertions) {
+    const idx = logWindow.indexOf(a.keyword);
+    if (idx >= 0) {
+      ev[a.id] = logWindow.slice(Math.max(0, idx - 120), idx + 160);
+    }
+  }
+  return ev;
 }
 
 /** 写报告 (stdout 或 --out 文件). */
@@ -121,7 +174,7 @@ function emitReport(report, out) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log('Usage: node scripts/harmony/seed-and-verify.mjs [--hdc <path>] [--hap <path>] [--bundle <name>] [--timeout <ms>] [--out <file>]');
+    console.log('Usage: node scripts/harmony/seed-and-verify.mjs [--hdc <path>] [--hap <path>] [--bundle <name>] [--timeout <ms>] [--open-card <cardId>] [--out <file>]');
     return 0;
   }
   if (!existsSync(args.hap)) {
@@ -181,15 +234,61 @@ async function main() {
     if (assertionResults.every((a) => a.passed)) break;
   }
 
-  const report = collectReport(args, steps, assertionResults, startedAt);
-  // 留存日志窗口片段作为证据 (每条断言首行命中前后 1 行).
-  report.evidence = {};
-  for (const a of assertionResults) {
-    const idx = logWindow.indexOf(a.keyword);
-    if (idx >= 0) {
-      report.evidence[a.id] = logWindow.slice(Math.max(0, idx - 120), idx + 160);
+  const report = collectReport(args, steps, assertionResults, startedAt, {
+    openCardAssertions: null,
+    openCardQuery: null,
+  });
+  // 留存 seed 段日志窗口片段作为证据 (每条断言首行命中前后 1 行).
+  report.evidence = buildEvidence(logWindow, assertionResults);
+
+  // 6. openCard 阶段 (seed 全命中后, 模拟器在线才进入; --open-card "" 跳过).
+  if (openCardEnabled(args)) {
+    const query = `action=openCard&cardId=${args.openCard}`;
+    // 清空 hilog, 避免 seed 段日志干扰 openCard 段独立评估窗口.
+    runHdc(args.hdc, ['shell', 'hilog', '-r'], 15000);
+    // 发送 openCard want (query 整串作为单个 --ps 值, 与 debugSeed 传参方式一致).
+    const ocStart = runHdc(
+      args.hdc,
+      ['shell', 'aa', 'start', '--ps', 'query', query, '-b', args.bundle, '-a', 'EntryAbility'],
+      20000,
+    );
+    steps.push({
+      name: 'aa-start-open-card',
+      ok: ocStart.code === 0 && !/error/i.test(ocStart.stdout + ocStart.stderr),
+      detail: (ocStart.stdout + ocStart.stderr).trim().slice(0, 300),
+    });
+
+    // 独立轮询窗口 (复用 timeoutMs) 至 A6/A7 命中或超时.
+    const ocDeadline = Date.now() + args.timeoutMs;
+    let ocWindow = '';
+    const ocAssertions = OPEN_CARD_ASSERTIONS.map((k) => ({
+      id: k.id, keyword: k.keyword, desc: k.desc, level: k.level, passed: false,
+    }));
+    while (Date.now() < ocDeadline) {
+      await new Promise((r) => setTimeout(r, DEFAULT_POLL_INTERVAL_MS));
+      const dump = runHdc(args.hdc, ['shell', 'hilog', '-x'], 15000);
+      ocWindow = dump.stdout || '';
+      for (const a of ocAssertions) {
+        if (!a.passed && evaluateAssertion(a.keyword, ocWindow)) {
+          a.passed = true;
+          a.evidenceAt = new Date().toISOString();
+        }
+      }
+      if (ocAssertions.every((a) => a.passed)) break;
     }
+
+    report.openCardAssertions = ocAssertions;
+    report.openCardQuery = query;
+    // evidence 机制对 openCardAssertions 同样生效 (命中片段留存).
+    report.evidence = { ...report.evidence, ...buildEvidence(ocWindow, ocAssertions) };
   }
+
+  // 最终 ok: 仅 critical 断言 (assertions + openCardAssertions 中的 critical) 决定;
+  // soft 失败只记 evidence 不影响. seed 段与 openCard 段独立评估.
+  report.ok = [...assertionResults, ...(report.openCardAssertions ?? [])]
+    .filter(isCritical)
+    .every((a) => a.passed);
+
   emitReport(report, args.out);
   return report.ok ? 0 : 1;
 }

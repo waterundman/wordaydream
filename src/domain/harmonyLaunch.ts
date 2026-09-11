@@ -89,6 +89,8 @@ function handleOpenCardLaunch(
       dependencies.showWarning('该词不在本次复习队列中');
       dependencies.setAppMode('review');
     }
+    // 运行验证日志点 (keep-session 跳转): 仅日志, 不改任何行为
+    console.log(`[harmonyLaunch] openCard keep-session cardId=${cardId}`);
     return;
   }
 
@@ -101,10 +103,14 @@ function handleOpenCardLaunch(
   // 已进入 reviewing，尝试定位目标卡
   if (dependencies.getReviewState().jumpToCard(cardId)) {
     dependencies.setAppMode('review');
+    // 运行验证日志点 (located 定位成功): 仅日志, 不改任何行为
+    console.log(`[harmonyLaunch] openCard located cardId=${cardId}`);
   } else {
     // 目标未到期 / 不存在于本次队列 → 降级为常规复习
     dependencies.showWarning('该词当前不在复习队列，已开始常规复习');
     dependencies.setAppMode('review');
+    // 运行验证日志点 (fallback 降级): 仅日志, 不改任何行为
+    console.log(`[harmonyLaunch] openCard fallback cardId=${cardId}`);
   }
 }
 
