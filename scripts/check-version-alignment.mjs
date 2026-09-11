@@ -57,6 +57,27 @@ export function expectedHarmonyFromWeb(webVersion) {
 }
 
 /**
+ * 由 harmony versionName 推导期望的 app.versionCode（数字字面量）。
+ *
+ * 线性规则（v0.7.0-harmony Stage 2 固化，与三个历史锚点全部吻合）：
+ *   versionCode = 1000000 + (minor - 3) * 5 + patch
+ *   锚点: 0.3.0 → 1000000, 0.5.0 → 1000010, 0.6.0 → 1000015, 0.7.0 → 1000020
+ *
+ * harmony major ≠ 0 时返回 null：表示规则未覆盖，校验应跳过。
+ * 注释：major 演进（1.x / 2.x …）时版本基准会重设，需同步修订本规则与基准常量。
+ *
+ * @param {string} harmonyVersionName harmony 版本名, 如 '0.6.0'
+ * @returns {number|null} 期望值数字；未覆盖返回 null
+ */
+export function expectedVersionCode(harmonyVersionName) {
+  const { major, minor, patch } = parseSemver(harmonyVersionName);
+  if (major !== 0) {
+    return null; // 规则未覆盖（major 演进时需重设基准）
+  }
+  return 1000000 + (minor - 3) * 5 + patch;
+}
+
+/**
  * 纯函数：校验版本对齐。
  *
  * @param {Object} versions 形如 { web, appScope, entry, buildProfile? }
@@ -95,6 +116,22 @@ export function checkAlignment(versions) {
     }
   }
 
+  // versionCode 检查（向后兼容：未携带 versionCode 字段的调用自动跳过）。
+  // harmony versionName 取自 versions.appScope（与 diff 报告同源）。
+  const harmonyVersionName = versions.appScope;
+  const expectedCode = expectedVersionCode(harmonyVersionName);
+  const actualCode = versions.versionCode;
+  if (actualCode !== undefined && actualCode !== null && expectedCode !== null) {
+    if (Number(actualCode) !== expectedCode) {
+      diffs.push({
+        source: 'versionCode',
+        file: VERSION_FILES.appScope,
+        expected: String(expectedCode),
+        actual: String(actualCode),
+      });
+    }
+  }
+
   return { ok: diffs.length === 0, diffs };
 }
 
@@ -107,9 +144,12 @@ export function readVersionsFromDisk(root = ROOT) {
     readFileSync(resolve(root, VERSION_FILES.web), 'utf8'),
   ).version;
 
-  const appScope = JSON5.parse(
+  const appScopeRaw = JSON5.parse(
     readFileSync(resolve(root, VERSION_FILES.appScope), 'utf8'),
-  ).app.versionName;
+  );
+  const appScope = appScopeRaw.app.versionName;
+  // versionCode 为数字字面量；数字字符串也能接受，缺失为 undefined。
+  const versionCode = appScopeRaw.app.versionCode;
 
   const entry = JSON5.parse(
     readFileSync(resolve(root, VERSION_FILES.entry), 'utf8'),
@@ -130,7 +170,7 @@ export function readVersionsFromDisk(root = ROOT) {
     buildProfile = undefined;
   }
 
-  return { web, appScope, entry, buildProfile };
+  return { web, appScope, entry, buildProfile, versionCode };
 }
 
 function formatTableRow(label, value) {
@@ -158,6 +198,21 @@ function main() {
         versions.buildProfile ?? '(无版本字段, 跳过)',
       ),
     );
+    // versionCode 行（规则未覆盖或缺失时给出跳过说明）。
+    const expectedCode = expectedVersionCode(versions.appScope);
+    if (expectedCode === null) {
+      console.log(
+        formatTableRow('versionCode', versions.versionCode ?? '(缺失)') +
+          ' (规则未覆盖 major≠0, 跳过)',
+      );
+    } else if (versions.versionCode === undefined || versions.versionCode === null) {
+      console.log(formatTableRow('versionCode', '(缺失, 跳过)'));
+    } else {
+      console.log(
+        formatTableRow('versionCode', String(versions.versionCode)) +
+          ` (期望 ${expectedCode})`,
+      );
+    }
     process.exit(0);
   } else {
     console.error('版本对齐校验失败 (FAIL)');
