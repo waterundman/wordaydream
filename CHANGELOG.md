@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] — 2026-09-11
+
+### 鸿蒙端 v0.7.0-harmony (Stage 3: 版本 bump + 文档回填)
+
+- openCard 运行验证就绪: `scripts/harmony/seed-and-verify.mjs` 新增 openCard 阶段 (A6 原生派发 critical / A7 Web 日志 soft) + 断言分级机制 (critical 失败即 FAIL / soft 仅告警) + `--open-card` 参数; 模拟器在线即可一条命令产出 openCard 端到端报告
+- versionCode 规则 CI 化: `expectedVersionCode` (1000000+(minor-3)×5+patch, 0.7.0 → 1000020) 接入 `check:versions`, 四锚点回归测试 (0.3.0→1000000 / 0.5.0→1000010 / 0.6.0→1000015 / 0.7.0→1000020)
+- `handleOpenCardLaunch` 增加运行日志点 (located / fallback / keep-session), 便于模拟器在线时定位 openCard 派发链路
+
 ## [2.6.0] — 2026-09-09
 
 ### 鸿蒙端 v0.6.0-harmony (Stage 3: 版本统一 + 文档回填)
