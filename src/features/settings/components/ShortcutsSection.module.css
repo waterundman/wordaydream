@@ -1,0 +1,159 @@
+/* ShortcutsSection (v1.0.0 Stage 2: 快捷键设置区块)
+ *
+ * 沿 WrongWordsSection / SettingsPanel 的 warm white paper 配色与 tokens.css 变量,
+ * 视觉风格与设置面板其他区块 (NotificationsSection 等) 保持一致 (同层级 block).
+ * 捕获态行用色彩 + aria-live 提示交互状态, 0 emoji.
+ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-bg-elevated, #ffffff);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  font-family: var(--font-serif, Georgia, serif);
+  color: var(--color-ink, #1c1917);
+}
+
+.desc {
+  margin: 0;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  line-height: var(--leading-normal, 1.5);
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--color-bg-subtle, #f5f2ed);
+}
+
+.labelCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 4.5rem;
+}
+
+.keyLabel {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: var(--text-base, 1rem);
+  font-weight: 500;
+  color: var(--color-text-primary, #1c1917);
+}
+
+.keyDesc {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 var(--space-2);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-ink, #1c1917);
+  background: var(--color-bg-elevated, #ffffff);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+.capturePrompt {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  height: 1.75rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-accent, #1d4ed8);
+  background: color-mix(in srgb, var(--color-accent, #1d4ed8) 10%, transparent);
+  border: 1px dashed var(--color-accent, #1d4ed8);
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+.error {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-error-strong, #b91c1c);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.modifyBtn,
+.resetBtn,
+.resetAllBtn {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm, 0.25rem);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.modifyBtn {
+  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-accent, #1d4ed8);
+  border: 1px solid var(--color-accent, #1d4ed8);
+}
+
+.modifyBtn:hover {
+  background: color-mix(in srgb, var(--color-accent, #1d4ed8) 85%, #000);
+}
+
+.resetBtn,
+.resetAllBtn {
+  color: var(--color-text-secondary, #4a4540);
+  background: var(--color-bg-elevated, #ffffff);
+  border: 1px solid var(--color-border, #e8e4dc);
+}
+
+.resetBtn:hover,
+.resetAllBtn:hover {
+  background: var(--color-bg-hover, #f5f2ed);
+}
+
+.resetAllBtn {
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modifyBtn,
+  .resetBtn,
+  .resetAllBtn {
+    transition: none;
+  }
+}

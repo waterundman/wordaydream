@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
+import { ShortcutsSection } from './ShortcutsSection';
 import { InstallPromptButton } from '../../../components/InstallPromptButton';
 import { ThemeSwitcher } from '../../../components/ThemeSwitcher';
 import styles from './SettingsPanel.module.css';
@@ -942,6 +943,9 @@ export function SettingsPanel() {
 
         {/* v0.1.0-harmony Stage 7: 复习提醒通知 (仅鸿蒙端渲染, Web 端 NotificationsSection 返回 null) */}
         <NotificationsSection />
+
+        {/* v1.0.0 Stage 2: 快捷键键位编辑区块 */}
+        <ShortcutsSection />
 
         {/* v1.6.0: 课程模式 (闯关 / 自由) */}
         <div className={styles.section}>
