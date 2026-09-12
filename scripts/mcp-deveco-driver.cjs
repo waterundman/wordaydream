@@ -341,7 +341,7 @@ async function main() {
     try {
       console.log('\n  --- MCP screenshot ---');
       const shotPath = join(process.env.TEMP || '/tmp', `harmony_test_${Date.now()}.png`);
-      const shotOutput = await client.callTool('screenshot', { savePath: shotPath });
+      await client.callTool('screenshot', { savePath: shotPath });
       console.log(`  V 截图: ${shotPath}`);
       results.push({ step: 'MCP screenshot', status: 'PASS', detail: shotPath });
     } catch (e) {

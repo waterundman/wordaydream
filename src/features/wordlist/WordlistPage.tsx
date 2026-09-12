@@ -47,6 +47,9 @@ interface WordlistPageProps {
 
 type FilterType = 'all' | 'unseen' | 'learning' | 'mastered';
 
+/** v1.1.0 S3: 模块级空数组常量 — 引用稳定, 供 useMemo 依赖比较, 避免每次渲染新建 [] */
+const EMPTY_WORDS: WordlistEntry[] = [];
+
 const CEFR_LABELS: Record<number, string> = {
   1: 'A1',
   2: 'A2',
@@ -93,8 +96,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
   }, [language, difficulty, isFreeMode]);
 
   const wordlist = getCachedWordlist(language, difficulty);
-  const words: WordlistEntry[] = wordlist?.words ?? [];
-
+  const words: WordlistEntry[] = wordlist?.words ?? EMPTY_WORDS;
   // 获取每个词的状态
   const getStatus = useCallback(
     (lemma: string): WordStatus => {

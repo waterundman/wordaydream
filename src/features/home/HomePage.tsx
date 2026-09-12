@@ -61,6 +61,7 @@ export function HomePage({
   const memoryCards = useMemoryStore((s) => s.cards);
   const dueCards = useMemo(
     () => useMemoryStore.getState().getDueCards(language),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- memoryCards 是 zustand 订阅的重算触发器 (memo 体走 getState() 快照), 删除会导致复习后 dueCount 冻结
     [memoryCards, language],
   );
 
@@ -76,6 +77,7 @@ export function HomePage({
 
   const masteredCount = useMemo(() => {
     return useWordlistStore.getState().getMasteredCount(language, difficulty);
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- progress/levelTotal 是重算触发器 (memo 体走 getState() 快照), 删除会导致已掌握计数冻结
   }, [language, difficulty, progress, levelTotal]);
 
   const isFreeMode = difficulty === 5;

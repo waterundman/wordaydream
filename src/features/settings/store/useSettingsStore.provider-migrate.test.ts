@@ -15,7 +15,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LLMProvider } from '../../../types';
-import { PROVIDER_PRESETS, SETTINGS_PRESETS } from '../components/SettingsPanel';
+import { PROVIDER_PRESETS, SETTINGS_PRESETS } from '../lib/settingsPresets';
 import { useSettingsStore } from './useSettingsStore';
 
 const STORAGE_KEY = 'wordaydream:settings';

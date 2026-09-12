@@ -533,7 +533,7 @@ export function parseLLMResponse(
       parsed = JSON.parse(repairedRaw);
       // 走 zod 校验
       return finalizeParseResult(parsed, /* repaired */ true, raw, schema, expectedLanguage);
-    } catch (e2) {
+    } catch {
       // Step 3: 用 jsonrepair 修复 (深度修复)
       try {
         const repaired = jsonrepair(raw);

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
 import { ShortcutsSection } from './ShortcutsSection';
+import { WrongWordsExportSection } from './WrongWordsExportSection';
 import { InstallPromptButton } from '../../../components/InstallPromptButton';
 import { ThemeSwitcher } from '../../../components/ThemeSwitcher';
 import styles from './SettingsPanel.module.css';
@@ -28,77 +29,10 @@ import {
   getCachedGlossCount,
   clearAllCachedGlosses,
 } from '../../dictionary/services/glossPersistentCache';
+import { PROVIDER_PRESETS, SETTINGS_PRESETS } from '../lib/settingsPresets';
 
-// v2.1.1 Stage 3 (D3): 收窄为 4 个有实现的 provider, 移除 kimi/qwen/minimax.
-// export 出来供测试 (T18/T19) 验证 keys 集合.
-export const PROVIDER_PRESETS: Record<LLMProvider, { defaultBaseUrl: string; defaultModel: string; placeholder: string; label: string }> = {
-  mock: { defaultBaseUrl: '', defaultModel: '', placeholder: '模拟模式不需要 API Key', label: '模拟' },
-  openai: {
-    defaultBaseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o-mini',
-    placeholder: 'sk-...',
-    label: 'OpenAI',
-  },
-  anthropic: {
-    defaultBaseUrl: 'https://api.anthropic.com',
-    defaultModel: 'claude-3-5-sonnet-20241022',
-    placeholder: 'sk-ant-...',
-    label: 'Anthropic',
-  },
-  deepseek: {
-    defaultBaseUrl: 'https://api.deepseek.com/v1',
-    defaultModel: 'deepseek-chat',
-    placeholder: 'sk-...',
-    label: 'DeepSeek',
-  },
-};
-
-// v2.1.1 Stage 3 (D3): 移除所有 kimi/qwen/minimax 条目, 仅保留 7 个有实现的 preset.
-// export 出来供测试 (T19) 验证不含已废弃 provider.
-export const SETTINGS_PRESETS = [
-  {
-    id: 'demo',
-    name: '演示模式',
-    description: '模拟数据，无需 API Key',
-    config: { provider: 'mock' as LLMProvider, model: '', temperature: 0.5, enabled: false },
-  },
-  {
-    id: 'openai-fast',
-    name: 'OpenAI 快速',
-    description: 'GPT-4o-mini，响应迅速',
-    config: { provider: 'openai' as LLMProvider, model: 'gpt-4o-mini', temperature: 0.3, enabled: true },
-  },
-  {
-    id: 'openai-quality',
-    name: 'OpenAI 高质量',
-    description: 'GPT-4o，最佳质量',
-    config: { provider: 'openai' as LLMProvider, model: 'gpt-4o', temperature: 0.5, enabled: true },
-  },
-  {
-    id: 'anthropic-fast',
-    name: 'Anthropic 快速',
-    description: 'Claude 3 Haiku，响应迅速',
-    config: { provider: 'anthropic' as LLMProvider, model: 'claude-3-haiku-20240307', temperature: 0.3, enabled: true },
-  },
-  {
-    id: 'anthropic-quality',
-    name: 'Anthropic 高质量',
-    description: 'Claude 3.5 Sonnet，最佳平衡',
-    config: { provider: 'anthropic' as LLMProvider, model: 'claude-3-5-sonnet-20241022', temperature: 0.5, enabled: true },
-  },
-  {
-    id: 'deepseek-fast',
-    name: 'DeepSeek 快速',
-    description: 'deepseek-chat (V3)，响应迅速',
-    config: { provider: 'deepseek' as LLMProvider, model: 'deepseek-chat', temperature: 0.3, enabled: true },
-  },
-  {
-    id: 'deepseek-reasoner',
-    name: 'DeepSeek 推理',
-    description: 'deepseek-reasoner (R1)，深度思考',
-    config: { provider: 'deepseek' as LLMProvider, model: 'deepseek-reasoner', temperature: 0.5, enabled: true },
-  },
-];
+// v2.1.1 Stage 3 (D3): PROVIDER_PRESETS / SETTINGS_PRESETS 已迁至 ../lib/settingsPresets
+// (v1.1.0 Stage 3: 非组件导出触发 react-refresh/only-export-components).
 
 /**
  * v1.8.0 Stage 3 / v2.2.0 Stage 3: FSRS 参数优化 UI 区域.
@@ -946,6 +880,9 @@ export function SettingsPanel() {
 
         {/* v1.0.0 Stage 2: 快捷键键位编辑区块 */}
         <ShortcutsSection />
+
+        {/* v1.1.0 Stage 2: 错词导出区块 */}
+        <WrongWordsExportSection />
 
         {/* v1.6.0: 课程模式 (闯关 / 自由) */}
         <div className={styles.section}>

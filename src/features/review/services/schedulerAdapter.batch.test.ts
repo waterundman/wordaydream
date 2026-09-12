@@ -81,7 +81,7 @@ describe('v0.4.0-harmony Stage 1 D1: scheduleNextReviewBatch 批处理优化', (
   it('T01 [critical]: scheduleNextReviewBatch 内部只调用 f.repeat() 1 次 (而非 4 次)', async () => {
     // 动态 import 让 vi.mock 生效
     const tsFsrs = await import('ts-fsrs');
-    const { fsrs, State, Rating: FsrsRating } = tsFsrs;
+    const { fsrs } = tsFsrs;
     const { default_w } = tsFsrs;
 
     // 用真实 fsrs 实例, 但 wrap f.repeat 为 spy

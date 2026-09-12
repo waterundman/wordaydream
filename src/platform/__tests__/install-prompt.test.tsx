@@ -9,7 +9,7 @@
  *   (确保是 platform 检查而非 event 缺失导致 null 渲染)
  * - 断言 queryByTestId('install-prompt-button') 不在文档中
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock detectPlatform: 鸿蒙环境, supportsInstallPrompt=false.
 // vi.mock 被 vitest 提升到所有 import 之前, 保证 ReadingSessionPage 拿到 mock.

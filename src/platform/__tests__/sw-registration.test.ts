@@ -12,7 +12,7 @@
  *   supportsServiceWorker() → 'serviceWorker' in navigator → import.meta.env.PROD
  * supportsServiceWorker=false 时第一个守卫即返回, 后续检查不执行.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const registerSWMock = vi.fn();
 

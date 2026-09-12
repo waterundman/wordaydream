@@ -93,7 +93,7 @@ function App() {
     } else if (reviewMode === 'idle' && appMode === 'review') {
       setAppMode('home');
     }
-  }, [reviewMode, appMode]);
+  }, [reviewMode, appMode, setAppMode]);
 
   useEffect(() => {
     const scope = appMode === 'review' ? 'review' : 'reading';

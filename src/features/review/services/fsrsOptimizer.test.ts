@@ -65,7 +65,6 @@ vi.mock('@open-spaced-repetition/binding', () => ({
 
 import {
   optimizeFsrsWeights,
-  OptimizationUnavailableError,
   isOptimizationAvailable,
   convertToReviewLog,
   _resetBindingCacheForTesting,

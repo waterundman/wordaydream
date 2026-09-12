@@ -127,7 +127,7 @@ class MockHarmonyBridge {
         return;
       }
       await MockTextToSpeechService.getInstance().speak(payload);
-    } catch (_e) {
+    } catch {
       // fire-and-forget 兜底: 不抛到 Web
     }
   }
@@ -135,7 +135,7 @@ class MockHarmonyBridge {
   stopSpeech(): void {
     try {
       MockTextToSpeechService.getInstance().stop();
-    } catch (_e) {
+    } catch {
       // fire-and-forget 兜底
     }
   }
@@ -143,7 +143,7 @@ class MockHarmonyBridge {
   async isSpeechSupported(): Promise<boolean> {
     try {
       return await MockTextToSpeechService.getInstance().isSupported();
-    } catch (_e) {
+    } catch {
       return false;
     }
   }
@@ -151,7 +151,7 @@ class MockHarmonyBridge {
   async getSpeechEngines(): Promise<SpeechEngineInfo[]> {
     try {
       return await MockTextToSpeechService.getInstance().getEngines();
-    } catch (_e) {
+    } catch {
       return [];
     }
   }

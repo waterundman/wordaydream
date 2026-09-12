@@ -247,6 +247,7 @@ export function ReadingSessionPage() {
     if (!currentSession) {
       loadSession(language, difficulty);
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 仅 mount 引导一次会话; loadSession 为 zustand action 引用稳定, 但补 language/difficulty 依赖会在 session 为 null (生成进行中) 时切下拉重入触发重复生成竞态
   }, []);
 
   useEffect(() => {
@@ -256,7 +257,7 @@ export function ReadingSessionPage() {
     if (resolvedCount < totalCount) return;
     if (!currentHistoryId) return;
     useReadingHistoryStore.getState().completeEntry(currentHistoryId);
-  }, [resolvedCount, totalCount, session?.isReplay, currentHistoryId]);
+  }, [session, resolvedCount, totalCount, session?.isReplay, currentHistoryId]);
 
   const isReadingCompleted = !!session && !session.isReplay && totalCount > 0 && resolvedCount >= totalCount;
 
