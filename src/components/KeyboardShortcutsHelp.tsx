@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useShortcutsStore } from '../features/shortcuts/store/useShortcutsStore';
 import styles from './KeyboardShortcutsHelp.module.css';
 
 interface ShortcutItem {
@@ -65,6 +66,26 @@ export function KeyboardShortcutsHelp() {
   const [visible, setVisible] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // 订阅评分键位 (改键后帮助面板实时反映当前键位); 仅 复习页 的 1/2/3/4 动态,
+  // 其余分类保持 SHORTCUT_CATEGORIES 静态数组不变.
+  const ratingKeys = useShortcutsStore((s) => s.ratingKeys);
+
+  const categories = useMemo(() => {
+    return SHORTCUT_CATEGORIES.map((category) => {
+      if (category.name !== '复习页') return category;
+      return {
+        ...category,
+        items: [
+          { keys: ratingKeys.again, description: '重来 (Again)' },
+          { keys: ratingKeys.hard, description: '困难 (Hard)' },
+          { keys: ratingKeys.good, description: '良好 (Good)' },
+          { keys: ratingKeys.easy, description: '简单 (Easy)' },
+          { keys: 'Enter', description: '确认' },
+        ],
+      };
+    });
+  }, [ratingKeys]);
+
   // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap
   useFocusTrap(modalRef, visible);
 
@@ -105,7 +126,7 @@ export function KeyboardShortcutsHelp() {
         </button>
         <h2 className={styles.title}>键盘快捷键</h2>
         <div className={styles.categories}>
-          {SHORTCUT_CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <div key={category.name} className={styles.category}>
               <h3 className={styles.categoryName}>{category.name}</h3>
               <div className={styles.shortcutList}>

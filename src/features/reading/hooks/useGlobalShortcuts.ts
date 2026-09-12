@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import type { Rating } from '../../../types';
+import { useShortcutsStore } from '../../shortcuts/store/useShortcutsStore';
 
 interface ShortcutHandlers {
   onEscape?: () => void;
@@ -11,13 +12,6 @@ interface UseGlobalShortcutsOptions {
   ratingEnabled?: boolean;
   handlers: ShortcutHandlers;
 }
-
-const RATING_KEY_MAP: Record<string, Rating> = {
-  '1': 'again',
-  '2': 'hard',
-  '3': 'good',
-  '4': 'easy',
-};
 
 /**
  * 判断键盘事件目标是否为"可编辑/输入"元素。
@@ -54,6 +48,10 @@ export function useGlobalShortcuts({
   ratingEnabled = false,
   handlers,
 }: UseGlobalShortcutsOptions) {
+  // 订阅评分键位 (改键后运行中即时生效): 从 store 派生 '1'→'again' 映射。
+  // 订阅 ratingKeys 整体, 保证任一评级改键都触发重渲染 + handleKeyDown 重建。
+  const ratingKeys = useShortcutsStore((s) => s.ratingKeys);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!enabled) return;
@@ -65,11 +63,22 @@ export function useGlobalShortcuts({
         return;
       }
 
-      if (ratingEnabled && RATING_KEY_MAP[e.key]) {
-        handlers.onRate?.(RATING_KEY_MAP[e.key]);
+      if (ratingEnabled) {
+        // ratingKeys 形如 {again:'1',...} (评级→按键), 需反查为 按键→评级。
+        // 订阅式: 改键后 ratingKeys 变化即重建此映射, 运行中即时生效。
+        const keyToRating: Record<string, Rating> = {
+          [ratingKeys.again]: 'again',
+          [ratingKeys.hard]: 'hard',
+          [ratingKeys.good]: 'good',
+          [ratingKeys.easy]: 'easy',
+        };
+        const rating = keyToRating[e.key];
+        if (rating) {
+          handlers.onRate?.(rating);
+        }
       }
     },
-    [enabled, ratingEnabled, handlers]
+    [enabled, ratingEnabled, handlers, ratingKeys]
   );
 
   useEffect(() => {
