@@ -55,9 +55,10 @@ describe('WrongWordsSection (Stage 1)', () => {
       expect(within(items[0]).getByText('newword')).toBeInTheDocument();
       expect(within(items[1]).getByText('oldword')).toBeInTheDocument();
 
-      // 语言标记存在
-      expect(screen.getByText('en')).toBeInTheDocument();
-      expect(screen.getByText('de')).toBeInTheDocument();
+      // 语言标记存在 (v1.1.0 起语言筛选 select 的 option 也含 'en'/'de' 文本,
+      // 故限定在列表条目内断言)
+      expect(within(items[0]).getByText('de')).toBeInTheDocument();
+      expect(within(items[1]).getByText('en')).toBeInTheDocument();
       // wrongCount 文案 (两条各 "错 1 次")
       expect(screen.getAllByText('错 1 次')).toHaveLength(2);
     });

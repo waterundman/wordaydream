@@ -1,0 +1,58 @@
+/* WrongWordsExportSection (v1.1.0 Stage 2: 错词导出区块)
+ *
+ * 沿 ShortcutsSection / SettingsPanel 的 warm white paper 配色与 tokens.css 变量,
+ * 视觉风格与设置面板其他区块保持一致 (同层级 block), 0 emoji.
+ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-bg-elevated, #ffffff);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-base, 1rem);
+  font-weight: 600;
+  font-family: var(--font-serif, Georgia, serif);
+  color: var(--color-ink, #1c1917);
+}
+
+.desc {
+  margin: 0;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  line-height: var(--leading-normal, 1.5);
+  color: var(--color-text-tertiary, #6b655b);
+}
+
+.btnRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.btn {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #1c1917);
+  background: var(--color-bg-subtle, #f5f2ed);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-sm, 0.25rem);
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--color-bg-hover, #ede9e0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

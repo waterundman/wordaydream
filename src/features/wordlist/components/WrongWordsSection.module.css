@@ -33,6 +33,31 @@
   gap: var(--space-2);
 }
 
+/* v1.1.0 Stage 2: 复习控件 (排序/数量 select) + 列表筛选行, 沿 warm white paper 风格 */
+.reviewControls {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.select {
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-text-primary, #1c1917);
+  background: var(--color-bg-subtle, #f5f2ed);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-sm, 0.25rem);
+  cursor: pointer;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 /* v1.0.0 Stage 3: "复习错词 (N)" 定向复习入口, 沿区块 warm white paper 风格 */
 .reviewBtn {
   flex-shrink: 0;
