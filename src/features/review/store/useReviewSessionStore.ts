@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MemoryCard, Rating, AnswerEvaluation, Language } from '../../../types';
 import { useMemoryStore } from '../store/useMemoryStore';
-import { useWrongWordsStore } from './useWrongWordsStore';
+import { useWrongWordsStore, getSortedEntries } from './useWrongWordsStore';
 import { SIMPLE_REMEDY_TEMPLATES_EN, SIMPLE_REMEDY_TEMPLATES_DE } from '../../llm/services/mockProvider';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
@@ -45,6 +45,15 @@ interface ReviewSessionState {
   cardContexts: Record<string, string>;
 
   startReview: (language?: Language) => void;
+  /**
+   * v1.0.0 Stage 3: 错词定向复习 — 从错词本 (useWrongWordsStore) 发起复习会话.
+   * 取错词条目按 lastWrongAt 倒序, 反查 cards 字典 (键 = lexemeGroupId) 中的卡片实体,
+   * 已删除卡片 (查不到) 丢弃; 过滤后为空则不进入会话 (空态分支, 对齐 startReview).
+   * 非空则会话启动语义与 startReview 完全同构:
+   * recordPreviousMode → set 会话状态 → streak recordDay → 成就检查.
+   * 不触碰 startReview / completeReview / jumpToCard 等既有函数体.
+   */
+  startWrongWordsReview: () => void;
   /**
    * v0.6.0-harmony Stage 1: 会话内定向定位到指定卡片。
    * 仅 mode === 'reviewing' 且 cardId 在 queue 中时生效：跳 currentIndex 并重置
@@ -138,6 +147,65 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
         // recordDay() 内部幂等 (同一日期重复调用直接 return),
         // 即使用户先在阅读流走过一遍, 也不会重复递增。
         // v1.5.3 fix V3-P2-005: 用 buildAchievementContext 传真实数据, 之前全 0/空.
+        useStreakStore.getState().recordDay();
+        useAchievementStore.getState().checkAndUnlock(buildAchievementContext(false));
+      },
+
+      // v1.0.0 Stage 3: 错词定向复习入口 (详见接口注释).
+      startWrongWordsReview: () => {
+        evaluationRequestGeneration += 1;
+        const sortedEntries = getSortedEntries(useWrongWordsStore.getState());
+        // 反查卡片实体: cards Map 以 lexemeGroupId 为键, 用既有 getCardByLexemeGroup.
+        // 错词条目的 cardId 是 MemoryCard.id (与 lexemeGroupId 可不同, 如 bridge 导入),
+        // lexemeGroupId 才是字典键; 查不到 (已删除) → 丢弃.
+        const cards = sortedEntries
+          .map((entry) =>
+            useMemoryStore.getState().getCardByLexemeGroup(entry.lexemeGroupId)
+          )
+          .filter((c): c is MemoryCard => c !== undefined);
+
+        // language 取值决策: 取 lastWrongAt 倒序第一条 language 有值的条目;
+        // 全部条目 language 均为 undefined (旧数据) 时回退当前 state.language.
+        // (条目间 language 不一时, 第一条即最近答错的词, 与队列首位语义一致.)
+        const firstLang = sortedEntries.find((e) => e.language)?.language;
+        const lang = firstLang ?? get().language;
+
+        if (cards.length === 0) {
+          // 空态分支: 对齐 startReview 的 dueCards.length===0 写法, 不进入会话.
+          set({
+            mode: 'idle',
+            language: lang,
+            queue: [],
+            currentIndex: 0,
+            userAnswer: '',
+            evaluation: null,
+            isEvaluating: false,
+            isPaused: false,
+            showRatingBar: false,
+            results: [],
+            startedAt: 0,
+          });
+          return;
+        }
+
+        // 以下与 startReview 逐字段同构: previousMode 记录须在 set mode='reviewing' 之前.
+        useAppModeStore.getState().recordPreviousMode();
+
+        set({
+          mode: 'reviewing',
+          language: lang,
+          queue: cards,
+          currentIndex: 0,
+          userAnswer: '',
+          evaluation: null,
+          isEvaluating: false,
+          isPaused: false,
+          showRatingBar: false,
+          results: [],
+          startedAt: Date.now(),
+        });
+
+        // 与 startReview 同构: streak 累计 (recordDay 幂等) + 成就检查.
         useStreakStore.getState().recordDay();
         useAchievementStore.getState().checkAndUnlock(buildAchievementContext(false));
       },

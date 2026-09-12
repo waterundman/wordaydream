@@ -17,16 +17,31 @@ import {
   getSortedEntries,
   formatRelativeTime,
 } from '../../review/store/useWrongWordsStore';
+import { useReviewSessionStore } from '../../review/store/useReviewSessionStore';
 import styles from './WrongWordsSection.module.css';
 
 export function WrongWordsSection() {
   const entries = useWrongWordsStore((s) => s.entries);
   const sorted = useMemo(() => getSortedEntries({ entries }), [entries]);
+  const startWrongWordsReview = useReviewSessionStore(
+    (s) => s.startWrongWordsReview
+  );
 
   return (
     <section data-testid="wrong-words-section" className={styles.section} aria-label="错词本">
       <h2 className={styles.title}>
-        错词本 <span data-testid="wrong-words-count" className={styles.count}>{sorted.length}</span>
+        <span className={styles.titleText}>
+          错词本 <span data-testid="wrong-words-count" className={styles.count}>{sorted.length}</span>
+        </span>
+        {sorted.length > 0 && (
+          <button
+            type="button"
+            className={styles.reviewBtn}
+            onClick={startWrongWordsReview}
+          >
+            复习错词 ({sorted.length})
+          </button>
+        )}
       </h2>
 
       {sorted.length === 0 ? (
