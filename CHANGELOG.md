@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] — 2026-09-12
+
+### Web 评分快捷键自定义 + 错词定向复习 + harmony 1.0.0 major 跨越 (Stage 4: 版本 bump + 文档回填)
+
+- Web 评分快捷键自定义：设置面板捕获式键位编辑（按下即捕获，无需手写键名）；冲突校验双规则——评分键之间互斥 + 全局保留键互斥；帮助面板动态显示当前自定义键位，不再硬编码 `1-4`
+- Web 错词定向复习：错词本「复习错词 (N)」按钮一键发起定向复习队列；已删除卡片自动过滤；评分走 FSRS 主链路（与常规复习同源调度）；再错的词自动续记回错词本
+- 版本 major 跨越：harmony 由 `0.9.0` 跨至 `1.0.0`（web `3.0.0`）；versionCode 校验按 `check-version-alignment` 规则自动跳过（harmony major≠0 时 `expectedVersionCode` 返回 null 未覆盖），versionCode 数值延续既有节奏递增为 `1000035`
+- 鸿蒙端：无功能变更，仅版本对齐维护（AppScope / entry `1.0.0`、versionCode `1000035`）；自动测试沿用既有 Web / 桥接回归套件，未做模拟器或真机运行验证
+
 ## [2.9.0] — 2026-09-11
 
 ### Web 错词本持久化 + 完成页收尾 + 工程清理 (Stage 3: 版本 bump + 文档回填)

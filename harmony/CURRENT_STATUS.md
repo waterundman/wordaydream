@@ -1,6 +1,6 @@
 # Wordaydream 鸿蒙版本当前状态
 
-> 更新日期：2026-09-09
+> 更新日期：2026-09-12
 > 本文档描述当前工作树，作为鸿蒙实现、验证证据和后续工作的权威入口。`README.md` 中原有的 “Stage 1 / API 12” 内容是早期历史记录，不代表当前工程状态。
 
 ## 1. 当前结论
@@ -25,7 +25,7 @@ Wordaydream 的鸿蒙端不是 ArkUI 全量重写，而是一个 **HarmonyOS 6.0
 | DevEco Node | `18.20.1` |
 | Hvigor | `6.22.7` |
 | ohpm | `6.0.1` |
-| 应用版本 | 单一版本真源（仓库根包 `2.9.0=harmony major+2`）；AppScope `0.9.0`、entry `0.9.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验 |
+| 应用版本 | 单一版本真源（仓库根包 `3.0.0=harmony major+2`）；AppScope `1.0.0`、entry `1.0.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验；v3.0.0 起 harmony 跨入 major 1.0.0，versionCode 线性规则（major≠0 未覆盖）自动跳过校验，数值延续递增 `1000035` |
 | 原生权限 | `ohos.permission.INTERNET`、`ohos.permission.VIBRATE` |
 | 签名 | `signingConfigs` 为空；当前只能生成 unsigned HAP |
 | 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；最新 content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过 |
