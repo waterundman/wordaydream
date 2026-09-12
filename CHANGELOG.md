@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] — 2026-09-12
+
+### Web 错词本完全体 + lint 归零 (Stage 4: 版本 bump + 文档回填)
+
+- Web 错词本完全体：定向复习数量选择（最近错 / 最早错 / 最常错 × 全部 / 10 / 20）；错词列表语言 / 时间筛选（仅影响显示，复习口径恒为全量）；设置面板错词导出 CSV / JSON（RFC 4180，schema version 1）
+- 工程质量：lint warnings 由 21 条降至 **0**（机械清理 + fast-refresh 常量迁移 `settings/lib/settingsPresets.ts` + exhaustive-deps 逐条处置：3 处带理由 disable、`WordlistPage` words 上游 `EMPTY_WORDS` 常量修复、`ReadingSessionPage` / App 各补依赖）；lint 基线守卫测试收紧至 0 并加重试
+- 诚实声明：自动测试沿用既有 Web / 桥接回归套件，未做模拟器或真机运行验证
+- 版本对齐维护：web `3.1.0`、AppScope / entry `1.1.0`、versionCode 延续递增 `1000040`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.0.0] — 2026-09-12
 
 ### Web 评分快捷键自定义 + 错词定向复习 + harmony 1.0.0 major 跨越 (Stage 4: 版本 bump + 文档回填)
