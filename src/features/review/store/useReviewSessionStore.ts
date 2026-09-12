@@ -2,7 +2,11 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MemoryCard, Rating, AnswerEvaluation, Language } from '../../../types';
 import { useMemoryStore } from '../store/useMemoryStore';
-import { useWrongWordsStore, getSortedEntries } from './useWrongWordsStore';
+import {
+  useWrongWordsStore,
+  sortEntriesBy,
+  type WrongWordsSortMode,
+} from './useWrongWordsStore';
 import { SIMPLE_REMEDY_TEMPLATES_EN, SIMPLE_REMEDY_TEMPLATES_DE } from '../../llm/services/mockProvider';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
@@ -47,13 +51,17 @@ interface ReviewSessionState {
   startReview: (language?: Language) => void;
   /**
    * v1.0.0 Stage 3: 错词定向复习 — 从错词本 (useWrongWordsStore) 发起复习会话.
-   * 取错词条目按 lastWrongAt 倒序, 反查 cards 字典 (键 = lexemeGroupId) 中的卡片实体,
-   * 已删除卡片 (查不到) 丢弃; 过滤后为空则不进入会话 (空态分支, 对齐 startReview).
+   * v1.1.0 Stage 1: 支持 options — sort (排序模式, 缺省 'recent') + limit (截断,
+   * 仅正整数生效, 0/负数/NaN/非整数走缺省全量). 执行顺序: 取 entries → 按 sort
+   * 排序 (在反查之前, 已删卡在 filter 时自然丢弃, 不影响有效卡相对顺序) →
+   * 反查 cards 字典 (键 = lexemeGroupId) → 过滤已删除卡 → limit 截断 →
+   * 过滤后为空则不进入会话 (空态分支, 对齐 startReview).
+   * 缺省调用 (无参) 行为与 v1.0.0 逐字段一致 (recent 全量).
    * 非空则会话启动语义与 startReview 完全同构:
    * recordPreviousMode → set 会话状态 → streak recordDay → 成就检查.
    * 不触碰 startReview / completeReview / jumpToCard 等既有函数体.
    */
-  startWrongWordsReview: () => void;
+  startWrongWordsReview: (options?: { sort?: WrongWordsSortMode; limit?: number }) => void;
   /**
    * v0.6.0-harmony Stage 1: 会话内定向定位到指定卡片。
    * 仅 mode === 'reviewing' 且 cardId 在 queue 中时生效：跳 currentIndex 并重置
@@ -151,18 +159,31 @@ export const useReviewSessionStore = create<ReviewSessionState>()(
         useAchievementStore.getState().checkAndUnlock(buildAchievementContext(false));
       },
 
-      // v1.0.0 Stage 3: 错词定向复习入口 (详见接口注释).
-      startWrongWordsReview: () => {
+      // v1.0.0 Stage 3: 错词定向复习入口 (详见接口注释). v1.1.0 支持 sort/limit.
+      startWrongWordsReview: (options) => {
         evaluationRequestGeneration += 1;
-        const sortedEntries = getSortedEntries(useWrongWordsStore.getState());
+        // v1.1.0: 排序在反查之前 (对 entries 排序); 缺省 'recent' 与
+        // v1.0.0 getSortedEntries 逐字段等价 (lastWrongAt 倒序副本).
+        const sortMode: WrongWordsSortMode = options?.sort ?? 'recent';
+        const sortedEntries = sortEntriesBy(useWrongWordsStore.getState(), sortMode);
         // 反查卡片实体: cards Map 以 lexemeGroupId 为键, 用既有 getCardByLexemeGroup.
         // 错词条目的 cardId 是 MemoryCard.id (与 lexemeGroupId 可不同, 如 bridge 导入),
         // lexemeGroupId 才是字典键; 查不到 (已删除) → 丢弃.
-        const cards = sortedEntries
+        let cards = sortedEntries
           .map((entry) =>
             useMemoryStore.getState().getCardByLexemeGroup(entry.lexemeGroupId)
           )
           .filter((c): c is MemoryCard => c !== undefined);
+
+        // v1.1.0 limit 防御: 仅正整数生效 (0/负数/NaN/非整数/缺省 → 全量).
+        const rawLimit = options?.limit;
+        const limit =
+          rawLimit !== undefined && Number.isInteger(rawLimit) && rawLimit > 0
+            ? rawLimit
+            : null;
+        if (limit !== null) {
+          cards = cards.slice(0, limit);
+        }
 
         // language 取值决策: 取 lastWrongAt 倒序第一条 language 有值的条目;
         // 全部条目 language 均为 undefined (旧数据) 时回退当前 state.language.

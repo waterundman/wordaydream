@@ -116,6 +116,67 @@ export function getSortedEntries(state: { entries: WrongWordEntry[] }): WrongWor
 }
 
 /**
+ * v1.1.0 Stage 1: 错词本多模式排序 (纯派生, 不修改原数组, 与 getSortedEntries 同签名风格)。
+ * - 'recent'    : lastWrongAt 倒序 (等价 getSortedEntries)
+ * - 'oldest'    : firstWrongAt 升序 (最早入本在前)
+ * - 'mostWrong' : wrongCount 倒序, 同分按 lastWrongAt 倒序 (最近答错的在前)
+ */
+export type WrongWordsSortMode = 'recent' | 'oldest' | 'mostWrong';
+
+export function sortEntriesBy(
+  state: { entries: WrongWordEntry[] },
+  mode: WrongWordsSortMode,
+): WrongWordEntry[] {
+  const copy = [...state.entries];
+  if (mode === 'oldest') {
+    copy.sort((a, b) => a.firstWrongAt - b.firstWrongAt);
+  } else if (mode === 'mostWrong') {
+    copy.sort((a, b) => b.wrongCount - a.wrongCount || b.lastWrongAt - a.lastWrongAt);
+  } else {
+    copy.sort((a, b) => b.lastWrongAt - a.lastWrongAt);
+  }
+  return copy;
+}
+
+/**
+ * v1.1.0 Stage 1: 错词本过滤 (纯派生, 不修改原数组)。
+ * - language: 'all'/未传 → 不过滤; 'en'/'de' → entry.language === 该值;
+ *   language 为 undefined 的条目 (旧数据) 只在 'all' 结果中出现。
+ * - timeRange: 'all'/未传 → 不过滤; '7d'/'30d' → now - lastWrongAt 严格小于阈值;
+ *   'older' → now - lastWrongAt >= 30 天。
+ * - now 可注入 (测试用), 缺省 Date.now()。
+ */
+export type WrongWordsLanguageFilter = 'all' | 'en' | 'de';
+export type WrongWordsTimeFilter = 'all' | '7d' | '30d' | 'older';
+
+export function filterEntriesBy(
+  state: { entries: WrongWordEntry[] },
+  opts: {
+    language?: WrongWordsLanguageFilter;
+    timeRange?: WrongWordsTimeFilter;
+    now?: number;
+  } = {},
+): WrongWordEntry[] {
+  const language = opts.language ?? 'all';
+  const timeRange = opts.timeRange ?? 'all';
+  const now = opts.now ?? Date.now();
+  const DAY = 86_400_000;
+
+  return state.entries.filter((entry) => {
+    if (language !== 'all' && entry.language !== language) {
+      return false;
+    }
+    if (timeRange !== 'all') {
+      const age = now - entry.lastWrongAt;
+      if (timeRange === '7d' && age >= 7 * DAY) return false;
+      if (timeRange === '30d' && age >= 30 * DAY) return false;
+      if (timeRange === 'older' && age < 30 * DAY) return false;
+    }
+    return true;
+  });
+}
+
+/**
  * 相对时间格式化 (零依赖)。
  * 阈值: <1min 刚刚 / <60min N 分钟前 / <24h N 小时前 / <30d N 天前 / 更久 YYYY-MM-DD。
  */

@@ -52,14 +52,15 @@ function makeEntry(
   cardId: string,
   lemma: string,
   language: 'en' | 'de',
-  lastWrongAt: number
+  lastWrongAt: number,
+  wrongCount = 1
 ): WrongWordEntry {
   return {
     cardId,
     lexemeGroupId: cardId,
     lemma,
     language,
-    wrongCount: 1,
+    wrongCount,
     lastWrongAt,
     firstWrongAt: lastWrongAt - 1000,
   };
@@ -213,6 +214,83 @@ describe('startWrongWordsReview (v1.0.0 Stage 3: 错词定向复习)', () => {
       const bananaEntry = entries.find((e) => e.cardId === 'lg-banana');
       expect(bananaEntry?.wrongCount).toBe(2);
       expect(bananaEntry?.firstWrongAt).toBe(8000); // 9000 - 1000
+    });
+  });
+
+  describe('v1.1.0 Stage 1: startWrongWordsReview(options?) 排序 + limit', () => {
+    describe('T06 [critical]: mostWrong + limit=1', () => {
+      it('T06: 3 条错词 (wrongCount 2/3/1) → queue 长度 1 且为 wrongCount=3 那张', () => {
+        setMemoryCards([
+          makeCard('lg-two', 'two', 'en'),
+          makeCard('lg-three', 'three', 'en'),
+          makeCard('lg-one', 'one', 'en'),
+        ]);
+        useWrongWordsStore.setState({
+          entries: [
+            makeEntry('lg-two', 'two', 'en', 5000, 2),
+            makeEntry('lg-three', 'three', 'en', 1000, 3),
+            makeEntry('lg-one', 'one', 'en', 9000, 1),
+          ],
+        });
+
+        useReviewSessionStore.getState().startWrongWordsReview({ sort: 'mostWrong', limit: 1 });
+
+        const s = useReviewSessionStore.getState();
+        expect(s.mode).toBe('reviewing');
+        expect(s.queue).toHaveLength(1);
+        expect(s.queue[0].id).toBe('lg-three'); // wrongCount=3
+      });
+    });
+
+    describe('T07 [critical]: limit 防御', () => {
+      it('T07a: limit > 有效数 → 全量', () => {
+        setMemoryCards([
+          makeCard('lg-apple', 'apple', 'en'),
+          makeCard('lg-banana', 'banana', 'de'),
+        ]);
+        useWrongWordsStore.setState({
+          entries: [makeEntry('lg-apple', 'apple', 'en', 1000), makeEntry('lg-banana', 'banana', 'de', 9000)],
+        });
+
+        useReviewSessionStore.getState().startWrongWordsReview({ limit: 5 });
+
+        expect(useReviewSessionStore.getState().queue).toHaveLength(2);
+      });
+
+      it('T07b: limit=0 / limit=-1 → 无效, 走缺省全量', () => {
+        setMemoryCards([
+          makeCard('lg-apple', 'apple', 'en'),
+          makeCard('lg-banana', 'banana', 'de'),
+        ]);
+        useWrongWordsStore.setState({
+          entries: [makeEntry('lg-apple', 'apple', 'en', 1000), makeEntry('lg-banana', 'banana', 'de', 9000)],
+        });
+
+        useReviewSessionStore.getState().startWrongWordsReview({ limit: 0 });
+        expect(useReviewSessionStore.getState().queue).toHaveLength(2);
+
+        // 复位会话后再验证负数
+        useReviewSessionStore.setState({ mode: 'idle', queue: [] });
+        useReviewSessionStore.getState().startWrongWordsReview({ limit: -1 });
+        expect(useReviewSessionStore.getState().queue).toHaveLength(2);
+      });
+    });
+
+    describe('T08 [critical]: 缺省调用零回归守护', () => {
+      it('T08: 无参 startWrongWordsReview() → recent 全量, queue 顺序与 T01 一致', () => {
+        setMemoryCards([makeCard('lg-apple', 'apple', 'en'), makeCard('lg-banana', 'banana', 'de')]);
+        useWrongWordsStore.setState({
+          entries: [makeEntry('lg-apple', 'apple', 'en', 1000), makeEntry('lg-banana', 'banana', 'de', 9000)],
+        });
+
+        useReviewSessionStore.getState().startWrongWordsReview();
+
+        const s = useReviewSessionStore.getState();
+        expect(s.mode).toBe('reviewing');
+        expect(s.queue).toHaveLength(2);
+        // 与既有 T01 完全一致: lastWrongAt 倒序, banana (9000) 在前
+        expect(s.queue.map((c) => c.id)).toEqual(['lg-banana', 'lg-apple']);
+      });
     });
   });
 });

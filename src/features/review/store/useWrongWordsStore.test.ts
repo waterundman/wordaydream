@@ -12,6 +12,29 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MemoryCard } from '../../../types';
+import {
+  sortEntriesBy,
+  filterEntriesBy,
+  type WrongWordEntry,
+} from './useWrongWordsStore';
+
+function makeEntry(
+  cardId: string,
+  lemma: string,
+  language: 'en' | 'de' | undefined,
+  lastWrongAt: number,
+  wrongCount = 1,
+): WrongWordEntry {
+  return {
+    cardId,
+    lexemeGroupId: cardId,
+    lemma,
+    language,
+    wrongCount,
+    lastWrongAt,
+    firstWrongAt: lastWrongAt - 1000,
+  };
+}
 
 function makeCard(
   id: string,
@@ -124,6 +147,119 @@ describe('useWrongWordsStore (Stage 1)', () => {
       const entries = fresh.getState().entries;
       expect(entries).toHaveLength(2);
       expect(entries.map((e) => e.lemma).sort()).toEqual(['apple', 'banana']);
+    });
+  });
+});
+
+describe('useWrongWordsStore (v1.1.0 Stage 1: 错词本派生函数)', () => {
+  describe('S-T01 [critical]: sortEntriesBy 三模式 + 同分稳定性 + 不改原数组', () => {
+    it('S-T01a: recent=lastWrongAt 倒序 / oldest=firstWrongAt 升序 / mostWrong=wrongCount 倒序', () => {
+      const entries: WrongWordEntry[] = [
+        makeEntry('a', 'apple', 'en', 3000, 1), // firstWrongAt 2000
+        makeEntry('b', 'banana', 'de', 1000, 3), // firstWrongAt 0
+        makeEntry('c', 'cherry', 'en', 2000, 2), // firstWrongAt 1000
+      ];
+
+      // recent: lastWrongAt 倒序 → a(3000), c(2000), b(1000)
+      expect(sortEntriesBy({ entries }, 'recent').map((e) => e.cardId))
+        .toEqual(['a', 'c', 'b']);
+      // oldest: firstWrongAt 升序 → b(0), c(1000), a(2000)
+      expect(sortEntriesBy({ entries }, 'oldest').map((e) => e.cardId))
+        .toEqual(['b', 'c', 'a']);
+      // mostWrong: wrongCount 倒序 → b(3), c(2), a(1)
+      expect(sortEntriesBy({ entries }, 'mostWrong').map((e) => e.cardId))
+        .toEqual(['b', 'c', 'a']);
+    });
+
+    it('S-T01b: mostWrong 同分按 lastWrongAt 倒序 (稳定)', () => {
+      const entries: WrongWordEntry[] = [
+        makeEntry('t1', 'w1', 'en', 100, 2),
+        makeEntry('t2', 'w2', 'de', 300, 2),
+        makeEntry('t3', 'w3', 'en', 200, 2),
+      ];
+
+      expect(sortEntriesBy({ entries }, 'mostWrong').map((e) => e.cardId))
+        .toEqual(['t2', 't3', 't1']);
+    });
+
+    it('S-T01c: 返回副本, 不修改原数组', () => {
+      const entries: WrongWordEntry[] = [
+        makeEntry('a', 'apple', 'en', 3000, 1),
+        makeEntry('b', 'banana', 'de', 1000, 3),
+      ];
+      const before = entries.map((e) => e.cardId);
+
+      const sorted = sortEntriesBy({ entries }, 'mostWrong');
+
+      expect(sorted).not.toBe(entries);
+      expect(entries.map((e) => e.cardId)).toEqual(before); // 原数组次序不变
+    });
+  });
+
+  describe('S-T02 [critical]: filterEntriesBy language/timeRange 过滤', () => {
+    const NOW = 1_000_000_000;
+    const DAY = 86_400_000;
+
+    function presetEntries(): WrongWordEntry[] {
+      return [
+        makeEntry('en-1d', 'recent-en', 'en', NOW - 1 * DAY),
+        makeEntry('de-20d', 'mid-de', 'de', NOW - 20 * DAY),
+        makeEntry('nolang-3d', 'legacy', undefined, NOW - 3 * DAY), // language undefined
+        makeEntry('en-edge7', 'edge7', 'en', NOW - 7 * DAY), // 恰好 7d 边界 (严格小于 → 不在 7d 内)
+        makeEntry('en-edge30', 'edge30', 'en', NOW - 30 * DAY), // 恰好 30d 边界 (>= 30d → 归 older)
+        makeEntry('de-40d', 'old-de', 'de', NOW - 40 * DAY),
+      ];
+    }
+
+    it('S-T02a: language 过滤 — undefined 条目只在 all 出现, 不出现在 en/de 筛选', () => {
+      const state = { entries: presetEntries() };
+
+      // all (含未传): 不过滤
+      expect(filterEntriesBy(state, { language: 'all', now: NOW })).toHaveLength(6);
+      expect(filterEntriesBy(state, { now: NOW })).toHaveLength(6);
+
+      // en: undefined 条目被排除
+      expect(filterEntriesBy(state, { language: 'en', now: NOW }).map((e) => e.cardId))
+        .toEqual(['en-1d', 'en-edge7', 'en-edge30']);
+
+      // de: undefined 条目被排除
+      expect(filterEntriesBy(state, { language: 'de', now: NOW }).map((e) => e.cardId))
+        .toEqual(['de-20d', 'de-40d']);
+    });
+
+    it('S-T02b: timeRange 边界 — 严格小于 7d/30d, older 为 >= 30d', () => {
+      const state = { entries: presetEntries() };
+
+      // 7d: age < 7d → 边界条目 (恰好 7d) 不在内
+      expect(filterEntriesBy(state, { timeRange: '7d', now: NOW }).map((e) => e.cardId))
+        .toEqual(['en-1d', 'nolang-3d']);
+
+      // 30d: age < 30d → 边界条目 (恰好 30d) 不在内; 7d 边界条目 (age=7d) 在内
+      expect(filterEntriesBy(state, { timeRange: '30d', now: NOW }).map((e) => e.cardId))
+        .toEqual(['en-1d', 'de-20d', 'nolang-3d', 'en-edge7']);
+
+      // older: age >= 30d → 两个边界/更旧条目
+      expect(filterEntriesBy(state, { timeRange: 'older', now: NOW }).map((e) => e.cardId))
+        .toEqual(['en-edge30', 'de-40d']);
+    });
+
+    it('S-T02c: language + timeRange 组合过滤', () => {
+      const state = { entries: presetEntries() };
+
+      expect(
+        filterEntriesBy(state, { language: 'en', timeRange: 'older', now: NOW })
+          .map((e) => e.cardId)
+      ).toEqual(['en-edge30']);
+    });
+
+    it('S-T02d: 不改原数组', () => {
+      const entries = presetEntries();
+      const before = entries.map((e) => e.cardId);
+
+      const filtered = filterEntriesBy({ entries }, { language: 'en', now: NOW });
+
+      expect(filtered).not.toBe(entries);
+      expect(entries.map((e) => e.cardId)).toEqual(before);
     });
   });
 });
