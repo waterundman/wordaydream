@@ -8,6 +8,8 @@ import { RatingBar } from '../../review/components/RatingBar';
 import { usePageEntranceAnimation } from '../hooks/usePageEntranceAnimation';
 import { useVocabPulseAnimation } from '../hooks/useVocabPulseAnimation';
 import { usePanelPosition } from '../../../hooks/usePanelPosition';
+// v1.2.0 Stage 2 (词汇点读): 词级发音按钮 — 双路径 TTS utility
+import { speakText, supportsSpeechText } from '../../../platform/speakText';
 import styles from './InlineAnswerPanel.module.css';
 import type { TokenOccurrence, AnswerEvaluation, Rating, Language } from '../../../types';
 
@@ -65,6 +67,17 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
     inputRef.current?.focus();
     triggerPulse();
   }, [triggerPulse]);
+
+  // v1.2.0 Stage 2 (词汇点读): 词级发音能力探测 — 与页级 ttsSupported 同一口径
+  // (supportsSpeechSynthesis() || !!nativeBridge?.speak). 双能力缺失时不渲染按钮.
+  const canSpeak = supportsSpeechText();
+
+  // 朗读 token 原文 (surfaceForm, 与错词标记一致的原文词形), 双路径分发见 speakText.ts.
+  // speakText 为模块级导入 (引用稳定), 不入 deps.
+  const handleSpeak = useCallback(() => {
+    speakText(token.surfaceForm, language);
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- speakText 是模块级导入, 非 outer scope 可变值
+  }, [token.surfaceForm, language]);
 
   const handleClose = useCallback(() => {
     // v2.2.4 Stage 3 (Bug 10): 答题后手动关闭面板时, 如果 token 还没 resolved (timer pending),
@@ -247,6 +260,35 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
         </div>
       )}
       <form onSubmit={handleSubmit} className={styles.form}>
+        {/* v1.2.0 Stage 2 (词汇点读): 面板头部 token 词条行 — 原文词形 + 发音按钮.
+            双能力缺失时按钮不渲染 (能力降级, 与页级朗读按钮口径一致). */}
+        <div className={styles.wordRow}>
+          <span className={styles.word}>{token.surfaceForm}</span>
+          {canSpeak && (
+            <button
+              type="button"
+              className={styles.speakBtn}
+              onClick={handleSpeak}
+              aria-label="朗读单词"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className={styles.inputRow}>
           <input
             ref={inputRef}
