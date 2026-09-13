@@ -387,10 +387,13 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
   /** 首页 → 阅读页 → 生成新文本 (mock 短路) → passage 渲染完成. */
   async function generatePassage(page: Page): Promise<void> {
     await page.goto('/');
-    await page.locator('[data-testid="hero-cta"]').click();
+    // v2.4.0 fix 沿例 (offline-install T04): mobile-chrome 393px 视口下 hero CTA /
+    // 生成按钮位于滚动容器视口外且 scrollIntoView 滚不动 (v0.4.0 移动布局),
+    // click 的视口命中检查失败 → dispatchEvent 直接派发 DOM click 绕过.
+    await page.locator('[data-testid="hero-cta"]').dispatchEvent('click');
     const generateBtn = page.locator('button', { hasText: '生成新文本' });
     await generateBtn.waitFor({ state: 'visible', timeout: 15_000 });
-    await generateBtn.click();
+    await generateBtn.dispatchEvent('click');
     await page.locator('[data-testid="passage-token"]').first().waitFor({ state: 'visible', timeout: 30_000 });
   }
 
