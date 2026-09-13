@@ -47,10 +47,16 @@ vi.mock('../../../platform/detect', () => ({
 // =============================================================================
 
 const speakViaWebSpeechSynthesisMock = vi.fn();
+const stopWebSpeechSynthesisMock = vi.fn();
 
+// 注: v1.3.0 Stage 1 起 speakText 还会调用 stopWebSpeechSynthesisIfOwnedBy /
+// stopWebSpeechSynthesis (词级收口), 故此处一并 mock, 否则 partial mock 会因缺失
+// 导出而报错. 沿用 reading-session-tts 手法.
 vi.mock('../../../platform/speechSynthesis', () => ({
   speakViaWebSpeechSynthesis: (payload: unknown) =>
     speakViaWebSpeechSynthesisMock(payload),
+  stopWebSpeechSynthesis: () => stopWebSpeechSynthesisMock(),
+  stopWebSpeechSynthesisIfOwnedBy: vi.fn(() => false),
 }));
 
 // =============================================================================
@@ -184,6 +190,7 @@ beforeEach(() => {
   clearAllListeners();
   // 清理 mock 调用记录
   speakViaWebSpeechSynthesisMock.mockClear();
+  stopWebSpeechSynthesisMock.mockClear();
   // 默认 platform: web + speechSynthesis 可用
   setPlatformMock(makeWebWithSpeechSynthesisPlatform());
 });

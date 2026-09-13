@@ -9,7 +9,8 @@ import { usePageEntranceAnimation } from '../hooks/usePageEntranceAnimation';
 import { useVocabPulseAnimation } from '../hooks/useVocabPulseAnimation';
 import { usePanelPosition } from '../../../hooks/usePanelPosition';
 // v1.2.0 Stage 2 (词汇点读): 词级发音按钮 — 双路径 TTS utility
-import { speakText, supportsSpeechText } from '../../../platform/speakText';
+// v1.3.0 Stage 1: stopSpeechText 用于面板卸载 / token 切换时收口词级朗读
+import { speakText, stopSpeechText, supportsSpeechText } from '../../../platform/speakText';
 import styles from './InlineAnswerPanel.module.css';
 import type { TokenOccurrence, AnswerEvaluation, Rating, Language } from '../../../types';
 
@@ -78,6 +79,19 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
     speakText(token.surfaceForm, language);
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- speakText 是模块级导入, 非 outer scope 可变值
   }, [token.surfaceForm, language]);
+
+  // v1.3.0 Stage 1 (词汇点读收口): 词级朗读生命周期清理.
+  // 面板卸载 (父级条件渲染关闭) 或切换到另一个 token (token.id 变更) 时,
+  // 取消由本面板发起的词级朗读. 归属权隔离见 speakText.stopSpeechText:
+  // 仅当朗读由词级发起才真正取消, 不会误杀页级朗读 (ReadingSessionPage 的朗读
+  // 不经过 speakText, 故 stopSpeechText 对其为 no-op).
+  // 初始挂载时 cleanup 不触发, 不会误停已有朗读; 仅 token.id 变更 / 卸载时触发.
+  useEffect(() => {
+    return () => {
+      stopSpeechText();
+    };
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- 仅在 token 切换 / 卸载时收口, stopSpeechText 为模块级导入
+  }, [token.id]);
 
   const handleClose = useCallback(() => {
     // v2.2.4 Stage 3 (Bug 10): 答题后手动关闭面板时, 如果 token 还没 resolved (timer pending),

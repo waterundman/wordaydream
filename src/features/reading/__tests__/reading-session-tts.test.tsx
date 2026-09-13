@@ -54,6 +54,9 @@ vi.mock('../../../platform/speechSynthesis', () => ({
   stopWebSpeechSynthesis: () => stopWebSpeechSynthesisMock(),
   setWebSpeechSynthesisEndCallback: (cb: (() => void) | null) =>
     setWebSpeechSynthesisEndCallbackMock(cb),
+  // v1.3.0 S1 保险键: 页面树含 InlineAnswerPanel → speakText (词级收口),
+  // 面板卸载时经 stopWebSpeechSynthesisIfOwnedBy 走真实 speakText — 缺键会 TypeError.
+  stopWebSpeechSynthesisIfOwnedBy: vi.fn(() => false),
 }));
 
 // =============================================================================

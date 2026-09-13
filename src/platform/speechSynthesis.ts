@@ -31,6 +31,19 @@ let currentUtterance: SpeechSynthesisUtterance | null = null;
 /** 播放结束回调 (由调用方 setWebSpeechSynthesisEndCallback 设置). */
 let onPlaybackEndCallback: (() => void) | null = null;
 
+/**
+ * 朗读发起方标记 (v1.3.0 Stage 1 归属权隔离).
+ *
+ * 'word' = 词级点读 (speakText), 'other' = 页级朗读等其余调用方 (缺省值).
+ * 用途: 词级收口 (stopWebSpeechSynthesisIfOwnedBy) 仅取消词级发起的朗读,
+ * 避免面板卸载/token 切换时误杀页级朗读.
+ * 生命周期: speak 时打标; 队列自然播空 / stopWebSpeechSynthesis 时清除.
+ */
+export type SpeechInitiator = 'word' | 'other';
+
+/** 当前朗读队列的发起方 (null = 无朗读在进行). */
+let currentInitiator: SpeechInitiator | null = null;
+
 /** 长文本切分阈值 (R-TTS-5: chunk size 200 字符). */
 const CHUNK_MAX_LENGTH = 200;
 
@@ -164,11 +177,17 @@ export function selectVoiceByLang(lang: 'de-DE' | 'en-US'): SpeechSynthesisVoice
  *
  * @param payload TTS 载荷 (text / language / rate / voiceId?)
  */
-export function speakViaWebSpeechSynthesis(payload: SpeakPayload): void {
+export function speakViaWebSpeechSynthesis(
+  payload: SpeakPayload,
+  initiator: SpeechInitiator = 'other',
+): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
   // 清空已有队列
   stopWebSpeechSynthesis();
+
+  // v1.3.0 Stage 1: 打标发起方 (缺省 'other' = 页级等既有调用方, 行为零变化)
+  currentInitiator = initiator;
 
   const { text, language, rate } = payload;
   const chunks = splitTextIntoChunks(text);
@@ -194,6 +213,7 @@ export function speakViaWebSpeechSynthesis(payload: SpeakPayload): void {
  */
 export function stopWebSpeechSynthesis(): void {
   utteranceQueue = [];
+  currentInitiator = null;
   if (currentUtterance) {
     currentUtterance.onend = null;
     currentUtterance.onerror = null;
@@ -206,6 +226,22 @@ export function stopWebSpeechSynthesis(): void {
       // 兜底: cancel 在某些实现可能抛异常, 静默跳过
     }
   }
+}
+
+/**
+ * 仅当当前朗读由指定发起方启动时才停止 (v1.3.0 Stage 1 归属权隔离).
+ *
+ * 词级收口场景: 词汇点读的面板卸载 / token 切换调用此函数并传 'word',
+ * 页级朗读 (initiator='other') 不受影响; 队列自然播空后 initiator 已清,
+ * 此时调用同样为 no-op (无 stale 标志误杀问题).
+ *
+ * @param initiator 期望的发起方
+ * @returns 是否实际执行了停止
+ */
+export function stopWebSpeechSynthesisIfOwnedBy(initiator: SpeechInitiator): boolean {
+  if (currentInitiator !== initiator) return false;
+  stopWebSpeechSynthesis();
+  return true;
 }
 
 /**
@@ -228,6 +264,8 @@ export function setWebSpeechSynthesisEndCallback(onEnd: (() => void) | null): vo
 function playNextUtterance(): void {
   if (utteranceQueue.length === 0) {
     currentUtterance = null;
+    // v1.3.0 Stage 1: 队列自然播空 → 发起方归属清除 (无 stale 标志)
+    currentInitiator = null;
     if (onPlaybackEndCallback) {
       onPlaybackEndCallback();
     }
@@ -309,4 +347,5 @@ export function _resetSpeechSynthesisCache(): void {
   utteranceQueue = [];
   currentUtterance = null;
   onPlaybackEndCallback = null;
+  currentInitiator = null;
 }
