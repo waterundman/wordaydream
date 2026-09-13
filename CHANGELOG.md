@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] — 2026-09-13
+
+### Web E2E 深化 + 词汇点读收口 (Stage 4: 版本 bump + 文档回填)
+
+- Web 词汇点读收口：`speakText` 升级 cancel-then-speak（同词连点重播 / 异词连点替换）；新增 `stopSpeechText()`；答题面板卸载 / 切词时自动取消进行中的词级朗读；归属权经 `speechSynthesis` 的 `currentInitiator` 发起方标记隔离（词级收口不误杀页级朗读，页级行为零改动）
+- Web E2E 深化（`e2e/web.spec.ts` 3→10 用例）：错词导出 CSV / JSON 下载断言（文件名 YYYYMMDD + RFC 4180 表头 / schema 字段体）；快捷键捕获交互（新键生效 + localStorage 持久化 + 保留键 / 评分互斥冲突拒绝 + Escape 取消）；阅读链三条主链路（答题评估制卡入账 / 发音按钮朗读 token 原文 / 错词标记 + tooltip 累计次数）
+- 缺陷修复（E2E 揪出）：答题面板发音按钮被绝对定位的关闭按钮覆盖，真实点击无法命中；词行右侧让位修复
+- 工程事实：Web E2E 已随 playwright.yml 零配置自动进入 CI（4 浏览器项目，v1.2.0 推送即验证 success）；本版测试证据 web 10/10 连续两轮
+- 诚实声明：自动测试沿用既有 Web / 桥接回归套件并新增 Web E2E，未做模拟器或真机运行验证；E2E 阅读链断言锚定 mock 确定性语料
+- 版本对齐维护：web `3.3.0`、AppScope / entry `1.3.0`、versionCode 延续递增 `1000050`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.2.0] — 2026-09-13
 
 ### Web 阅读流联动 + Web E2E 首批 (Stage 4: 版本 bump + 文档回填)
