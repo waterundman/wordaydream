@@ -26,8 +26,28 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const SHOTS_DIR = 'debug_shots_web';
+
+/** 本地日期戳 YYYYMMDD (与 WrongWordsExportSection.toLocalDateStamp 同口径). */
+function localDateStamp(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+/** 打开首页设置面板 (dialog), 供导出/快捷键区块用例复用. */
+async function openSettingsPanel(page: Page): Promise<void> {
+  await page.goto('/');
+  await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 15_000 });
+  const settingsBtn = page.locator('[aria-label="设置"]').first();
+  await settingsBtn.waitFor({ state: 'visible', timeout: 10_000 });
+  await settingsBtn.click();
+  await page.locator('[role="dialog"][aria-modal="true"]').waitFor({ state: 'visible', timeout: 10_000 });
+}
 
 interface SeedCard {
   id: string;
@@ -228,5 +248,131 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
     await expect(page.getByTestId('wrong-words-export-section')).toBeVisible();
 
     await page.screenshot({ path: `${SHOTS_DIR}/T03-settings-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T04 [critical]: 导出链 — CSV 下载 (v1.3.0 Stage 2, 计划用例 T01)
+  // 种子 2 条错词 → 设置面板导出 CSV → 文件名 YYYYMMDD + RFC 4180 表头 7 字段 + 行序 recent
+  test('T04 [critical]: 导出链 — CSV 下载文件名与 RFC 4180 内容体', async ({ page }, testInfo) => {
+    const now = Date.now();
+    await seedWrongWords(page, [
+      { cardId: 'c-apple', lexemeGroupId: 'apple', lemma: 'apple', language: 'en', wrongCount: 3, lastWrongAt: now - 1_000, firstWrongAt: now - 10_000 },
+      { cardId: 'c-baum', lexemeGroupId: 'baum', lemma: 'baum', language: 'de', wrongCount: 1, lastWrongAt: now - 5_000, firstWrongAt: now - 6_000 },
+    ]);
+
+    await openSettingsPanel(page);
+    const exportSection = page.getByTestId('wrong-words-export-section');
+    await expect(exportSection).toBeVisible();
+
+    // waitForEvent 先于 click 注册 (blob 下载竞态预防)
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: '导出 CSV' }).click();
+    const download = await downloadPromise;
+
+    // 文件名: wordaydream-wrong-words-YYYYMMDD.csv
+    expect(download.suggestedFilename()).toBe(`wordaydream-wrong-words-${localDateStamp()}.csv`);
+
+    // 内容体: 表头 7 字段 + 行序 recent (apple lastWrongAt 更近 → 在 baum 前) + ISO 8601 时间
+    const content = readFileSync(await download.path(), 'utf-8');
+    const lines = content.trim().split('\n');
+    expect(lines[0]).toBe('cardId,lexemeGroupId,lemma,language,wrongCount,firstWrongAt,lastWrongAt');
+    expect(lines).toHaveLength(3);
+    expect(content.indexOf('apple')).toBeLessThan(content.indexOf('baum'));
+    expect(lines[1]).toContain(',apple,en,3,');
+    expect(lines[1]).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    expect(lines[2]).toContain(',baum,de,1,');
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T04-export-csv-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T05 [critical]: 导出链 — JSON 下载 (v1.3.0 Stage 2, 计划用例 T02)
+  test('T05 [critical]: 导出链 — JSON 下载 schema/version/entries', async ({ page }, testInfo) => {
+    const now = Date.now();
+    await seedWrongWords(page, [
+      { cardId: 'c-apple', lexemeGroupId: 'apple', lemma: 'apple', language: 'en', wrongCount: 3, lastWrongAt: now - 1_000, firstWrongAt: now - 10_000 },
+    ]);
+
+    await openSettingsPanel(page);
+    await expect(page.getByTestId('wrong-words-export-section')).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: '导出 JSON' }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe(`wordaydream-wrong-words-${localDateStamp()}.json`);
+
+    const payload = JSON.parse(readFileSync(await download.path(), 'utf-8')) as {
+      schema: string;
+      version: number;
+      exportedAt: string;
+      entries: Array<{ lemma: string; wrongCount: number }>;
+    };
+    expect(payload.schema).toBe('wordaydream-wrong-words');
+    expect(payload.version).toBe(1);
+    expect(payload.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(payload.entries).toHaveLength(1);
+    expect(payload.entries[0]).toMatchObject({ lemma: 'apple', wrongCount: 3 });
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T05-export-json-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T06 [critical]: 快捷键链 — 捕获新键生效 + localStorage 持久化 (v1.3.0 Stage 2, 计划用例 T03)
+  test('T06 [critical]: 快捷键链 — 捕获新键生效并持久化', async ({ page }, testInfo) => {
+    await openSettingsPanel(page);
+
+    // 进入 Again 键捕获态 → 按下 'q' (window capture 阶段 keydown)
+    await page.getByRole('button', { name: '修改 Again 键' }).click();
+    await expect(page.locator('[aria-label="正在修改 Again 键，请按下新按键"]')).toBeVisible();
+    await page.keyboard.press('q');
+
+    // kbd 更新为新键
+    await expect(page.locator('[aria-label="Again 当前按键 q"]')).toBeVisible();
+    // 无冲突告警
+    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+
+    // persist: wordaydream:shortcut-overrides 写入 again:'q'
+    await expect
+      .poll(async () => {
+        const raw = await page.evaluate(() => window.localStorage.getItem('wordaydream:shortcut-overrides'));
+        if (!raw) return null;
+        try {
+          return (JSON.parse(raw) as { state: { ratingKeys: { again: string } } }).state.ratingKeys.again;
+        } catch {
+          return null;
+        }
+      }, { timeout: 10_000 })
+      .toBe('q');
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T06-shortcut-capture-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T07 [critical]: 快捷键链 — 保留键/互斥冲突拒绝, 原键位不变 (v1.3.0 Stage 2, 计划用例 T04)
+  test('T07 [critical]: 快捷键链 — 冲突拒绝且原键位不变', async ({ page }, testInfo) => {
+    await openSettingsPanel(page);
+
+    // 冲突 1: 保留键 'r' → role="alert" 行内提示, Hard 键位不变
+    await page.getByRole('button', { name: '修改 Hard 键' }).click();
+    await page.keyboard.press('r');
+    const alert = page.locator('[role="alert"]');
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText('保留键');
+    await expect(page.locator('[aria-label="Hard 当前按键 2"]')).toBeVisible();
+
+    // 冲突 2: 评分互斥 — Again 占用的 '1' → alert 提示占用, 键位仍不变
+    await page.getByRole('button', { name: '修改 Hard 键' }).click();
+    await page.keyboard.press('1');
+    await expect(page.locator('[role="alert"]')).toContainText('占用');
+    await expect(page.locator('[aria-label="Hard 当前按键 2"]')).toBeVisible();
+
+    // 拒绝不写持久化 (setRatingKey 拒绝路径不触发 zustand set)
+    const raw = await page.evaluate(() => window.localStorage.getItem('wordaydream:shortcut-overrides'));
+    expect(raw).toBeNull();
+
+    // Escape 取消捕获态 (无告警新增)
+    await page.getByRole('button', { name: '修改 Hard 键' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[aria-label="Hard 当前按键 2"]')).toBeVisible();
+    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T07-shortcut-conflict-${testInfo.project.name}.png`, fullPage: true });
   });
 });
