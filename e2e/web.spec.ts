@@ -375,4 +375,134 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
     await page.screenshot({ path: `${SHOTS_DIR}/T07-shortcut-conflict-${testInfo.project.name}.png`, fullPage: true });
   });
+
+  // ---------------------------------------------------------------------------
+  // 阅读链 (v1.3.0 Stage 3, 计划用例 T01-T03)
+  // 断言锚定 MockLLMProvider 确定性 demo 语料 'The Quiet Revolution'
+  // (src/mocks/passages.ts mockEnglishPassage: 7 token, revolution/artisans/...),
+  // 评估走 mockProvider.lookupEvaluation 确定性启发式:
+  //   'revolution' + '革命' → correct (制卡); 非中文答案 → wrong (错词入账).
+  // ---------------------------------------------------------------------------
+
+  /** 首页 → 阅读页 → 生成新文本 (mock 短路) → passage 渲染完成. */
+  async function generatePassage(page: Page): Promise<void> {
+    await page.goto('/');
+    await page.locator('[data-testid="hero-cta"]').click();
+    const generateBtn = page.locator('button', { hasText: '生成新文本' });
+    await generateBtn.waitFor({ state: 'visible', timeout: 15_000 });
+    await generateBtn.click();
+    await page.locator('[data-testid="passage-token"]').first().waitFor({ state: 'visible', timeout: 30_000 });
+  }
+
+  // T08 [critical]: 阅读链答题 → 评估 → 制卡入账 (计划用例 T01)
+  test('T08 [critical]: 阅读链 — 答题评估制卡入账', async ({ page }, testInfo) => {
+    // mock 短路: 全程不应有 LLM proxy 请求 (沿 offline-install T04 手法)
+    let llmProxyCallCount = 0;
+    await page.route('**/api/llm-proxy**', (route) => {
+      llmProxyCallCount += 1;
+      return route.fulfill({ status: 500, body: 'unexpected call with mock provider' });
+    });
+    await page.route('**/.netlify/edge-functions/llm-proxy**', (route) => {
+      llmProxyCallCount += 1;
+      return route.fulfill({ status: 500, body: 'unexpected call with mock provider' });
+    });
+
+    await generatePassage(page);
+
+    // 点击 token 'revolution' → InlineAnswerPanel 打开
+    const token = page.locator('[data-testid="passage-token"]', { hasText: 'revolution' }).first();
+    await token.click();
+    const answerInput = page.locator('input[aria-label="释义输入"]');
+    await answerInput.waitFor({ state: 'visible', timeout: 10_000 });
+
+    // 提交正确释义 → mock 评估 correct → addCardFromToken 制卡
+    await answerInput.fill('革命');
+    await page.locator('[role="dialog"]').getByRole('button', { name: '确认' }).click();
+
+    // UI 反馈: 评估 correct 文案
+    await expect(page.getByText('完全正确')).toBeVisible({ timeout: 10_000 });
+
+    // 状态级佐证: memory persist (wordaydream:memory) 出现 lex-revolution 卡
+    await expect
+      .poll(async () => {
+        const raw = await page.evaluate(() => window.localStorage.getItem('wordaydream:memory'));
+        return raw !== null && raw.includes('lex-revolution');
+      }, { timeout: 10_000 })
+      .toBe(true);
+
+    // mock 短路: 无 proxy 请求
+    expect(llmProxyCallCount).toBe(0);
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T08-reading-card-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T09 [critical]: 阅读链 — 面板发音按钮朗读 token 原文 (计划用例 T02)
+  test('T09 [critical]: 阅读链 — 发音按钮朗读 token 原文', async ({ page }, testInfo) => {
+    // 页面加载前 stub window.speechSynthesis → 录制 speak 的 utterance 文本
+    await page.addInitScript(() => {
+      const spoken: string[] = [];
+      (window as unknown as { __spokenTexts: string[] }).__spokenTexts = spoken;
+      Object.defineProperty(window, 'speechSynthesis', {
+        configurable: true,
+        value: {
+          speak: (utterance: { text: string }) => {
+            spoken.push(utterance.text);
+          },
+          cancel: () => undefined,
+          getVoices: () => [],
+        },
+      });
+    });
+
+    await generatePassage(page);
+
+    // 点击 token 'artisans' (难度 3, 在默认 difficulty 2 的 ±1 过滤范围内;
+    // 'dilapidated' 难度 4 会被 getMockPassage 过滤掉) → 面板 → 发音按钮
+    // → stub 收到 surfaceForm 'artisans' (lemma 为 'artisan', 恰好可断言原文非 lemma)
+    const token = page.locator('[data-testid="passage-token"]', { hasText: 'artisans' }).first();
+    await token.click();
+    await page.locator('input[aria-label="释义输入"]').waitFor({ state: 'visible', timeout: 10_000 });
+
+    await page.getByRole('button', { name: '朗读单词' }).click();
+
+    await expect
+      .poll(async () => {
+        const spoken = await page.evaluate(
+          () => (window as unknown as { __spokenTexts: string[] }).__spokenTexts,
+        );
+        return spoken.join('|');
+      }, { timeout: 10_000 })
+      .toContain('artisans');
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T09-reading-speak-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T10 [critical]: 阅读链 — 错词种子命中渲染标记 + tooltip 累计次数 (计划用例 T03)
+  test('T10 [critical]: 阅读链 — 错词标记与 tooltip', async ({ page }, testInfo) => {
+    const now = Date.now();
+    // 种子错词: lex-revolution (passage token 'revolution' 的 lexemeGroupId)
+    await seedWrongWords(page, [
+      {
+        cardId: 'c-rev',
+        lexemeGroupId: 'lex-revolution',
+        lemma: 'revolution',
+        language: 'en',
+        wrongCount: 2,
+        lastWrongAt: now - 60_000,
+        firstWrongAt: now - 120_000,
+      },
+    ]);
+
+    await generatePassage(page);
+
+    // 错词 token 渲染标记类 (amber 虚线下划线, CSS module 类名含 wrongWordMark)
+    const token = page.locator('[data-testid="passage-token"]', { hasText: 'revolution' }).first();
+    await expect(token).toHaveClass(/wrongWordMark/);
+
+    // hover → Radix tooltip: "错词 · 累计 2 次"
+    await token.hover();
+    await expect(page.getByRole('tooltip')).toContainText('错词 · 累计 2 次', { timeout: 5_000 });
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T10-reading-wrongmark-${testInfo.project.name}.png`, fullPage: true });
+  });
 });

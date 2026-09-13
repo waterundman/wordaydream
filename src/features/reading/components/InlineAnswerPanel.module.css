@@ -76,6 +76,9 @@
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
+  /* v1.3.0 S3 E2E 缺陷修复: 右上角让位给绝对定位的 .closeBtn (24px + 8px 边距),
+     否则发音按钮被关闭按钮覆盖, 真实点击无法命中 (E2E hit-testing 揪出). */
+  padding-right: calc(1.5rem + var(--space-2));
 }
 
 .word {
