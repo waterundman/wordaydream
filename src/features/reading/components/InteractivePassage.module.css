@@ -91,6 +91,23 @@
 }
 
 /**
+ * v1.2.0 Stage 1: 错词本联动标记 (阅读流 ↔ 错词本).
+ * amber/warning 虚线下划线, 与既有语义区分:
+ * - linked highlight: accent/underline 蓝系背景 + 实线下划线
+ * - resolved (correct): --color-correct 绿色文字
+ * - resolvedWrong: 灰色 + 删除线
+ * 错词用 amber 虚线下划线 (text-decoration 挂在 wrapper 层, 不与内部
+ * LinkedOccurrenceHighlight 的 ::after 下划线 / resolved 删除线冲突).
+ */
+.wrongWordMark {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: var(--color-warning, #f59e0b);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/**
  * v1.2.0: alignment status tooltip 样式.
  * Radix Tooltip 默认 portal 到 body, 需要在全局选择器里也兼容一份
  * (因为 css modules 会将 .alignmentTooltip 编译为唯一类名).

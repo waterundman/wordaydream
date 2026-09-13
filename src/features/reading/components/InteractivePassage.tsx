@@ -6,6 +6,7 @@ import { InlineAnswerPanel } from './InlineAnswerPanel';
 import { GrammarHighlight } from '../../grammar/components/GrammarHighlight';
 import { GrammarPanel } from '../../grammar/components/GrammarPanel';
 import { usePageEntranceAnimation } from '../hooks/usePageEntranceAnimation';
+import { useWrongWordMarks, getTokenWrongCount } from '../hooks/useWrongWordMarks';
 import { EmptyState } from '../../../components/EmptyState';
 import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts';
 import styles from './InteractivePassage.module.css';
@@ -34,6 +35,11 @@ interface TokenSpanProps {
   isFocused: boolean;
   language: Language;
   isReplay: boolean;
+  /**
+   * v1.2.0 Stage 1: 错词本命中次数. undefined = 非错词.
+   * 用 number | undefined (而非 boolean) 保证 memo 浅比较在次数变化时也能感知.
+   */
+  wrongCount?: number;
   children: React.ReactNode;
 }
 
@@ -66,6 +72,7 @@ const TokenSpan = memo(function TokenSpan({
   isFocused,
   language,
   isReplay,
+  wrongCount,
   children,
 }: TokenSpanProps) {
   // v2.1.0 Stage 4 (Contract 68): 重读模式下禁用作答面板.
@@ -76,12 +83,21 @@ const TokenSpan = memo(function TokenSpan({
     () => buildAlignmentTooltip(token.alignmentStatus, token.originalOffset),
     [token.alignmentStatus, token.originalOffset]
   );
-  const showAlignmentTooltip = tooltipText !== null;
+
+  // v1.2.0 Stage 1: 错词 tooltip 与 alignment tooltip 共存决策 — 拼接
+  // "原文案 · 错词 · 累计 N 次"; 仅错词时文案为 "错词 · 累计 N 次".
+  const wrongTooltipText = wrongCount !== undefined ? `错词 · 累计 ${wrongCount} 次` : null;
+  const combinedTooltipText =
+    tooltipText && wrongTooltipText
+      ? `${tooltipText} · ${wrongTooltipText}`
+      : (wrongTooltipText ?? tooltipText);
+  const showTooltip = combinedTooltipText !== null;
 
   const wrapperClassName = [
     styles.tokenWrapper,
     isFocused ? styles.focused : '',
     isReplay ? styles.tokenReplay : '',
+    wrongCount !== undefined ? styles.wrongWordMark : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -111,6 +127,7 @@ const TokenSpan = memo(function TokenSpan({
       data-testid="passage-token"
       data-token-id={token.id}
       data-replay={isReplay ? 'true' : undefined}
+      data-wrong-count={wrongCount !== undefined ? String(wrongCount) : undefined}
       onClickCapture={handleReplayClickCapture}
       onKeyDownCapture={handleReplayKeyDownCapture}
     >
@@ -122,7 +139,7 @@ const TokenSpan = memo(function TokenSpan({
 
   return (
     <>
-      {showAlignmentTooltip ? (
+      {showTooltip ? (
         <Tooltip.Root delayDuration={300}>
           <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>
           <Tooltip.Portal>
@@ -133,7 +150,7 @@ const TokenSpan = memo(function TokenSpan({
               data-alignment={token.alignmentStatus}
               data-testid="alignment-tooltip"
             >
-              {tooltipText}
+              {combinedTooltipText}
             </Tooltip.Content>
           </Tooltip.Portal>
         </Tooltip.Root>
@@ -232,6 +249,9 @@ export function InteractivePassage({ language, isReplay = false, hideTitle = fal
     animationDuration: 500,
     offset: 16,
   });
+
+  // v1.2.0 Stage 1: 阅读流 ↔ 错词本联动 — 订阅错词本 entries, 派生匹配 Map
+  const wrongWordMarks = useWrongWordMarks();
 
   /**
    * Stage 4 单层段落切分 (替换旧版双层 split 状态机):
@@ -707,6 +727,7 @@ export function InteractivePassage({ language, isReplay = false, hideTitle = fal
                   const token = item.token!;
                   const isActive = token.id === activeOccurrenceId;
                   const isFocused = token.id === focusedTokenId;
+                  const wrongCount = getTokenWrongCount(wrongWordMarks, token);
 
                   return (
                     <TokenSpan
@@ -716,6 +737,7 @@ export function InteractivePassage({ language, isReplay = false, hideTitle = fal
                       isFocused={isFocused}
                       language={effectiveLanguage}
                       isReplay={isReplay}
+                      wrongCount={wrongCount}
                     >
                       {item.content}
                     </TokenSpan>
