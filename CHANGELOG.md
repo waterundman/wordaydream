@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] — 2026-09-13
+
+### Web 阅读流联动 + Web E2E 首批 (Stage 4: 版本 bump + 文档回填)
+
+- Web 错词联动高亮：阅读文本中错词本词条以琥珀色虚线下划线标记，tooltip 附加「错词 · 累计 N 次」；双层匹配键（lexemeGroupId 优先 / 表面形式兜底，取最大 wrongCount）；订阅式派生，persist rehydrate 即时生效；纯视觉零交互变更
+- Web 词汇点读：答题面板头部新增发音按钮，朗读 token 原文（surfaceForm 而非 lemma）；抽取 `platform/speakText.ts` 双路径 utility（鸿蒙 bridge.speak 优先 / Web SpeechSynthesis 兜底，语种映射 de→de-DE、en→en-US）；双能力缺失自动隐藏按钮；页级朗读链路零改动
+- Web E2E 首批：`e2e/web.spec.ts` 三条主链路（复习链答错入账可见 / 错词本区块与排序·数量·筛选控件 / 设置面板快捷键与导出区块），localStorage 种子逐字段对齐 zustand persist 源码；新增 `npm run test:e2e:web`；E2E 为独立 script，不接入 CI
+- 工程配套：`.gitignore` 补 playwright 本地产物（`playwright-report/`、`test-results/`）
+- 诚实声明：自动测试沿用既有 Web / 桥接回归套件并新增 Web E2E（web 3/3、offline 回归 4/4），未做模拟器或真机运行验证
+- 版本对齐维护：web `3.2.0`、AppScope / entry `1.2.0`、versionCode 延续递增 `1000045`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.1.0] — 2026-09-12
 
 ### Web 错词本完全体 + lint 归零 (Stage 4: 版本 bump + 文档回填)
