@@ -57,3 +57,7 @@ pnpm-lock.yaml
 .runtime-smoke/
 pw-out-*/
 test-results-audit/
+
+# v1.2.0 S3: Playwright 本地运行产物 (web e2e)
+playwright-report/
+test-results/

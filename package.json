@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:e2e:web": "playwright test --project=chromium e2e/web.spec.ts",
     "typecheck": "tsc --noEmit",
     "check:versions": "node scripts/check-version-alignment.mjs"
   },
