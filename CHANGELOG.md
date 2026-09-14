@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] — 2026-09-14
+
+### 阅读完成页会话统计 (v1.5.0)
+
+- 阅读完成层（ReadingCompleteOverlay）新增本篇会话统计行：「本篇生词 X 个 · 答对 Y · 答错 Z（· 复习 W）」，连续三版 defer 的 D2② 以轻量形态兑现；复用副标题淡入时序，不改动 ink-draw 动画
+- 统计 100% 纯派生自 `session.passage.tokens`（`summarizeReadingSession`，与进度口径同源：normal token distinct lexemeGroupId），**useReadingSessionStore 零改动**；partial（部分对）归入答错侧，保证 答对 + 答错 = 已答组数；复习复现按 distinct cardId 计数
+- 无 session 字段时统计行不渲染（向后兼容既有调用方）；卡片制作数因 token 不回写 cardId 无法回溯派生，诚实改用答对口径
+- 测试证据：vitest 1422/1422（基线 1414 + 8）、Web E2E 14/14（chromium + mobile-chrome 双项目，新增 T14 完成页链：真实答题全对 → 统计行断言；途中锚定答对庆祝层与完成层的 z-index 交互）、tsc 0 错误、oxlint 0 警告 0 错误
+- 诚实声明：自动测试沿用既有 Web / 桥接回归套件并新增 Web E2E，未做模拟器或真机运行验证
+- 版本对齐维护：web `3.5.0`、AppScope / entry `1.5.0`、versionCode 延续递增 `1000060`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.4.0] — 2026-09-14
 
 ### 错词本导入闭环 + 单条管理 + 轻量阅读摘要 (v1.4.0)
