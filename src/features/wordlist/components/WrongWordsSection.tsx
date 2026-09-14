@@ -14,7 +14,7 @@
  *   (全部/近 7 天/近 30 天/更早). 列表数据 = filterEntriesBy 后再 sortEntriesBy('recent')
  *   (列表保持最近错倒序, 与 v0.9.0 一致). 筛选后空列表显示空态文案.
  * - 契约: 筛选只影响列表显示; 复习按钮 N 恒为全量有效条目数 (不随筛选变化).
- * - 只读展示, 无重练 / 删除单条入口 (clearAll 本轮不接 UI).
+ * - v1.4.0 S3a: 列表行内新增单条删除按钮 (removeEntry), 移除后列表/总数 reactive 更新.
  * - lemma 缺失 (词条已删除) → "词条已删除"降级.
  * - 相对时间零依赖 (formatRelativeTime).
  */
@@ -41,6 +41,7 @@ type ReviewLimit = 'all' | 10 | 20;
 
 export function WrongWordsSection() {
   const entries = useWrongWordsStore((s) => s.entries);
+  const removeEntry = useWrongWordsStore((s) => s.removeEntry);
   const startWrongWordsReview = useReviewSessionStore(
     (s) => s.startWrongWordsReview
   );
@@ -172,6 +173,20 @@ export function WrongWordsSection() {
                   )}
                   <span className={styles.meta}>错 {e.wrongCount} 次</span>
                   <span className={styles.time}>{formatRelativeTime(e.lastWrongAt)}</span>
+                  {/* v1.4.0 S3a: 单条删除 (v1.1.0 预留项); 流内 flex 布局, 不做 absolute
+                      (v1.3.0 closeBtn 遮挡发音按钮教训) */}
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    data-testid="wrong-word-remove"
+                    aria-label={`删除错词 ${isDeleted ? e.cardId : e.lemma}`}
+                    onClick={() => removeEntry(e.cardId)}
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                      <line x1="5" y1="5" x2="19" y2="19" />
+                      <line x1="19" y1="5" x2="5" y2="19" />
+                    </svg>
+                  </button>
                 </li>
                 );
               })}

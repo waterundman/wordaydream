@@ -164,6 +164,33 @@
   color: var(--color-text-tertiary, #6b655b);
 }
 
+/* v1.4.0 S3a: 行内删除按钮 (流内 flex, 幽灵样式) */
+.removeBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm, 0.25rem);
+  background: transparent;
+  color: var(--color-text-tertiary, #6b655b);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.removeBtn:hover {
+  background: var(--color-bg-hover, #efeae2);
+  color: var(--color-error-strong, #b91c1c);
+}
+
+.removeBtn:focus-visible {
+  outline: 2px solid var(--color-focus, #8a7a5c);
+  outline-offset: 1px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .section,
   .item {

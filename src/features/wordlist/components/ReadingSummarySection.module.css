@@ -1,0 +1,27 @@
+.section {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border, #e8e4dc);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-bg-subtle, #f5f2ed);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #1c1917);
+}
+
+.mainRow {
+  font-size: var(--text-sm, 0.875rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary, #1c1917);
+}
+
+.subRow {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs, 0.75rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary, #6b655b);
+}

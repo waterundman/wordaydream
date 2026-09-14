@@ -38,6 +38,7 @@ import {
 import type { Language, DifficultyLevel } from '../../types';
 import { WordlistRow } from './components/WordlistRow';
 import { WrongWordsSection } from './components/WrongWordsSection';
+import { ReadingSummarySection } from './components/ReadingSummarySection';
 import { useVirtualList } from '../../hooks/useVirtualList';
 import styles from './WordlistPage.module.css';
 
@@ -587,6 +588,9 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
 
       {/* v0.9.0 Stage 1: 错词本 (跨会话持久化回顾) — 与"我的词库"同层级 block */}
       <WrongWordsSection />
+
+      {/* v1.4.0 S3b: 轻量阅读摘要 (useReadingHistoryStore 纯派生, 无历史不渲染) */}
+      <ReadingSummarySection />
 
       <div className={styles.levelTabs} role="group" aria-label="语言与难度切换">
         <div className={styles.levelDots} role="group" aria-label="语言">
