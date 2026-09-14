@@ -508,4 +508,147 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
     await page.screenshot({ path: `${SHOTS_DIR}/T10-reading-wrongmark-${testInfo.project.name}.png`, fullPage: true });
   });
+
+  // ---------------------------------------------------------------------------
+  // v1.4.0 S4: 导入链 / 单条删除链 / 阅读摘要链 (计划用例 T11-T13)
+  // ---------------------------------------------------------------------------
+
+  // T11 [critical]: 导入链 — 设置面板导入 CSV (含重复条目 + RFC 4180 引号字段)
+  // 种子 c-apple → 导入 CSV (c-apple 重复 + c-new 引号 lemma) → 结果行 "导入 1 条 · 跳过 1 条"
+  // → localStorage 佐证: c-apple 保留现有 (wrongCount 不变), c-new lemma 逗号还原
+  test('T11 [critical]: 导入链 — CSV 导入 skip 冲突 + RFC 4180 字段还原', async ({ page }, testInfo) => {
+    const now = Date.now();
+    await seedWrongWords(page, [
+      {
+        cardId: 'c-apple',
+        lexemeGroupId: 'apple',
+        lemma: 'apple',
+        language: 'en',
+        wrongCount: 3,
+        lastWrongAt: now - 1_000,
+        firstWrongAt: now - 10_000,
+      },
+    ]);
+
+    await openSettingsPanel(page);
+    await expect(page.getByTestId('wrong-words-import-section')).toBeVisible();
+
+    const csv = [
+      'cardId,lexemeGroupId,lemma,language,wrongCount,firstWrongAt,lastWrongAt',
+      `c-apple,apple,apple,en,99,${new Date(now - 5000).toISOString()},${new Date(now - 4000).toISOString()}`,
+      `c-new,gruen,"grün, mit Umlaut",de,1,${new Date(now - 3000).toISOString()},${new Date(now - 2000).toISOString()}`,
+    ].join('\n');
+    await page.getByTestId('wrong-words-import-input').setInputFiles({
+      name: 'wordaydream-wrong-words-backup.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv, 'utf-8'),
+    });
+
+    // 结果行: 导入 1 条 (c-new) · 跳过 1 条 (c-apple 冲突)
+    const result = page.getByTestId('wrong-words-import-result');
+    await expect(result).toBeVisible({ timeout: 10_000 });
+    await expect(result).toContainText('导入 1 条');
+    await expect(result).toContainText('跳过 1 条');
+
+    // 状态级佐证: c-apple 保留现有 (wrongCount=3 非 CSV 的 99), c-new 引号字段还原
+    await expect
+      .poll(async () => {
+        const raw = await page.evaluate(() => window.localStorage.getItem('wordaydream:wrong-words'));
+        if (!raw) return null;
+        try {
+          const entries = (JSON.parse(raw) as { state: { entries: Array<{ cardId: string; wrongCount: number; lemma: string }> } }).state.entries;
+          return entries.map((e) => `${e.cardId}:${e.wrongCount}:${e.lemma}`).join('|');
+        } catch {
+          return null;
+        }
+      }, { timeout: 10_000 })
+      .toBe('c-apple:3:apple|c-new:1:grün, mit Umlaut');
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T11-import-csv-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T12 [critical]: 单条删除链 — wordlist 页行内删除按钮 → 行消失 + 总数 -1
+  test('T12 [critical]: 单条删除链 — 行内删除按钮移除条目', async ({ page }, testInfo) => {
+    const now = Date.now();
+    await seedWrongWords(page, [
+      { cardId: 'c-apple', lexemeGroupId: 'apple', lemma: 'apple', language: 'en', wrongCount: 3, lastWrongAt: now - 1_000, firstWrongAt: now - 10_000 },
+      { cardId: 'c-baum', lexemeGroupId: 'baum', lemma: 'baum', language: 'de', wrongCount: 1, lastWrongAt: now - 5_000, firstWrongAt: now - 6_000 },
+    ]);
+
+    await page.goto('/#/wordlist');
+    const section = page.getByTestId('wrong-words-section');
+    await section.waitFor({ state: 'visible', timeout: 15_000 });
+    await expect(page.getByTestId('wrong-word-item')).toHaveCount(2);
+
+    // 删除第一行 (apple, lastWrongAt 倒序在前) — mobile 视口命中风险兜底: 先常规 click
+    const firstItem = page.getByTestId('wrong-word-item').first();
+    await firstItem.getByTestId('wrong-word-remove').click();
+
+    // 行消失 + 总数 -1 + 剩余为 baum
+    await expect(page.getByTestId('wrong-word-item')).toHaveCount(1);
+    await expect(page.getByTestId('wrong-words-count')).toHaveText('1');
+    await expect(page.getByTestId('wrong-word-item').first()).toContainText('baum');
+
+    // 状态级佐证: persist 已移除 c-apple
+    await expect
+      .poll(async () => {
+        const raw = await page.evaluate(() => window.localStorage.getItem('wordaydream:wrong-words'));
+        if (!raw) return null;
+        try {
+          return (JSON.parse(raw) as { state: { entries: Array<{ cardId: string }> } }).state.entries.map((e) => e.cardId).join('|');
+        } catch {
+          return null;
+        }
+      }, { timeout: 10_000 })
+      .toBe('c-baum');
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T12-wrong-remove-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T13 [critical]: 阅读摘要链 — wordlist 页摘要卡 (完成/解析/近 7 天/语言分布)
+  test('T13 [critical]: 阅读摘要链 — 摘要卡渲染主行与次行', async ({ page }, testInfo) => {
+    const now = Date.now();
+    // 种子 reading-history (persist 键 wordaydream:reading-history, version 2):
+    // h1 = 今天完成 en (resolved 8); h2 = 未完成 de (resolved 5, 不进完成/语言分布)
+    await page.addInitScript((nowMs: number) => {
+      const mkEntry = (id: string, language: string, resolvedCount: number, completedAt: number | null) => ({
+        id,
+        passage: { tokens: [] },
+        language,
+        difficulty: 2,
+        startedAt: nowMs - 2 * 86_400_000,
+        resolvedCount,
+        totalTokenCount: 20,
+        ...(completedAt !== null ? { completedAt } : {}),
+      });
+      localStorage.setItem(
+        'wordaydream:reading-history',
+        JSON.stringify({
+          state: {
+            maxHistory: 50,
+            history: [
+              mkEntry('h1', 'en', 8, nowMs - 3_600_000),
+              mkEntry('h2', 'de', 5, null),
+            ],
+          },
+          version: 2,
+        }),
+      );
+    }, now);
+
+    await page.goto('/#/wordlist');
+    const summary = page.getByTestId('reading-summary-section');
+    await summary.waitFor({ state: 'visible', timeout: 15_000 });
+
+    // 主行: 阅读 2 篇 · 完成 1 篇 · 解析 8 词 (完成条目 resolved 求和)
+    await expect(page.getByTestId('reading-summary-main')).toHaveText(
+      '阅读 2 篇 · 完成 1 篇 · 解析 8 词',
+    );
+    // 次行: 近 7 天完成 1 篇 · en 1 / de 0 (语言分布只计完成条目)
+    await expect(page.getByTestId('reading-summary-sub')).toHaveText(
+      '近 7 天完成 1 篇 · en 1 / de 0',
+    );
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T13-reading-summary-${testInfo.project.name}.png`, fullPage: true });
+  });
 });
