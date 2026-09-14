@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MemoryCard, Language } from '../../../types';
+import { mergeEntries, type ImportSummary } from './wrongWordsImport';
 
 /**
  * v0.9.0 Stage 1: 跨会话错词本 (Cross-session Wrong Words Book)
@@ -44,13 +45,21 @@ interface WrongWordsState {
   recordWrong: (card: MemoryCard, answeredAt: number) => void;
   /** 清空全部错词 (供将来设置面板用, 本轮仅实现+测试) */
   clearAll: () => void;
+  /**
+   * v1.4.0 S1: 批量导入 (备份恢复). 合并规则由 mergeEntries 决定:
+   * cardId 冲突 skip 保留现有 (幂等); 合并后超容量按 lastWrongAt 一次淘汰到位.
+   * 返回 { imported, skipped, evicted } 汇总供 UI 反馈.
+   */
+  importEntries: (entries: WrongWordEntry[]) => ImportSummary;
+  /** v1.4.0 S1: 按 cardId 移除单条 (wordlist 页错词列表行内删除); 不存在时无副作用 */
+  removeEntry: (cardId: string) => void;
 }
 
 const SCHEMA_VERSION = 1;
 
 export const useWrongWordsStore = create<WrongWordsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       entries: [],
 
       recordWrong: (card, answeredAt) => {
@@ -95,6 +104,21 @@ export const useWrongWordsStore = create<WrongWordsState>()(
       },
 
       clearAll: () => set({ entries: [] }),
+
+      importEntries: (incoming) => {
+        const { merged, imported, skipped, evicted } = mergeEntries(
+          get().entries,
+          incoming,
+        );
+        set({ entries: merged });
+        return { imported, skipped, evicted };
+      },
+
+      removeEntry: (cardId) => {
+        set((state) => ({
+          entries: state.entries.filter((e) => e.cardId !== cardId),
+        }));
+      },
     }),
     {
       name: 'wordaydream:wrong-words',

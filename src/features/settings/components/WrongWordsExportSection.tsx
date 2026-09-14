@@ -14,18 +14,9 @@
  *   a[download] + click + revokeObjectURL.
  * - 空错词本 (N=0): 两按钮 disabled.
  */
-import { useWrongWordsStore, sortEntriesBy, type WrongWordEntry } from '../../review/store/useWrongWordsStore';
+import { useWrongWordsStore } from '../../review/store/useWrongWordsStore';
+import { buildCsv } from '../wrongWordsCsvFormat';
 import styles from './WrongWordsExportSection.module.css';
-
-const CSV_HEADER = 'cardId,lexemeGroupId,lemma,language,wrongCount,firstWrongAt,lastWrongAt';
-
-/** RFC 4180 转义: 含 逗号/双引号/换行 → 双引号包裹 + 内部 " 翻倍 */
-function escapeCsvField(value: string): string {
-  if (/[",\r\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
 
 /** 本地日期戳 YYYYMMDD */
 function toLocalDateStamp(now = new Date()): string {
@@ -33,25 +24,6 @@ function toLocalDateStamp(now = new Date()): string {
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   return `${y}${m}${d}`;
-}
-
-/** 行序 = recent (lastWrongAt 倒序), 与列表展示一致 */
-function buildCsv(entries: WrongWordEntry[]): string {
-  const lines: string[] = [CSV_HEADER];
-  for (const e of sortEntriesBy({ entries }, 'recent')) {
-    lines.push(
-      [
-        escapeCsvField(e.cardId),
-        escapeCsvField(e.lexemeGroupId),
-        escapeCsvField(e.lemma),
-        escapeCsvField(e.language ?? ''),
-        String(e.wrongCount),
-        new Date(e.firstWrongAt).toISOString(),
-        new Date(e.lastWrongAt).toISOString(),
-      ].join(','),
-    );
-  }
-  return lines.join('\n');
 }
 
 /** 沿 CsvWordlistManagementSection 的下载手法 */
