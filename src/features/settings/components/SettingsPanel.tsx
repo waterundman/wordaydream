@@ -3,6 +3,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
 import { ShortcutsSection } from './ShortcutsSection';
 import { WrongWordsExportSection } from './WrongWordsExportSection';
+import { WrongWordsImportSection } from './WrongWordsImportSection';
 import { InstallPromptButton } from '../../../components/InstallPromptButton';
 import { ThemeSwitcher } from '../../../components/ThemeSwitcher';
 import styles from './SettingsPanel.module.css';
@@ -883,6 +884,9 @@ export function SettingsPanel() {
 
         {/* v1.1.0 Stage 2: 错词导出区块 */}
         <WrongWordsExportSection />
+
+        {/* v1.4.0 S2: 错词导入区块 (与导出对称, 备份恢复闭环) */}
+        <WrongWordsImportSection />
 
         {/* v1.6.0: 课程模式 (闯关 / 自由) */}
         <div className={styles.section}>
