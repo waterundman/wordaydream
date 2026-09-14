@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] — 2026-09-14
+
+### 错词本导入闭环 + 单条管理 + 轻量阅读摘要 (v1.4.0)
+
+- 错词本导入（设置面板新增「错词导入」区块，与导出对称位）：支持 `.csv` / `.json` 双格式，与 v1.1.0 导出格式 roundtrip 兼容；逐行校验（必填字段 / 正整数 wrongCount / 可解析时间 / en-de 语言合法），错误行拒绝不入账并内联展示明细；非本产品 JSON（schema / version 不符）与表头缺列整文件拒绝
+- 导入合并策略：cardId 冲突跳过并保留现有条目（幂等，重复导入同一备份零副作用）；合并后超出容量上限（500）按 lastWrongAt 一次淘汰到位（与 recordWrong FIFO 同口径）；结果反馈含导入 / 跳过 / 容量淘汰计数
+- 错词单条管理：wordlist 页错词列表行内新增删除按钮（v1.1.0 预留项），流内 flex 布局规避遮挡类缺陷，移除后列表 / 总数 reactive 更新
+- 轻量阅读摘要：wordlist 页错词本之后新增摘要卡（无历史不渲染），数据来自 `useReadingHistoryStore` 纯派生（store 零改动）——阅读 / 完成 / 解析词数、近 7 天完成数、完成条目语言分布
+- CSV 构造纯函数提取至 `wrongWordsCsvFormat.ts`（组件文件 export 非组件值触发 react(only-export-components) 基线守卫）
+- 测试证据：vitest 1414/1414（基线 1376 + 38）、Web E2E 13/13（chromium + mobile-chrome 双项目一次全绿，v1.3.0 10 条 + 本版导入 / 删除 / 摘要三链路）、tsc 0 错误、oxlint 0 警告 0 错误
+- 诚实声明：自动测试沿用既有 Web / 桥接回归套件并新增 Web E2E，未做模拟器或真机运行验证
+- 版本对齐维护：web `3.4.0`、AppScope / entry `1.4.0`、versionCode 延续递增 `1000055`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.3.0] — 2026-09-13
 
 ### Web E2E 深化 + 词汇点读收口 (Stage 4: 版本 bump + 文档回填)
