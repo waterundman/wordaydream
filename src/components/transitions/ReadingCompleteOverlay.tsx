@@ -16,6 +16,7 @@
  * - 动画时序由 JS 计时器控制 (非 CSS delay)
  */
 import { memo, useEffect, useRef, useState } from 'react';
+import type { ReadingSessionStats } from '../../features/reading/readingSummary';
 import styles from './ReadingCompleteOverlay.module.css';
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
   stats: {
     minutesRead: number;
     articlesRead: number;
+    /** v1.5.0 S2: 本篇会话统计 (纯派生 session.passage.tokens); 缺省不渲染统计行 (向后兼容) */
+    session?: ReadingSessionStats;
   };
   onDismiss?: () => void;
 }
@@ -218,6 +221,19 @@ export const ReadingCompleteOverlay = memo(function ReadingCompleteOverlay({
         <p className={`${styles.subtitle} ${subtitleVisible ? styles.visible : ''}`}>
           今日阅读 {stats.minutesRead} 分钟 · {stats.articlesRead} 篇文章
         </p>
+
+        {/* v1.5.0 S2: 本篇会话统计 (与 subtitle 同 phase 淡入, 不新增动画计时;
+            无 session 字段时不渲染 — 向后兼容既有调用方) */}
+        {stats.session && (
+          <p
+            data-testid="reading-complete-session-stats"
+            className={`${styles.subtitle} ${subtitleVisible ? styles.visible : ''}`}
+          >
+            本篇生词 {stats.session.totalWords} 个 · 答对 {stats.session.correctWords} · 答错{' '}
+            {stats.session.wrongWords}
+            {stats.session.reviewWords > 0 ? ` · 复习 ${stats.session.reviewWords}` : ''}
+          </p>
+        )}
 
         {/* 嫩枝分隔线 (含浆果) — ink-draw */}
         <svg

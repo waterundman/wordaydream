@@ -22,6 +22,7 @@ import type { SpeakPayload } from '../../platform/harmonyBridge';
 import styles from './ReadingSessionPage.module.css';
 import type { Language, DifficultyLevel } from '../../types';
 import type { HistoryEntry } from './store/useReadingHistoryStore';
+import { summarizeReadingSession } from './readingSummary';
 
 const CEFR_LABELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
 const LANGUAGE_LABELS: Record<Language, string> = { en: '英语', de: '德语' };
@@ -327,6 +328,13 @@ export function ReadingSessionPage() {
       articlesRead: completedCount + 1,
     };
   }, [session]);
+
+  // v1.5.0 S2: 本篇会话统计 (纯派生, store 零改动)。overlay 显示期间 session 引用
+  // 稳定 (session.id 变化时 overlay 先被 effect 关闭), 直传无需快照。
+  const sessionStats = useMemo(
+    () => (session ? summarizeReadingSession(session.passage.tokens) : undefined),
+    [session],
+  );
 
   const passageSource = session?.passage.source;
   const sourceBadgeConfig = (() => {
@@ -646,7 +654,7 @@ export function ReadingSessionPage() {
       {readingCompleteVisible && (
         <ReadingCompleteOverlay
           visible={readingCompleteVisible}
-          stats={readingStats}
+          stats={{ ...readingStats, session: sessionStats }}
           onDismiss={() => setReadingCompleteVisible(false)}
         />
       )}

@@ -372,3 +372,73 @@ describe('ReadingSessionPage "重新练习" 按钮 (v2.1.0 Stage 4 Contract 68)'
     expect(screen.queryByText('这是历史重读模式，词汇作答已禁用。')).not.toBeInTheDocument();
   });
 });
+
+/**
+ * v1.5.0 S2 (C2.3): 完成页会话统计接线 — 全 resolved session → overlay 统计行数值正确。
+ * 自造带 resolvedGrade 的 token (现有 makeToken 无 grade 字段, 不扰动既有 helper)。
+ * review token 构造沿 useReadingSessionStore:153 (kind:'review' + cardId)。
+ */
+describe('ReadingSessionPage 完成页会话统计 (v1.5.0 S2)', () => {
+  function makeGradedToken(
+    id: string,
+    lexemeGroupId: string,
+    opts: { isResolved: boolean; resolvedGrade?: 'correct' | 'partial' | 'wrong'; kind?: 'normal' | 'review'; cardId?: string },
+  ): TokenOccurrence {
+    return {
+      ...makeToken(id, lexemeGroupId, opts.isResolved, opts.kind ?? 'normal'),
+      ...(opts.resolvedGrade !== undefined ? { resolvedGrade: opts.resolvedGrade } : {}),
+      ...(opts.cardId !== undefined ? { cardId: opts.cardId } : {}),
+    };
+  }
+
+  it('T12a: 全 resolved (2 对 1 错 + 1 复习) → overlay 统计行数值正确', () => {
+    const tokens = [
+      makeGradedToken('t1', 'g1', { isResolved: true, resolvedGrade: 'correct' }),
+      makeGradedToken('t2', 'g2', { isResolved: true, resolvedGrade: 'correct' }),
+      makeGradedToken('t3', 'g3', { isResolved: true, resolvedGrade: 'wrong' }),
+      makeGradedToken('t4', 'g4', { isResolved: true, resolvedGrade: 'correct', kind: 'review', cardId: 'card-4' }),
+    ];
+    const session = makeSession(tokens);
+    useReadingSessionStore.setState({
+      session,
+      currentHistoryId: 'h-s1',
+      lastConfig: { language: 'en', difficulty: 2 },
+    });
+    useReadingHistoryStore.setState({
+      history: [{
+        id: 'h-s1',
+        passage: session.passage,
+        language: 'en',
+        difficulty: 2,
+        startedAt: Date.now() - 10000,
+        resolvedCount: 0,
+        totalTokenCount: 3,
+      }],
+      maxHistory: 50,
+    });
+
+    render(<ReadingSessionPage />);
+
+    const row = screen.getByTestId('reading-complete-session-stats');
+    // totalWords = 3 (normal distinct), correctWords = 2, wrongWords = 1, reviewWords = 1
+    expect(row.textContent).toBe('本篇生词 3 个 · 答对 2 · 答错 1 · 复习 1');
+  });
+
+  it('T12b: 全 resolved 无错无复习 → 统计行省略复习段', () => {
+    const tokens = [
+      makeGradedToken('t1', 'g1', { isResolved: true, resolvedGrade: 'correct' }),
+      makeGradedToken('t2', 'g2', { isResolved: true, resolvedGrade: 'correct' }),
+    ];
+    const session = makeSession(tokens);
+    useReadingSessionStore.setState({
+      session,
+      currentHistoryId: 'h-s2',
+      lastConfig: { language: 'en', difficulty: 2 },
+    });
+
+    render(<ReadingSessionPage />);
+
+    const row = screen.getByTestId('reading-complete-session-stats');
+    expect(row.textContent).toBe('本篇生词 2 个 · 答对 2 · 答错 0');
+  });
+});
