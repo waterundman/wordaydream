@@ -651,4 +651,73 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
     await page.screenshot({ path: `${SHOTS_DIR}/T13-reading-summary-${testInfo.project.name}.png`, fullPage: true });
   });
+
+  // ---------------------------------------------------------------------------
+  // v1.5.0 S3: 完成页链 (T14) — 全答对 → ReadingCompleteOverlay 会话统计
+  // session store 无 persist → 必须真实答题。mock 语料 7 词中 difficulty 2 会话
+  // (getMockPassage ±1 过滤) 保留 4 词: revolution(2)/artisans(3)/marveled(3)/
+  // blossomed(3), lemma 全命中 mockProvider EVAL_KEYWORDS → 全答对链可行。
+  // 每词 correct 反馈后 1500ms 面板关闭, 4 词 ≈ 15-25s > 单 test 30s → setTimeout 90s。
+  // ---------------------------------------------------------------------------
+
+  /** 答案映射 (surfaceForm → mockProvider EVAL_KEYWORDS 中文, 全部命中 correct)。 */
+  const COMPLETE_ANSWERS: Record<string, string> = {
+    revolution: '革命',
+    artisans: '工匠',
+    marveled: '惊叹',
+    blossomed: '开花',
+    dilapidated: '破旧的',
+    authenticity: '真实性',
+    endeavor: '努力',
+  };
+
+  test('T14 [critical]: 完成页链 — 全答对后 overlay 显示会话统计', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
+    await generatePassage(page);
+
+    // 收集本会话实际渲染的唯一 token 词形 (难度过滤后动态断言, 不写死数量)
+    const tokenTexts = await page.getByTestId('passage-token').allTextContents();
+    const uniqueWords = [...new Set(tokenTexts.map((t) => t.trim()).filter(Boolean))];
+    expect(uniqueWords.length).toBeGreaterThan(0);
+
+    // 完成统计行 (最后一词答对时与庆祝层同步出现, z-index 更高)
+    const statsRow = page.getByTestId('reading-complete-session-stats');
+
+    // 逐词: 点击 → 输入 EVAL_KEYWORDS 中文 (全对) → 确认 → 等面板 1500ms 后关闭
+    // → WordLearnedOverlay ('已掌握单词 X' 庆祝层) 点击关闭 → 下一词。
+    // 最后一词: ReadingCompleteOverlay 与庆祝层同步渲染 (z-index 更高, 拦截点击),
+    // 此时完成统计已出现, 庆祝层无需也无法关闭。
+    for (const word of uniqueWords) {
+      const answer = COMPLETE_ANSWERS[word.toLowerCase()] ?? 'zzzzz';
+      await page.locator('[data-testid="passage-token"]', { hasText: word }).first().click();
+      const input = page.locator('input[aria-label="释义输入"]');
+      await input.waitFor({ state: 'visible', timeout: 10_000 });
+      await input.fill(answer);
+      await page.locator('[role="dialog"]').getByRole('button', { name: '确认' }).click();
+      await input.waitFor({ state: 'hidden', timeout: 15_000 });
+
+      if (await statsRow.isVisible().catch(() => false)) break;
+
+      const learned = page.locator('[role="dialog"][aria-label^="已掌握单词"]');
+      try {
+        await learned.waitFor({ state: 'visible', timeout: 5_000 });
+        await learned.click({ timeout: 3_000 });
+        await learned.waitFor({ state: 'hidden', timeout: 5_000 });
+      } catch {
+        // 庆祝层被完成层覆盖 (最后一词 race) → 统计行已出现, 继续循环外断言
+      }
+    }
+
+    // 完成触发: overlay 会话统计行已随最后一词渲染 (waitFor 兜底)
+    await statsRow.waitFor({ state: 'visible', timeout: 20_000 });
+
+    const expectedCorrect = uniqueWords.filter((w) => COMPLETE_ANSWERS[w.toLowerCase()]).length;
+    const expectedWrong = uniqueWords.length - expectedCorrect;
+    await expect(statsRow).toContainText(`本篇生词 ${uniqueWords.length} 个`);
+    await expect(statsRow).toContainText(`答对 ${expectedCorrect}`);
+    await expect(statsRow).toContainText(`答错 ${expectedWrong}`);
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T14-reading-complete-${testInfo.project.name}.png`, fullPage: true });
+  });
 });
