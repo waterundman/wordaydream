@@ -72,13 +72,21 @@ export function buildSkipReport(reason, args) {
   };
 }
 
-/** 断言关键词 (运行日志证据链, 顺序即验证链顺序). level 缺省 = critical (向后兼容). */
+/** 断言关键词 (运行日志证据链, 顺序即验证链顺序). level 缺省 = critical (向后兼容).
+ *
+ * 关键词与 v1.5.0 实机日志对齐 (2026-09-16 模拟器 127.0.0.1:5555 实测):
+ * - A4: HarmonyBridge.ets 实际输出 'getAllCards done: count=N' (旧 'getAllCards=' 已漂移);
+ * - A5: debugSeed 在 EntryAbility.handleLaunchWant 被原生拦截 (不进 HarmonyBridge FIFO),
+ *   seed 阶段不存在 'handleHarmonyLaunch queued' 日志; 改为验证 notifyWebReady 就绪握手
+ *   'Web launch handler ready: generation=N' (FIFO 派发通道武装完成的实证).
+ *   'queued' 关键词由 openCard 阶段覆盖 (onNewWant -> handleHarmonyLaunch -> queued).
+ */
 export const ASSERTION_KEYWORDS = [
   { id: 'A1', keyword: 'seedDebugCards done', desc: '原生 RDB 预置 5 张到期卡完成', level: 'critical' },
   { id: 'A2', keyword: 'Page begin', desc: 'ArkWeb 虚拟 HTTPS 入口开始加载', level: 'critical' },
   { id: 'A3', keyword: 'Web content ready', desc: 'React content-ready ACK 到达', level: 'critical' },
-  { id: 'A4', keyword: 'getAllCards=', desc: 'RDB 恢复链路执行 (卡片数上报)', level: 'critical' },
-  { id: 'A5', keyword: 'queued', desc: '启动请求进入原生 FIFO 队列', level: 'critical' },
+  { id: 'A4', keyword: 'getAllCards done: count=', desc: 'RDB 恢复链路执行 (getAllCards done: count=N)', level: 'critical' },
+  { id: 'A5', keyword: 'Web launch handler ready: generation=', desc: 'Web 启动处理器就绪握手 (FIFO 派发通道就绪)', level: 'critical' },
 ];
 
 /** openCard 阶段断言 (seed 冷启动链全命中后独立执行与评估). */
@@ -207,10 +215,25 @@ async function main() {
     return 1;
   }
 
-  // 3. 强制停止 + 清空 hilog.
+  // 3. 强制停止 + 清应用数据 + 清空 hilog.
   runHdc(args.hdc, ['shell', 'aa', 'force-stop', args.bundle], 15000);
+  // R-1 恢复契约 (useMemoryStore onRehydrateStorage): localStorage 非空时 web 跳过
+  // getAllCards (避免覆盖用户最近写入). 模拟器残留历史数据会使 seed 到期卡对 web
+  // 不可见 (实测 2026-09-16: 旧数据 83 卡全部未到期, openCard 场景 A 双语言
+  // getDueCards=0 -> 静默降级 '暂无到期复习卡片', 该路径无运行验证日志点, A7 永失).
+  // bm clean -d 清空应用数据 (localStorage + RDB), 保证验证从干净状态出发且可复现.
+  const clean = runHdc(args.hdc, ['shell', 'bm', 'clean', '-n', args.bundle, '-d'], 30000);
+  const cleanOk = !/error|failed/i.test(clean.stdout + clean.stderr);
+  steps.push({ name: 'clean-app-data', ok: cleanOk, detail: (clean.stdout + clean.stderr).trim().slice(0, 300) });
+  if (!cleanOk) {
+    emitReport(
+      collectReport(args, steps, [{ id: 'CLEAN', passed: false, detail: clean.stderr || clean.stdout }], startedAt),
+      args.out,
+    );
+    return 1;
+  }
   runHdc(args.hdc, ['shell', 'hilog', '-r'], 15000);
-  steps.push({ name: 'reset', ok: true, detail: 'force-stop + hilog -r' });
+  steps.push({ name: 'reset', ok: true, detail: 'force-stop + clean-app-data + hilog -r' });
 
   // 4. 冷启动 + seed (want parameter query=action=debugSeed).
   const start = runHdc(args.hdc, ['shell', 'aa', 'start', '--ps', 'query', 'action=debugSeed', '-b', args.bundle, '-a', 'EntryAbility'], 20000);
@@ -246,10 +269,15 @@ async function main() {
     const query = `action=openCard&cardId=${args.openCard}`;
     // 清空 hilog, 避免 seed 段日志干扰 openCard 段独立评估窗口.
     runHdc(args.hdc, ['shell', 'hilog', '-r'], 15000);
+    // query 含 '&' (action=openCard&cardId=...): hdc shell 把参数拼接成一行交给
+    // 设备端 /bin/sh 解析, 裸 '&' 会被当成后台符拆断命令 (实测报错:
+    // "/bin/sh: -b: inaccessible or not found"). 给 query 套一层双引号,
+    // 保证设备端按单 token 解析. debugSeed 无 '&' 不受影响, 无需同改.
+    const quotedQuery = `"${query}"`;
     // 发送 openCard want (query 整串作为单个 --ps 值, 与 debugSeed 传参方式一致).
     const ocStart = runHdc(
       args.hdc,
-      ['shell', 'aa', 'start', '--ps', 'query', query, '-b', args.bundle, '-a', 'EntryAbility'],
+      ['shell', 'aa', 'start', '--ps', 'query', quotedQuery, '-b', args.bundle, '-a', 'EntryAbility'],
       20000,
     );
     steps.push({
