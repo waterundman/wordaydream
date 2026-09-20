@@ -60,6 +60,29 @@ function memoryCardToBridge(card: MemoryCard): MemoryCardRecordBridge {
 }
 
 /**
+ * v1.6.0 D1: ArkWeb async JSProxy 返回值归一 (纯函数).
+ *
+ * 实机 (API 22 模拟器) 发现复杂返回值可能以 JSON string 形态到达 Web
+ * (native `getAllCards done: count=5`, Web 端按数组消费得到 0 条).
+ * 统一兼容数组直传与 JSON string 两种形态; 解析失败返回空数组
+ * (走"首次安装静默跳过"分支, 与空 RDB 语义一致).
+ */
+function parseBridgeRecords(raw: unknown): MemoryCardRecordBridge[] {
+  if (Array.isArray(raw)) {
+    return raw as MemoryCardRecordBridge[];
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as MemoryCardRecordBridge[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
  * v0.2.0-harmony Stage 3: 鸿蒙 MemoryCardRecordBridge → Web MemoryCard 反向转换.
  *
  * 用于 onRehydrateStorage 从鸿蒙 relationalStore 恢复卡片.
@@ -568,8 +591,13 @@ export const useMemoryStore = create<MemoryStore>()(
           const bridge = window.harmonyBridge;
           void Promise.resolve()
             .then(() => bridge.getAllCards())
-            .then((cards: MemoryCardRecordBridge[]) => {
-              if (!cards || cards.length === 0) return; // 首次安装场景, 静默跳过
+            .then((raw: unknown) => {
+              const cards = parseBridgeRecords(raw);
+              const rawLen = Array.isArray(raw)
+                ? raw.length
+                : typeof raw === 'string'
+                  ? raw.length
+                  : -1;
               const newCards = new Map<string, MemoryCard>();
               for (const bridgeCard of cards) {
                 const memoryCard = bridgeToMemoryCard(bridgeCard);
@@ -577,6 +605,11 @@ export const useMemoryStore = create<MemoryStore>()(
                   newCards.set(memoryCard.lexemeGroupId, memoryCard);
                 }
               }
+              // v1.6.0 D1 运行验证日志点: 归一化前后形态一次说清,
+              // 防止恢复断链再次被静默吞掉 (rawLen=-1 = 意外形态).
+              console.log(
+                `[memory-restore] rawType=${typeof raw} rawLen=${rawLen} cards=${cards.length} applied=${newCards.size}`,
+              );
               if (newCards.size > 0) {
                 useMemoryStore.setState({ cards: newCards });
                 publish<MemoryCardsUpdatedPayload>('memory:cards-updated', {
@@ -585,8 +618,12 @@ export const useMemoryStore = create<MemoryStore>()(
                 });
               }
             })
-            .catch(() => {
-              // silent skip — JSBridge 异步失败不传播到 Web
+            .catch((e: unknown) => {
+              // 仍不传播到 Web, 但留运行日志点 — 此前 .catch 全静默,
+              // 十版实机欠账期间断链无法诊断 (v1.6.0 D1 教训).
+              console.log(
+                `[memory-restore] rejected: ${e instanceof Error ? e.message : String(e)}`,
+              );
             })
             .finally(() => {
               markNativeMemoryRestoreSettled();
