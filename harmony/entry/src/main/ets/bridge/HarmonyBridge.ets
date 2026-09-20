@@ -490,12 +490,68 @@ export class HarmonyBridge {
     try {
       AppStorage.setOrCreate<boolean>(WEB_CONTENT_READY_STORAGE_KEY, true);
       hilog.info(DOMAIN, TAG, 'Web content ready');
+      // v1.6.0 D1: R-1 恢复走原生推送 (拉取通道在 API 22 实机不可用, 见
+      // getAllCards JSDoc). content-ready 即控制器就绪, 异步读 RDB 后经
+      // runJavaScript 推送 (该通道已由 FIFO openCard 派发实证可靠).
+      // Web 端 __applyNativeCardRestore 自带"store 非空不覆盖"守卫,
+      // 重复 content-ready / 页面重载场景幂等安全.
+      this.pushCardsToWeb();
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.warn(
         DOMAIN,
         TAG,
         'notifyWebContentReady failed: code=%{public}d msg=%{public}s',
+        err.code,
+        err.message
+      );
+    }
+  }
+
+  /**
+   * v1.6.0 D1: R-1 恢复推送 — 读 RDB 全量卡片, runJavaScript 推给 Web.
+   *
+   * 全程 try/catch 兜底, 失败仅 warn 不抛 (与拉取路径静默降级语义一致);
+   * Web 端空 store 守卫保证推送幂等. 推送载荷为 JSON 字符串
+   * (runJavaScript 已实证可用, 且字符串参数经 JSON.stringify 转义安全注入).
+   */
+  private async pushCardsToWeb(): Promise<void> {
+    try {
+      const controller: webview.WebviewController | undefined =
+        AppStorage.get<webview.WebviewController>(WEB_CONTROLLER_STORAGE_KEY);
+      if (controller === undefined || controller === null) {
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'pushCardsToWeb skipped: webController not ready'
+        );
+        return;
+      }
+      const store: MemoryCardStore = await this.getMemoryCardStore();
+      const cards: MemoryCardRecord[] = await store.getAllCards();
+      if (cards.length === 0) {
+        hilog.info(DOMAIN, TAG, 'pushCardsToWeb skipped: empty store');
+        return;
+      }
+      const payload: string = JSON.stringify(cards);
+      const jsCode: string =
+        'window.__applyNativeCardRestore && window.__applyNativeCardRestore(' +
+        JSON.stringify(payload) +
+        ');';
+      await controller.runJavaScript(jsCode);
+      hilog.info(
+        DOMAIN,
+        TAG,
+        'pushCardsToWeb dispatched: count=%{public}d bytes=%{public}d',
+        cards.length,
+        payload.length
+      );
+    } catch (e) {
+      const err: BusinessError = e as BusinessError;
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'pushCardsToWeb failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );
@@ -686,10 +742,15 @@ export class HarmonyBridge {
   /**
    * 鸿蒙 → Web 卡片恢复 (R-1 闭环核心).
    *
-   * 返回所有卡片 (按 due 升序), 供 Web 端 onRehydrateStorage 在
-   * localStorage 为空时调用恢复. 异常返回空数组.
+   * 返回所有卡片 (按 due 升序) 的 JSON 字符串, 供 Web 端 onRehydrateStorage 在
+   * localStorage 为空时调用恢复. 异常返回 '[]'.
+   *
+   * v1.6.0 D1 实机契约 (API 22 模拟器实测): async JSProxy 复杂返回值
+   * (对象/数组) 无法跨桥 — Web 端 Promise resolve 得到 number (原生 count=5,
+   * Web rawType=number cards=0). 基本类型 string 可靠传输, 故统一序列化为
+   * JSON 字符串; Web 侧 parseBridgeRecords 兼容解析 (useMemoryStore.ts).
    */
-  async getAllCards(): Promise<MemoryCardRecord[]> {
+  async getAllCards(): Promise<string> {
     try {
       const store: MemoryCardStore = await this.getMemoryCardStore();
       const cards: MemoryCardRecord[] =
@@ -700,7 +761,7 @@ export class HarmonyBridge {
         'getAllCards done: count=%{public}d',
         cards.length
       );
-      return cards;
+      return JSON.stringify(cards);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -710,7 +771,7 @@ export class HarmonyBridge {
         err.code,
         err.message
       );
-      return [];
+      return '[]';
     }
   }
 

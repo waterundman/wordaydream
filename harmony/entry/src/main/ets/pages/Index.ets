@@ -192,6 +192,22 @@ struct Index {
         BRIDGE_ASYNC_METHODS
       );
       this.bridgeRegistered = true;
+      // ArkWeb 官方契约: registerJavaScriptProxy 后必须 refresh() 注册才完全生效.
+      // v1.6.0 D1 实机发现缺失该调用时 sync 方法 (notifyWebReady 等) 恰好可用、
+      // async 方法回执路由失效 (Web 端 Promise resolve 得到 number 而非返回值,
+      // getAllCards 原生 count=5 / Web cards=0). refresh 触发注册完整生效.
+      try {
+        this.controller.refresh();
+      } catch (e) {
+        const err: BusinessError = e as BusinessError;
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'post-register refresh failed: code=%{public}d msg=%{public}s',
+          err.code,
+          err.message
+        );
+      }
       hilog.info(DOMAIN, TAG, 'HarmonyBridge registered via onControllerAttached');
     } catch (e) {
       const err: BusinessError = e as BusinessError;

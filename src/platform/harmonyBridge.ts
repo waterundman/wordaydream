@@ -199,8 +199,12 @@ export interface HarmonyBridge {
    *
    * 由 useMemoryStore.onRehydrateStorage 在 localStorage 为空时调用恢复.
    * 返回顺序: due ASC (MemoryCardStore.getAllCards SQL ORDER BY).
+   *
+   * v1.6.0 D1 实机契约 (API 22): async JSProxy 复杂返回值 (数组/对象) 无法
+   * 跨桥 (Web 端 resolve 得到 number), 原生侧序列化为 JSON 字符串传输;
+   * Web 侧经 parseBridgeRecords 解析 (useMemoryStore.ts), 兼容旧数组形态.
    */
-  getAllCards(): Promise<MemoryCardRecordBridge[]>;
+  getAllCards(): Promise<string>;
   /**
    * Stage 3: 查询最近复习过的卡片 (Web dashboard).
    *

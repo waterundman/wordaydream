@@ -13,6 +13,58 @@ const nativeMemoryRestoreReady: Promise<void> = new Promise((resolve) => {
 });
 
 /**
+ * v1.6.0 D1: 原生卡片推送接收器 (R-1 恢复的实机通道).
+ *
+ * API 22 模拟器实测: async JSProxy 返回值无论数组还是 JSON string, Web 端
+ * Promise 一律 resolve 成 number (回执路由失效, refresh() 亦无效) — 拉取
+ * (web -> native getAllCards) 通道在该环境不可用. 而 runJavaScript 派发
+ * (native -> web) 已实证可靠 (FIFO openCard 链), 故恢复数据改由原生在
+ * content-ready 后主动推送, 落到本处理器.
+ *
+ * 语义与拉取路径一致: 仅 store 为空时应用 (不覆盖用户数据), 卡片按
+ * lexemeGroupId 入 Map. 纯 Web 环境 (无原生) 下该 handler 永不被调用, 零影响.
+ */
+function installNativeCardRestorePush(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const target = window as unknown as {
+    __applyNativeCardRestore?: (json: string) => void;
+  };
+  target.__applyNativeCardRestore = (json: string): void => {
+    try {
+      if (useMemoryStore.getState().cards.size > 0) {
+        console.log('[memory-restore] push skipped: store non-empty');
+        return;
+      }
+      const cards = parseBridgeRecords(json);
+      const newCards = new Map<string, MemoryCard>();
+      for (const bridgeCard of cards) {
+        const memoryCard = bridgeToMemoryCard(bridgeCard);
+        if (memoryCard) {
+          newCards.set(memoryCard.lexemeGroupId, memoryCard);
+        }
+      }
+      console.log(
+        `[memory-restore] push rawLen=${json.length} applied=${newCards.size}`,
+      );
+      if (newCards.size > 0) {
+        useMemoryStore.setState({ cards: newCards });
+        publish<MemoryCardsUpdatedPayload>('memory:cards-updated', {
+          cards: newCards,
+          isReview: false,
+        });
+      }
+    } catch (e) {
+      console.log(
+        `[memory-restore] push failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  };
+}
+installNativeCardRestorePush();
+
+/**
  * Resolves after persisted Web state is hydrated and any required Harmony RDB
  * restore attempt has settled. Launch actions use this to avoid racing an empty
  * localStorage snapshot against the native card mirror.

@@ -171,12 +171,12 @@ FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true`
 
 ## 7. 下一轮优先级
 
-1. ✅（2026-09-16 已执行）`seed-and-verify.mjs` 模拟器清账完成：critical 链 A1-A6 全 PASS（seed inserted=5 → Page begin → content ready → `getAllCards done: count=5` → Web launch handler ready → onNewWant openCard 派发 + FIFO queued/dispatched），退出码 0。**A7（soft）FAIL 为真实发现**：干净安装下 R-1 恢复链（getAllCards → web store）静默断链，openCard 场景 A 因 web 侧 `getDueCards=0` 走"暂无到期复习卡片"静默降级（toast 已用 uitest dumpLayout 抓到现行），复习页未到达。详见 `docs/vault/v1.6.0-EMULATOR-VERIFY-REPORT.md`。修复方向：web 侧恢复链加序列化形态诊断（疑似 ArkWeb async JSProxy 数组返回以 JSON string 到达 / promise 被静默 catch），重建 HAP 后复跑。注意脚本断言关键词已对齐 v1.5.0 实机日志（A4 `getAllCards done: count=`；A5 改为 `Web launch handler ready: generation=`，debugSeed 原生拦截不进 FIFO，`queued` 由 openCard 阶段覆盖）；openCard query 已加引号防设备 shell 拆断 `&`；脚本新增 `bm clean -d` 步骤保证从干净状态出发。
+1. ✅（2026-09-20 已结清）`seed-and-verify.mjs` 模拟器清账 **7/7 断言全 PASS, 退出码 0**: seed (inserted=5) → Page begin → content ready → `getAllCards done: count=5` → Web launch handler ready → onNewWant openCard 派发 + FIFO queued/dispatched → **A7 `[harmonyLaunch] openCard located cardId=debug-seed-1`** (复习页真实到达)。修复 = R-1 恢复改走原生推送通道: async JSProxy 复杂返回值在 API 22 webview 不可用 (Web 端 Promise resolve 成 number, refresh() 亦无效), content-ready 后原生 `pushCardsToWeb()` 经 runJavaScript 推 JSON, Web 端 `window.__applyNativeCardRestore` 空 store 守卫应用; web 侧 `parseBridgeRecords` 兼容数组/string, `getAllCards` 原生改返回 JSON string, 注册后补官方 `refresh()`。过程与契约详见 `docs/vault/v1.6.0-EMULATOR-VERIFY-REPORT.md`。脚本断言关键词已对齐 v1.5.0 实机日志 (A4/A5 改), openCard query 加引号防 shell 拆断 `&`, 新增 `bm clean -d` 保证干净状态出发。
 2. 运行 `collect-perf.mjs` 采集冷启动耗时与 PSS 基线；后续补 CSV/LLM Worker 的 uitest 交互级性能对比。
 3. 服务卡跨进程主动刷新实际验证（代码闭环已就绪：notifyReviewCompleted → FormRefresher → updateForm）；配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
 4. 申请 `reminderAgent` 开放能力和签名 Profile 后验证 `ReminderAgentService` 的发布/去重/取消/恢复策略（代码已就绪，无权益期间保持安全跳过）。
 5. 提供真实 Harmony LLM 代理环境，验证代理 URL、CSP、TLS、超时与弱网行为。
-6. ✅（2026-09-16 已执行，见第 1 条）openCard 断言已随 seed-and-verify 实测：A6（原生 onNewWant 派发）PASS，A7（web 域层处理日志）待 R-1 恢复链修复后复验。
+6. ✅（2026-09-20 已结清）openCard 断言随 seed-and-verify 全绿: A6 (原生 onNewWant 派发) PASS, A7 (web 域层 located 日志) PASS。
 7. 持续清理仍带早期历史痕迹的文档；根包 / AppScope 版本口径已统一并由 CI 强制；versionCode 规则已 CI 化（check:versions 强制）。
 
 ## 8. 状态维护规则
