@@ -1,0 +1,105 @@
+{
+  "skipped": false,
+  "ok": true,
+  "steps": [
+    {
+      "name": "list-targets",
+      "ok": true,
+      "detail": "127.0.0.1:5555"
+    },
+    {
+      "name": "install-hap",
+      "ok": true,
+      "detail": "[Info]App install path:W:\\wordaydream\\harmony\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap msg:install bundle successfully. \r\nAppMod finish"
+    },
+    {
+      "name": "clean-app-data",
+      "ok": true,
+      "detail": "clean bundle data files successfully."
+    },
+    {
+      "name": "reset",
+      "ok": true,
+      "detail": "force-stop + clean-app-data + hilog -r"
+    },
+    {
+      "name": "aa-start-debug-seed",
+      "ok": true,
+      "detail": "start ability successfully."
+    },
+    {
+      "name": "aa-start-open-card",
+      "ok": true,
+      "detail": "start ability successfully."
+    }
+  ],
+  "assertions": [
+    {
+      "id": "A1",
+      "keyword": "seedDebugCards done",
+      "desc": "原生 RDB 预置 5 张到期卡完成",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:39.935Z"
+    },
+    {
+      "id": "A2",
+      "keyword": "Page begin",
+      "desc": "ArkWeb 虚拟 HTTPS 入口开始加载",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:39.938Z"
+    },
+    {
+      "id": "A3",
+      "keyword": "Web content ready",
+      "desc": "React content-ready ACK 到达",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:39.939Z"
+    },
+    {
+      "id": "A4",
+      "keyword": "getAllCards done: count=",
+      "desc": "RDB 恢复链路执行 (getAllCards done: count=N)",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:39.939Z"
+    },
+    {
+      "id": "A5",
+      "keyword": "Web launch handler ready: generation=",
+      "desc": "Web 启动处理器就绪握手 (FIFO 派发通道就绪)",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:39.939Z"
+    }
+  ],
+  "openCardQuery": "action=openCard&cardId=debug-seed-1",
+  "openCardAssertions": [
+    {
+      "id": "A6",
+      "keyword": "dispatching query=action=openCard",
+      "desc": "原生 onNewWant 派发 openCard (来自 EntryAbility hilog)",
+      "level": "critical",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:42.695Z"
+    },
+    {
+      "id": "A7",
+      "keyword": "[harmonyLaunch] openCard",
+      "desc": "Web 域层 openCard 处理日志 (located/fallback/keep-session 任一命中即过)",
+      "level": "soft",
+      "passed": true,
+      "evidenceAt": "2026-09-20T09:14:42.695Z"
+    }
+  ],
+  "hap": "harmony/entry/build/default/outputs/default/entry-default-unsigned.hap",
+  "bundle": "com.wordaydream.app",
+  "timeoutMs": 90000,
+  "generatedAt": "2026-09-20T09:14:31.445Z",
+  "evidence": {
+    "A1": "ebugSeedCards: seedDebugCardsForRun inserted=5 due=1789892077753\r\n09-20 17:14:37.832 24765 24765 I A00001/EntryAbility: seedDebugCards done: skipped=0 inserted=5\r\n09-20 17:14:37.854   815   815 E C01406/RSScreenManager: IsAllScreensPowerOff: screenPowerStatus_ is empty.\r\n09-20 17",
+    "A2": "[media_avsession_adapter_impl.cpp:411] UpdateMetaData return updated: 1\r\n09-20 17:14:38.315 24765 24765 I A00001/Index: Page begin: https://app.wordaydream.invalid/index.html\r\n09-20 17:14:38.315 24765 24765 I C0391b/AceWeb: [(100000:100000:scope)] WebPattern::InitDataDetector\r\n09",
+    "A3": "gate.cc:4428] native proxy object not found, name:harmonyBridge\r\n09-20 17:14:38.835 24765 24765 I A00001/HarmonyBridge: Web content ready\r\n09-20 17:14:38.836 24765 24765 D A04500/chromium: [nweb_value_convert.cc:371] ParseNWebValueToValueHelper: NONE\r\n09-20 17:14:38.836 24765 247",
+    "A4": "//app.wordaydream.invalid/assets/useMemoryStore-Ba65eZyy.js (1)\r\n09-20 17:14:38.740 24765 24765 I A00001/HarmonyBridge: getAllCards done: count=5\r\n09-20 17:14:38.741 24989     1 D A04501/chromium: [style_cascade_for_include.cc:110] GetEnvironmentVariableExt \"safe-area-inset-botto",
+    "A5": "gate.cc:4428] native proxy object not found, name:harmonyBridge\r\n09-20 17:14:38.731 24765 24765 I A00001/HarmonyBridge: Web launch handler ready: generation=1\r\n09-20 17:14:38.731 24765 24765 D A04500/chromium: [nweb_value_convert.cc:371] ParseNWebValueToValueHelper: NONE\r\n09-20 1",
+    "A6": " onNewWant\r\n09-20 17:14:40.561 24765 24765 I A00001/EntryAbility: [a92ab1a4007e452, 170cd22, 27e63e6] handleLaunchWant: dispatching query=action=openCard&cardId=debug-seed-1\r\n09-20 17:14:40.561 24765 24765 I A00001/HarmonyBridge: [a92ab1a4007e452, 170cd22, 27e63e6] handleHarmonyL",
+    "A7": "t ResourceRequestSender::SendAsync, request->is_sync_mode=0\r\n09-20 17:14:40.580 24765 24765 I A00001/Index: [Console:2] [harmonyLaunch] openCard located cardId=debug-seed-1\r\n09-20 17:14:40.580 24765 24765 I A01194/ARKWEB-CONSOLE: [CONSOLE:16] \"[harmonyLaunch] openCard located car"
+  }
+}

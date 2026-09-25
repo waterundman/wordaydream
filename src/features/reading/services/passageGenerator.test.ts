@@ -703,19 +703,43 @@ describe('v2.2.2 Stage 2 (Bug 5): recentTitles LRU 黑名单', () => {
 
 // === v2.2.3 Stage 1 (D1-2): wordlist 补偿 — passage tokens < 8 时从 wordlist 补齐 ===
 describe('generatePassage (v2.2.3 Stage 1 D1-2: wordlist 补偿)', () => {
-  // 构造 passage: 只 1 个 token ("cat"), text 含 7 个 A1 wordlist 词 (be/have/do/go/get/make/know).
-  // A1 词表前 7 个词按序为 be, have, do, go, get, make, know, 均出现在 text 中,
-  // 故补偿能找到 7 个匹配 → 总 token 数 = 1 + 7 = 8.
-  // 偏移参考 (0-based): be[2,4) have[13,17) cat[20,23) do[27,29) go[36,38) get[46,49) make[56,60) know[69,73)
-  const passageText = 'I be here. I have a cat. I do it. I go now. I get it. I make food. I know.';
-  const passageJson = JSON.stringify({
-    language: 'en',
-    difficulty: 1,
-    text: passageText,
-    tokens: [
-      { lemma: 'cat', surfaceForm: 'cat', startIndex: 20, endIndex: 23, partOfSpeech: 'noun' },
-    ],
-  });
+  /**
+   * 构造 mock passage: 只给 1 个 token, 但 text 覆盖词表头部若干词 —
+   * 补偿逻辑会取 getUnlearnedWordsSync 的前 7 个未学词并在 text 中命中, 补齐到 8 token.
+   *
+   * v1.6.0: A1 词表由 80 词占位替换为真实 CEFR 词表 (排序由 priority+topic 决定, 词序已变),
+   *         故 fixture 改为按实际词表动态构造, 不再与具体词序耦合.
+   */
+  function buildMockPassage() {
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    const textLemmas = wordlist!.words
+      .map((w) => w.lemma)
+      .filter((l) => /^[a-z]+$/.test(l))
+      .slice(0, 40);
+    // mock 提供的唯一 token 取靠后的词, 避开补偿会选中的头部词 (防位置重叠导致补齐数不足)
+    const anchor = textLemmas[Math.min(30, textLemmas.length - 1)];
+    const text = textLemmas.map((l) => `I ${l}.`).join(' ');
+    const anchorMatch = new RegExp(`(?:^|\\s)(${anchor})(?![\\p{L}\\p{N}])`, 'u').exec(text);
+    expect(anchorMatch).not.toBeNull();
+    const start = anchorMatch!.index + anchorMatch![0].length - anchor.length;
+    // 补偿实际会选中的词 (与实现同源, 仅用于定位断言目标)
+    const supplements = useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 7);
+    const probe = supplements.find((l) => /^[a-z]+$/.test(l) && l !== anchor);
+    return {
+      anchor,
+      probe,
+      text,
+      json: JSON.stringify({
+        language: 'en',
+        difficulty: 1,
+        text,
+        tokens: [
+          { lemma: anchor, surfaceForm: anchor, startIndex: start, endIndex: start + anchor.length, partOfSpeech: 'noun' },
+        ],
+      }),
+    };
+  }
 
   beforeEach(() => {
     if (typeof window !== 'undefined') window.localStorage.clear();
@@ -749,14 +773,12 @@ describe('generatePassage (v2.2.3 Stage 1 D1-2: wordlist 补偿)', () => {
   });
 
   it('T05: alignedTokens < 8 时从 wordlist 补齐到 >= 8', async () => {
-    // 加载 A1 词表 (80 词), 确保 getCachedWordlist + getUnlearnedWordsSync 可用
+    // 加载 A1 词表, 确保 getCachedWordlist + getUnlearnedWordsSync 可用
     await useWordlistStore.getState().getLevelTotal('en', 1);
-    const wordlist = getCachedWordlist('en', 1);
-    expect(wordlist).not.toBeNull();
-    if (!wordlist) return;
+    const mock = buildMockPassage();
 
     // mock LLM 返回只含 1 个 token 的 passage
-    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: passageJson });
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: mock.json });
 
     const passage = await generatePassage('en', 1, [], undefined, true);
 
@@ -764,8 +786,8 @@ describe('generatePassage (v2.2.3 Stage 1 D1-2: wordlist 补偿)', () => {
     expect(passage.tokens.length).toBeGreaterThanOrEqual(8);
     // source 仍为 'llm' (补偿不改变 source)
     expect(passage.source).toBe('llm');
-    // 原始 "cat" token 仍在
-    expect(passage.tokens.some((t) => t.lemma === 'cat')).toBe(true);
+    // 原始 token 仍在
+    expect(passage.tokens.some((t) => t.lemma === mock.anchor)).toBe(true);
     // 补偿的 token 用 kind='normal' (非 'review')
     const supplementTokens = passage.tokens.filter((t) => t.id.startsWith('supplement-'));
     expect(supplementTokens.length).toBeGreaterThan(0);
@@ -776,19 +798,17 @@ describe('generatePassage (v2.2.3 Stage 1 D1-2: wordlist 补偿)', () => {
 
   it('T06: 补偿的 token 在 text 中找到匹配位置 (startIndex/endIndex 正确)', async () => {
     await useWordlistStore.getState().getLevelTotal('en', 1);
-    const wordlist = getCachedWordlist('en', 1);
-    expect(wordlist).not.toBeNull();
-    if (!wordlist) return;
+    const mock = buildMockPassage();
 
-    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: passageJson });
+    vi.spyOn(routerModule, 'generateWithFallback').mockResolvedValue({ text: mock.json });
 
     const passage = await generatePassage('en', 1, [], undefined, true);
 
-    // 找到补偿的 "have" token (A1 词表第 2 个词)
-    const haveToken = passage.tokens.find((t) => t.lemma === 'have');
-    expect(haveToken).toBeDefined();
-    if (haveToken) {
-      expect(passage.text.substring(haveToken.startIndex, haveToken.endIndex)).toBe('have');
+    // 找到补偿选中的首个探针词
+    const probeToken = passage.tokens.find((t) => t.lemma === mock.probe);
+    expect(probeToken).toBeDefined();
+    if (probeToken) {
+      expect(passage.text.substring(probeToken.startIndex, probeToken.endIndex)).toBe(mock.probe);
     }
 
     // 验证所有 token (原始 + 补偿) 的 startIndex/endIndex 与 surfaceForm 一致

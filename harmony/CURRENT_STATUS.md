@@ -1,6 +1,6 @@
 # Wordaydream 鸿蒙版本当前状态
 
-> 更新日期：2026-09-13
+> 更新日期：2026-09-25
 > 本文档描述当前工作树，作为鸿蒙实现、验证证据和后续工作的权威入口。`README.md` 中原有的 “Stage 1 / API 12” 内容是早期历史记录，不代表当前工程状态。
 
 ## 1. 当前结论
@@ -25,7 +25,7 @@ Wordaydream 的鸿蒙端不是 ArkUI 全量重写，而是一个 **HarmonyOS 6.0
 | DevEco Node | `18.20.1` |
 | Hvigor | `6.22.7` |
 | ohpm | `6.0.1` |
-| 应用版本 | 单一版本真源（仓库根包 `3.5.0=harmony major+2`）；AppScope `1.5.0`、entry `1.5.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验；v3.0.0 起 harmony 跨入 major 1.0.0，versionCode 线性规则（major≠0 未覆盖）自动跳过校验，数值延续递增 `1000060` |
+| 应用版本 | 单一版本真源（仓库根包 `3.6.0=harmony major+2`）；AppScope `1.6.0`、entry `1.6.0` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验；v3.0.0 起 harmony 跨入 major 1.0.0，versionCode 线性规则（major≠0 未覆盖）自动跳过校验，数值延续递增 `1000065` |
 | 原生权限 | `ohos.permission.INTERNET`、`ohos.permission.VIBRATE` |
 | 签名 | `signingConfigs` 为空；当前只能生成 unsigned HAP |
 | 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；最新 content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过 |
@@ -89,8 +89,9 @@ React/Vite source (src/)
 | 检查 | 结果 |
 |---|---|
 | `npm run typecheck` | 通过（tsc 0 errors） |
-| `npm run test:run` | 118 个测试文件、1246 项测试全部通过（v0.5.0-harmony Stage 0-4 新增 68 项） |
-| `npm run lint` | 0 个错误；23 条现存警告 |
+| `npm run test:run` | 151 个测试文件、1434 项测试全部通过（v1.6.0 英语 CEFR 词表替换后修正 5 处硬编码期望，并补齐 SPEC §11.1 测试契约 4 文件 12 项） |
+| `npm run lint` | 通过（oxlint 0 个警告 0 个错误） |
+| `npm run verify:wordlists` | 通过（en A1-B2 / de A1-B2 字段契约 + `courses/en.ts` 20 Lesson targetLemmas 命中校验；德语同形异义 11 处记为 warning） |
 | `npm run check:versions` | 通过（四处版本口径一致，已接入 CI） |
 | `npm run build` | 普通 Web 生产构建通过，仍保留代码分包、module Worker 与 PWA |
 | 虚拟同源定向测试 | 通过（origin/path/MIME、双编码穿越和源码接线契约） |
@@ -116,6 +117,7 @@ npm run build:harmony:hap
 - 2026-08-13 00:07 对包含 content-ready ACK 与 12 秒失败/重试保护的最新工作树完整执行 `npm run build:harmony:hap`，进程退出码为 0；`CompileArkTS`、`PackageHap` 与 packing 均通过，Hvigor 明确报告 `BUILD SUCCESSFUL`。
 - 2026-09-09 v0.5.0-harmony Stage 0-4 完整执行 `npm run build:harmony:hap`：Hvigor `BUILD SUCCESSFUL`，产物 `harmony/entry/build/default/outputs/default/entry-default-unsigned.hap`（3,845,446 bytes）。构建包装器新增 realpathSync 规范化 cwd —— hvigor 对盘符大小写敏感（`w:\` 报 "Path not found"，`W:\` 正常），现从任意大小写 cwd 启动均可构建。
 - 当前产物仍未签名，但可覆盖安装到 API 22 模拟器（模拟器在线时执行 seed-and-verify 自动验证）。
+- 2026-09-25 v1.6.0 Stage 1 完整执行 `npm run build:harmony:hap`：Hvigor `BUILD SUCCESSFUL`，产物 `entry-default-unsigned.hap` **4,765,139 bytes**（v1.5.0 为 3,773,777 bytes）。增量 +991 KB 全部来自本次替换的英语 CEFR 词表 —— 词表 JSON 位于 HAP 的 `rawfile/dist` 内，**不做压缩**（Web 侧 brotli 后仅 12–22 KB/级，harmony 侧 rawfile 保留原始体积）。
 - 构建包装器的 ANSI 控制符归一化已修复，相关测试 3/3 通过，不再因带颜色的成功日志产生假阴性。
 
 ### API 22 模拟器运行证据

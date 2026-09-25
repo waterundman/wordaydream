@@ -720,4 +720,75 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
     await page.screenshot({ path: `${SHOTS_DIR}/T14-reading-complete-${testInfo.project.name}.png`, fullPage: true });
   });
+
+  // === v1.6.0 Stage 1 (S3): 课程路径 + 词表规模冒烟 ===
+  // 背景: v1.6.0 把英语词表从 80 词占位替换为真实 CEFR 词表
+  //       (A1 942 / A2 898 / B1 802 / B2 1428, 见 src/data/wordlists/en/*.json),
+  //       并据此重建了 courses/en.ts 的 Lesson targetLemmas.
+  //       这两条用例守住"词表规模不再回退到占位"与"课程路径仍可渲染"。
+
+  test('T15 [critical]: 课程路径 — #/course 选课 → Module/Lesson 渲染且每 Lesson 15 目标词', async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
+
+    // 深链接进入课程页 (useUrlHashSync: '#/${mode}')
+    await page.goto('/#/course');
+
+    // 未选课视图: 英语课程卡片
+    const courseCard = page.getByTestId('course-card-en-from-zh');
+    await courseCard.waitFor({ state: 'visible', timeout: 20_000 });
+    await expect(courseCard).toContainText('4 个 Module');
+    await courseCard.click();
+
+    // 已选课视图: A1-B2 四个 Module 全部渲染
+    await page.getByTestId('module-section-en-a1').waitFor({ state: 'visible', timeout: 15_000 });
+    for (const lv of ['a1', 'a2', 'b1', 'b2']) {
+      await expect(page.getByTestId(`module-section-en-${lv}`)).toBeVisible();
+    }
+
+    // A1 的 5 个 Lesson 全部渲染 (id 由 themeSlug 派生)
+    const a1Section = page.getByTestId('module-section-en-a1');
+    await expect(a1Section.locator('[data-testid^="lesson-card-en-a1-"]')).toHaveCount(5);
+
+    // 每个 Lesson 15 个 targetLemmas → 进度标签形如 "0/15" (LessonCard.progressLabel)
+    await expect(a1Section).toContainText('0/15');
+
+    // 课程标题 (来自 courses/en.ts) 可见
+    await expect(page.getByRole('heading', { name: 'English for Chinese Speakers' })).toBeVisible();
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T15-course-path-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  test('T16 [critical]: 词表链 — 首页进入词表页, A1 规模为真实 CEFR 词表 (>= 900)', async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
+
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 20_000 });
+
+    await page.getByRole('button', { name: '查看词表' }).click();
+
+    // 头部: "{CEFR} 词表 · N 词" (WordlistPage: {cefrLabel} 词表 · {words.length} 词)
+    const header = page.getByText(/词表 · \d+ 词/);
+    await header.waitFor({ state: 'visible', timeout: 20_000 });
+
+    /** 读取当前等级的词数 (词表按难度异步加载, 用轮询避免读到切换中的中间态) */
+    const readCount = async (): Promise<number> => {
+      const text = (await header.textContent()) ?? '';
+      return Number(/词表 · (\d+) 词/.exec(text)?.[1] ?? '0');
+    };
+
+    // 默认难度为 A2 (useSettingsStore.difficulty 初始值 2) → A2 真实词表 898 词
+    await expect.poll(readCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(800);
+
+    // 切到 A1: 占位词表为 80 词, v1.6.0 真实 CEFR 词表为 942 词 → 下界取 900
+    await page.getByRole('group', { name: '难度' }).getByRole('button', { name: 'A1' }).click();
+    await expect.poll(readCount, { timeout: 20_000 }).toBeGreaterThanOrEqual(900);
+
+    // 搜索框可用, 且能命中词表内的真实词
+    const search = page.getByLabel('搜索词表');
+    await expect(search).toBeVisible();
+    await search.fill('dog');
+    await expect(page.getByText('dog', { exact: true }).first()).toBeVisible({ timeout: 10_000 });
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T16-wordlist-${testInfo.project.name}.png`, fullPage: true });
+  });
 });

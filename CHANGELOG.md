@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] — 2026-09-25
+
+### 英语词表数据工程：80 词占位 → 真实 CEFR 词表 (v1.6.0 Stage 1)
+
+- **词表数据替换**：`src/data/wordlists/en/{a1,a2,b1,b2}.json` 由 80 词/级占位（version 1.0.0，无 priority/topic）替换为真实 CEFR 分级词表 —— **A1 942 / A2 898 / B1 802 / B2 1428 = 4070 词条（四级并集去重 3702 个唯一词形）**，version 2.0.0，对齐德语词表 schema
+- **数据来源（均为 MIT 许可，经 npm 获取，不入库）**：① `@polyglot-bundles/en-word-lists` —— Oxford 3000/5000 频段分级的英语词（lemma / pos / CEFR / 语义分类）；② `ecdict` —— ECDICT 英汉词典数据集（skywind3000/ECDICT，中文释义 / COCA 词频 / 考纲标签）。join 覆盖率 4070/4070 = **100%**
+- **v2 字段派生规则**（全部数据驱动，无人工编造）：
+  - `translation`：ECDICT 释义按**词性对齐取义**（剥离词性前缀，剔除 `[计]/[经]` 等专业域与百科式长尾，收敛省略号占位符）。词性对齐是本轮关键修正 —— ECDICT 释义按义项顺序排列，与词表包标注词性常不一致（如 `clear(verb)` 首义项为「清楚的」，按词性取义后为「澄清/清除障碍」）
+  - `priority`（1 核心 / 2 常用 / 3 边缘）：由 `collins` 星级 + `frq` 词频 + `oxford` 核心表 + 考纲标签合成核心度评分，再按**该等级内评分三分位**切分（30% / 40% / 30%）。绝对阈值不可用 —— A1 段 92% 的词都在 Oxford 核心表内，唯有一等级内相对分位才有区分度
+  - `topic`：优先取词表包语义分类（规范化命名对齐德语口径）→ 人工主题表（~700 词，覆盖 family/food/body/time/transport 等 30 个语义域）→ 虚词按 pos 归入 `<pos>_basic`（与德语一致）
+  - `frequency`：由 COCA 词频序号映射 1（最高频）~ 5（最低频）
+  - `semanticConflicts`：人工整理 65 组易混词，**同等级内共现 ≥2 词时双向标注**（与德语同机制，供 `getUnlearnedWordsSync` 避免同批次放入易混词）。A1 35 / A2 26 / B1 6 / B2 16 词被标注
+- **课程数据重新对齐**（本次替换暴露的集成缺陷）：`src/data/courses/en.ts` 的 20 个 Lesson `targetLemmas` 原为旧 80 词快照切片，替换后 **19/20 个 Lesson 含该等级词表之外的词**（旧 a2/b1/b2 切片甚至是字母序前缀），违背 SPEC「词表驱动的课程」设计。已按新词表重建：每 Lesson 15 词、按 theme 主题优选（如 "Family Dinner Together" → child/family/mother/father…、"A Day with a Pet" → animal/dog/fish/bird…）、同级 5 个 Lesson 互不重复；**moduleId / order / title / theme 全部不变**（lesson id 由 themeSlug 派生），既有用户进度不失效
+- **新增工具脚本**：`scripts/generate-en-wordlists.mjs`（词表生成，支持 dry-run）、`scripts/generate-en-courses.mjs`（课程词表重建）、`scripts/verify-wordlists.mjs` + `npm run verify:wordlists`（词表契约校验：字段完整性 / CEFR 与等级一致 / 等级内 lemma 唯一 / semanticConflicts 引用完整性与双向对称 / 课程 targetLemmas 命中对应等级词表）
+- **测试修正**：`useWordlistStore.test.ts` 7 处硬编码「80 词」期望改为按实际词表派生（阈值类断言用 `Math.ceil(len*0.8)`）；`passageGenerator.test.ts` wordlist 补偿用例的 fixture 原依赖旧词表头部词序，改为按实际词表动态构造 mock passage；`getUnlearnedWordsSync` 排序/冲突用例的 limit 与隔离条件同步修正
+- **SPEC §11.1 测试契约补齐**（本轮发现的真实缺口）：SPEC 声明的 5 个测试文件原仅 `useWordlistStore.test.ts` 落地，**其余 4 个不存在**，其中 `wordlistConstraint` 在整个测试套件中**零覆盖**。本轮补入 `prompts.wordlist.test.ts`（3）/ `passageGenerator.wordlist.test.ts`（5）/ `HomePage.progress.test.tsx`（2）/ `ReadingSessionPage.unlock.test.tsx`（2）= **12 项**，覆盖：约束段装配与 `MANDATORY self-check` 前注入位置、`minCover = max(6, ceil(n*0.75))` 实际口径、无词表（C1）时 `wordlistConstraint` 为 `undefined` 的 0 breaking change、正常模式取词（target = 未学词 8 / optional = learning 词）、passage 词表内词覆盖回写 `markWordLearning` 而词表外词不标记、ProgressRing 接线（`masteredCount`/`levelTotal` → `aria-label`）与自由模式 0/1 分支、难度解锁 UI 的 locked/disabled + `完成 A1 80% 掌握可解锁` 提示。契约 5/5 文件齐备，`useWordlistStore.test.ts` 71 项为声明量（8）的超集
+- **测试证据**：vitest **151/151 files、1434/1434 tests** 全绿（契约补入前基线 147/1422，本轮 **+4 files / +12 tests，零回归**）；Web E2E **16/16**（chromium，新增 T15 课程路径：`#/course` 选课 → 4 Module + A1 五个 Lesson 渲染 + 每 Lesson `0/15` 目标词；T16 词表链：A2 默认 898 词 / 切 A1 ≥900 词 + 搜索命中真实词）；tsc 0 错误；oxlint 0 警告 0 错误；`npm run verify:wordlists` 通过（en 4 级 + de 4 级 + courses/en.ts 20 Lesson 全命中）；`check:versions` PASS
+- **产物体积**：英语各级词表 chunk 原始 95–122 KB，**brotli 后 12–22 KB**（4 级均为动态 import 按需加载，不进入首屏）；Harmony HAP `entry-default-unsigned.hap` 4,765,139 B（v1.5.0 为 3,773,777 B，+991 KB 全部来自 rawfile 内未压缩词表）
+- **已知限制（诚实声明）**：
+  - **未产出 `example` / `exampleTranslation`** —— 上游两数据源均无例句语料，手工编造 4000 条例句会产生错误示范；该字段为可选且当前**无任何消费方**（`src/` 内对词表 `example` 字段零引用，`WordlistEntry` 接口亦未声明）。注：德语 `de/a1.json` 已带 645 条 `example`/`exampleTranslation`，但 `de/a2..b2.json` 没有，且同样无消费方 —— 属既有**死数据**，留待后续版本统一接入真实语料与 UI 消费方
+  - `topic` 在 B1/B2 仍有 ~40–47% 落到 `general`（低等级语义域词稀疏 + 词表包分类粒度为 `general` 所致），A1 已降至 12%
+  - 德语词表存在 **10 处同形异义重复 lemma**（如 `sein` 动词「是」/限定词「他的」、`Morgen`「早晨」/「明天」）—— 属既有数据特征（本次未改动德语文件），校验器中记为 warning 而非 error；应用层 progress 以 `language:lemma` 为键，同形词共享状态
+  - 词频与 CEFR 分级来自上游语料，**未逐词人工校对**；上游数据源不入库（`npm pack` 获取，`.tmp-wl/` 已 gitignore）
+  - 自动测试沿用既有 Web 回归套件 + E2E，**未做模拟器或真机运行验证**
+- 版本对齐维护：web `3.6.0`、AppScope / entry `1.6.0`、versionCode 延续递增 `1000065`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.5.0] — 2026-09-14
 
 ### 阅读完成页会话统计 (v1.5.0)

@@ -50,10 +50,16 @@ afterEach(() => {
 });
 
 describe('useWordlistStore — 词表加载', () => {
-  it('getLevelTotal 返回英语 A1 词表总词数 (80)', async () => {
+  it('getLevelTotal 返回英语 A1 词表总词数 (v1.6.0 真实 CEFR 词表)', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
+    const { getCachedWordlist } = await import('../../../data/wordlists');
     const total = await useWordlistStore.getState().getLevelTotal('en', 1);
-    expect(total).toBe(80);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(wordlist).not.toBeNull();
+    // total 与 words.length 一致 (由生成脚本保证)
+    expect(total).toBe(wordlist!.words.length);
+    // v1.6.0: 英语 A1 由 80 词占位替换为 Oxford 3000/5000 A1 段真实词表
+    expect(total).toBeGreaterThanOrEqual(900);
   });
 
   it('getLevelTotal 对 C1 (难度 5) 返回 0 (无内置词表)', async () => {
@@ -69,8 +75,10 @@ describe('useWordlistStore — 词表加载', () => {
 
   it('getLevelTotalSync 在词表加载后返回正确数量', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
+    const { getCachedWordlist } = await import('../../../data/wordlists');
     await useWordlistStore.getState().getLevelTotal('en', 1);
-    expect(useWordlistStore.getState().getLevelTotalSync('en', 1)).toBe(80);
+    const wordlist = getCachedWordlist('en', 1);
+    expect(useWordlistStore.getState().getLevelTotalSync('en', 1)).toBe(wordlist!.words.length);
   });
 });
 
@@ -246,29 +254,27 @@ describe('useWordlistStore — 解锁逻辑 (isLevelUnlocked)', () => {
   it('闯关模式: 上一级 ≥80% mastered → 下一级解锁', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const { getCachedWordlist } = await import('../../../data/wordlists');
-    // 加载 A1 词表 (80 词)
     await useWordlistStore.getState().getLevelTotal('en', 1);
     const wordlist = getCachedWordlist('en', 1);
     expect(wordlist).not.toBeNull();
-    // 标记 64 词 (80%) 为 mastered
-    if (wordlist) {
-      for (let i = 0; i < 64; i++) {
-        useWordlistStore.getState().markWordMastered('en', wordlist.words[i].lemma);
-      }
+    // 标记 ⌈80%⌉ 词为 mastered
+    const target = Math.ceil(wordlist!.words.length * 0.8);
+    for (let i = 0; i < target; i++) {
+      useWordlistStore.getState().markWordMastered('en', wordlist!.words[i].lemma);
     }
     expect(useWordlistStore.getState().isLevelUnlocked('en', 2)).toBe(true);
   });
 
-  it('闯关模式: 上一级 79% mastered → 下一级仍锁定', async () => {
+  it('闯关模式: 上一级 <80% mastered → 下一级仍锁定', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const { getCachedWordlist } = await import('../../../data/wordlists');
     await useWordlistStore.getState().getLevelTotal('en', 1);
     const wordlist = getCachedWordlist('en', 1);
-    // 标记 63 词 (78.75%) 为 mastered — 差 1 词不到 80%
-    if (wordlist) {
-      for (let i = 0; i < 63; i++) {
-        useWordlistStore.getState().markWordMastered('en', wordlist.words[i].lemma);
-      }
+    expect(wordlist).not.toBeNull();
+    // 标记 ⌈80%⌉-1 词为 mastered — 差 1 词不到 80% 阈值
+    const target = Math.ceil(wordlist!.words.length * 0.8) - 1;
+    for (let i = 0; i < target; i++) {
+      useWordlistStore.getState().markWordMastered('en', wordlist!.words[i].lemma);
     }
     expect(useWordlistStore.getState().isLevelUnlocked('en', 2)).toBe(false);
   });
@@ -316,7 +322,10 @@ describe('useWordlistStore — getUnlearnedWords / getLearningWords', () => {
     const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 100);
     expect(unlearned).not.toContain(wordlist?.words[0].lemma);
     expect(unlearned).not.toContain(wordlist?.words[1].lemma);
-    expect(unlearned.length).toBe(78); // 80 - 2
+    // limit=100 截断: 无 limit 时应为 words.length - 2
+    expect(
+      useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 99999).length
+    ).toBe(wordlist!.words.length - 2);
   });
 
   it('getLearningWordsSync 只返回 learning 词', async () => {
@@ -481,6 +490,11 @@ describe('useWordlistStore — getUnlearnedWordsSync priority+topic 排序 (v1.6
     const wordlist = getCachedWordlist('en', 1);
     expect(wordlist).not.toBeNull();
     if (wordlist) {
+      // v1.6.0: 真实词表中大量词同为 priority 1, 直接改前 3 词无法隔离断言 —
+      // 先把其余词降为 priority 3, 使 words[0..2] 成为唯一的 priority 1 组
+      for (let i = 3; i < wordlist.words.length; i++) {
+        wordlist.words[i] = { ...wordlist.words[i], priority: 3 };
+      }
       // 同 priority=1, 不同 topic
       wordlist.words[0] = { ...wordlist.words[0], priority: 1, topic: 'food' };
       wordlist.words[1] = { ...wordlist.words[1], priority: 1, topic: 'core' };
@@ -525,18 +539,16 @@ describe('useWordlistStore — 毕业机制 (v1.6.0 Stage 1)', () => {
     expect(useWordlistStore.getState().checkLevelCompletion('en', 1)).toBe(true);
   });
 
-  it('T02: checkLevelCompletion: 80% mastered (解锁但未毕业) 返回 false', async () => {
+  it('T02: checkLevelCompletion: ⌈80%⌉ mastered (解锁但未毕业) 返回 false', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const { getCachedWordlist } = await import('../../../data/wordlists');
-    // 加载 A1 词表 (80 词)
     await useWordlistStore.getState().getLevelTotal('en', 1);
     const wordlist = getCachedWordlist('en', 1);
     expect(wordlist).not.toBeNull();
-    // 标记 64 词 (80%) 为 mastered — 满足 isLevelUnlocked 80% 阈值但不满足 100% 毕业
-    if (wordlist) {
-      for (let i = 0; i < 64; i++) {
-        useWordlistStore.getState().markWordMastered('en', wordlist.words[i].lemma);
-      }
+    // 标记 ⌈80%⌉ 词为 mastered — 满足 isLevelUnlocked 80% 阈值但不满足 100% 毕业
+    const target = Math.ceil(wordlist!.words.length * 0.8);
+    for (let i = 0; i < target; i++) {
+      useWordlistStore.getState().markWordMastered('en', wordlist!.words[i].lemma);
     }
     expect(useWordlistStore.getState().checkLevelCompletion('en', 1)).toBe(false);
   });
@@ -562,7 +574,8 @@ describe('useWordlistStore — 毕业机制 (v1.6.0 Stage 1)', () => {
       }
     }
     expect(useWordlistStore.getState().checkCourseCompletion('en')).toBe(true);
-  });
+    // v1.6.0: A1-B2 共 4000+ 词, 逐词 markWordMastered 较慢, 放宽超时
+  }, 30000);
 
   it('T05: levelComplete 闭环: 100% mastered 时下一等级 isLevelUnlocked 返回 true', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
@@ -743,16 +756,15 @@ describe('useWordlistStore — v1.6.1 Stage 2: 语义混淆避让', () => {
   it('T05: learning 含 affect → getUnlearnedWordsSync 排除 effect (语义冲突避让)', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const { getCachedWordlist } = await import('../../../data/wordlists');
-    // 加载 A2 词表 (含 affect→["effect"] 标注)
+    // 加载 A2 词表 (生成脚本对同级共现的易混词做双向标注: affect ↔ effect)
     await useWordlistStore.getState().getLevelTotal('en', 2);
     const wordlist = getCachedWordlist('en', 2);
     expect(wordlist).not.toBeNull();
     if (!wordlist) return;
-    // effect 不在 a2.json 中, 临时注入以验证过滤逻辑
-    wordlist.words.push({ lemma: 'effect', pos: 'noun', translation: '效果', cefr: 'A2' });
+    expect(wordlist.words.some((w) => w.lemma === 'effect')).toBe(true);
     // 标记 affect 为 learning
     useWordlistStore.getState().markWordLearning('en', 'affect');
-    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 2, 200);
+    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 2, 99999);
     // effect 应被排除 (affect 正在 learning, affect.semanticConflicts 含 effect)
     expect(unlearned).not.toContain('effect');
     // affect 自身也排除 (learning 状态)
@@ -761,22 +773,21 @@ describe('useWordlistStore — v1.6.1 Stage 2: 语义混淆避让', () => {
     expect(unlearned).toContain('accept');
   });
 
-  it('T06: 词表无 semanticConflicts 字段 (v1 词表) → 过滤逻辑跳过, 行为不变', async () => {
+  it('T06: learning 词无 semanticConflicts → 无额外过滤, 仅排除 learning/mastered', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const { getCachedWordlist } = await import('../../../data/wordlists');
-    // A1 词表无 semanticConflicts 字段 (v1 词表)
     await useWordlistStore.getState().getLevelTotal('en', 1);
     const wordlist = getCachedWordlist('en', 1);
     expect(wordlist).not.toBeNull();
     if (!wordlist) return;
-    // 确认 A1 词表无 semanticConflicts 字段
+    // v1.6.0: A1 词表整体已含易混标注 (35 词), 但前两词不带标注 → 不触发冲突过滤
     expect(wordlist.words[0].semanticConflicts).toBeUndefined();
-    // 标记 2 个词为 learning
+    expect(wordlist.words[1].semanticConflicts).toBeUndefined();
     useWordlistStore.getState().markWordLearning('en', wordlist.words[0].lemma);
     useWordlistStore.getState().markWordLearning('en', wordlist.words[1].lemma);
     // getUnlearnedWordsSync 应仅排除 learning/mastered 词, 无语义冲突过滤
-    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 200);
-    expect(unlearned.length).toBe(78); // 80 - 2 learning, 无额外过滤
+    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 99999);
+    expect(unlearned.length).toBe(wordlist.words.length - 2);
     expect(unlearned).not.toContain(wordlist.words[0].lemma);
     expect(unlearned).not.toContain(wordlist.words[1].lemma);
   });
@@ -788,23 +799,25 @@ describe('useWordlistStore — v1.6.1 Stage 2: 语义混淆避让', () => {
     const wordlist = getCachedWordlist('en', 2);
     expect(wordlist).not.toBeNull();
     if (!wordlist) return;
-    // 验证 a2.json 中 affect 标注 semanticConflicts: ["effect"]
+    // 生成脚本对同等级共现的易混词做双向标注
     const affectEntry = wordlist.words.find((w) => w.lemma === 'affect');
     expect(affectEntry).toBeDefined();
     expect(affectEntry!.semanticConflicts).toEqual(['effect']);
-    // effect 不在 a2.json 中, 临时注入并双向标注
-    wordlist.words.push({ lemma: 'effect', pos: 'noun', translation: '效果', cefr: 'A2', semanticConflicts: ['affect'] });
-    // 反向验证: effect 为 learning → affect 被排除
-    useWordlistStore.getState().markWordLearning('en', 'effect');
-    const unlearnedReverse = useWordlistStore.getState().getUnlearnedWordsSync('en', 2, 200);
-    expect(unlearnedReverse).not.toContain('affect');
-    expect(unlearnedReverse).not.toContain('effect');
+    const effectEntry = wordlist.words.find((w) => w.lemma === 'effect');
+    expect(effectEntry).toBeDefined();
+    expect(effectEntry!.semanticConflicts).toEqual(['affect']);
+    // affect 为 learning → effect 被排除
+    useWordlistStore.getState().markWordLearning('en', 'affect');
+    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 2, 99999);
+    expect(unlearned).not.toContain('affect');
+    expect(unlearned).not.toContain('effect');
+    // 无关词不受影响
+    expect(unlearned).toContain('research');
   });
 
   it('T08: 过滤后剩余词数 < limit 不回填, 保持优先级顺序', async () => {
     const { useWordlistStore } = await import('./useWordlistStore');
     const { getCachedWordlist } = await import('../../../data/wordlists');
-    // 使用 A1 词表 (无 semanticConflicts, 手动注入冲突对)
     await useWordlistStore.getState().getLevelTotal('en', 1);
     const wordlist = getCachedWordlist('en', 1);
     expect(wordlist).not.toBeNull();
@@ -814,11 +827,10 @@ describe('useWordlistStore — v1.6.1 Stage 2: 语义混淆避让', () => {
     wordlist.words[0] = { ...wordlist.words[0], semanticConflicts: conflictTargets };
     // 标记 words[0] 为 learning (触发冲突过滤)
     useWordlistStore.getState().markWordLearning('en', wordlist.words[0].lemma);
-    // limit=100 远大于剩余词数, 验证不回填
-    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 100);
-    // 80 - 1 (learning) = 79 unlearned; 冲突过滤再排除 3 (words[1..3]) = 76
-    expect(unlearned.length).toBe(76);
-    expect(unlearned.length).toBeLessThan(100); // 不回填至 limit
+    // limit 远大于剩余词数, 验证不回填
+    const unlearned = useWordlistStore.getState().getUnlearnedWordsSync('en', 1, 99999);
+    // words.length - 1 (learning) - 3 (冲突目标) = words.length - 4
+    expect(unlearned.length).toBe(wordlist.words.length - 4);
     // 验证冲突词被排除
     expect(unlearned).not.toContain(wordlist.words[1].lemma);
     expect(unlearned).not.toContain(wordlist.words[2].lemma);

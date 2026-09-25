@@ -1,7 +1,7 @@
 {
   "name": "wordaydream",
   "private": true,
-  "version": "3.5.0",
+  "version": "3.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "build:harmony": "vite build --mode harmony && node scripts/verify-harmony-build.mjs",
     "build:harmony:hap": "npm run build:harmony && node scripts/assemble-harmony-hap.mjs",
     "verify:harmony-build": "node scripts/verify-harmony-build.mjs",
+    "verify:wordlists": "node scripts/verify-wordlists.mjs",
     "test:harmony-build-verifier": "node --test scripts/verify-harmony-build.test.mjs",
     "test:harmony-build-wrapper": "node --test scripts/hvigor-output.test.mjs",
     "lint": "oxlint",

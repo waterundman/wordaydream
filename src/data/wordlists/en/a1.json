@@ -2,88 +2,8606 @@
   "language": "en",
   "level": "A1",
   "difficulty": 1,
-  "version": "1.0.0",
-  "total": 80,
+  "version": "2.0.0",
+  "total": 942,
   "words": [
-    { "lemma": "be", "pos": "verb", "translation": "是", "cefr": "A1" },
-    { "lemma": "have", "pos": "verb", "translation": "有", "cefr": "A1" },
-    { "lemma": "do", "pos": "verb", "translation": "做", "cefr": "A1" },
-    { "lemma": "go", "pos": "verb", "translation": "去", "cefr": "A1" },
-    { "lemma": "get", "pos": "verb", "translation": "得到", "cefr": "A1" },
-    { "lemma": "make", "pos": "verb", "translation": "制作", "cefr": "A1" },
-    { "lemma": "know", "pos": "verb", "translation": "知道", "cefr": "A1" },
-    { "lemma": "think", "pos": "verb", "translation": "想", "cefr": "A1" },
-    { "lemma": "see", "pos": "verb", "translation": "看见", "cefr": "A1" },
-    { "lemma": "come", "pos": "verb", "translation": "来", "cefr": "A1" },
-    { "lemma": "want", "pos": "verb", "translation": "想要", "cefr": "A1" },
-    { "lemma": "look", "pos": "verb", "translation": "看", "cefr": "A1" },
-    { "lemma": "take", "pos": "verb", "translation": "拿", "cefr": "A1" },
-    { "lemma": "give", "pos": "verb", "translation": "给", "cefr": "A1" },
-    { "lemma": "work", "pos": "verb", "translation": "工作", "cefr": "A1" },
-    { "lemma": "call", "pos": "verb", "translation": "打电话", "cefr": "A1" },
-    { "lemma": "try", "pos": "verb", "translation": "尝试", "cefr": "A1" },
-    { "lemma": "ask", "pos": "verb", "translation": "问", "cefr": "A1" },
-    { "lemma": "need", "pos": "verb", "translation": "需要", "cefr": "A1" },
-    { "lemma": "feel", "pos": "verb", "translation": "感觉", "cefr": "A1" },
-    { "lemma": "become", "pos": "verb", "translation": "成为", "cefr": "A1" },
-    { "lemma": "leave", "pos": "verb", "translation": "离开", "cefr": "A1" },
-    { "lemma": "put", "pos": "verb", "translation": "放", "cefr": "A1" },
-    { "lemma": "mean", "pos": "verb", "translation": "意思是", "cefr": "A1" },
-    { "lemma": "keep", "pos": "verb", "translation": "保持", "cefr": "A1" },
-    { "lemma": "let", "pos": "verb", "translation": "让", "cefr": "A1" },
-    { "lemma": "begin", "pos": "verb", "translation": "开始", "cefr": "A1" },
-    { "lemma": "seem", "pos": "verb", "translation": "似乎", "cefr": "A1" },
-    { "lemma": "help", "pos": "verb", "translation": "帮助", "cefr": "A1" },
-    { "lemma": "talk", "pos": "verb", "translation": "谈话", "cefr": "A1" },
-    { "lemma": "turn", "pos": "verb", "translation": "转动", "cefr": "A1" },
-    { "lemma": "show", "pos": "verb", "translation": "展示", "cefr": "A1" },
-    { "lemma": "play", "pos": "verb", "translation": "玩", "cefr": "A1" },
-    { "lemma": "run", "pos": "verb", "translation": "跑", "cefr": "A1" },
-    { "lemma": "move", "pos": "verb", "translation": "移动", "cefr": "A1" },
-    { "lemma": "live", "pos": "verb", "translation": "居住", "cefr": "A1" },
-    { "lemma": "believe", "pos": "verb", "translation": "相信", "cefr": "A1" },
-    { "lemma": "hold", "pos": "verb", "translation": "握住", "cefr": "A1" },
-    { "lemma": "bring", "pos": "verb", "translation": "带来", "cefr": "A1" },
-    { "lemma": "happen", "pos": "verb", "translation": "发生", "cefr": "A1" },
-    { "lemma": "write", "pos": "verb", "translation": "写", "cefr": "A1" },
-    { "lemma": "provide", "pos": "verb", "translation": "提供", "cefr": "A1" },
-    { "lemma": "sit", "pos": "verb", "translation": "坐", "cefr": "A1" },
-    { "lemma": "stand", "pos": "verb", "translation": "站", "cefr": "A1" },
-    { "lemma": "lose", "pos": "verb", "translation": "丢失", "cefr": "A1" },
-    { "lemma": "pay", "pos": "verb", "translation": "支付", "cefr": "A1" },
-    { "lemma": "meet", "pos": "verb", "translation": "遇见", "cefr": "A1" },
-    { "lemma": "include", "pos": "verb", "translation": "包含", "cefr": "A1" },
-    { "lemma": "continue", "pos": "verb", "translation": "继续", "cefr": "A1" },
-    { "lemma": "set", "pos": "verb", "translation": "设置", "cefr": "A1" },
-    { "lemma": "learn", "pos": "verb", "translation": "学习", "cefr": "A1" },
-    { "lemma": "change", "pos": "verb", "translation": "改变", "cefr": "A1" },
-    { "lemma": "lead", "pos": "verb", "translation": "带领", "cefr": "A1" },
-    { "lemma": "understand", "pos": "verb", "translation": "理解", "cefr": "A1" },
-    { "lemma": "watch", "pos": "verb", "translation": "观看", "cefr": "A1" },
-    { "lemma": "follow", "pos": "verb", "translation": "跟随", "cefr": "A1" },
-    { "lemma": "stop", "pos": "verb", "translation": "停止", "cefr": "A1" },
-    { "lemma": "create", "pos": "verb", "translation": "创造", "cefr": "A1" },
-    { "lemma": "speak", "pos": "verb", "translation": "说话", "cefr": "A1" },
-    { "lemma": "read", "pos": "verb", "translation": "阅读", "cefr": "A1" },
-    { "lemma": "spend", "pos": "verb", "translation": "花费", "cefr": "A1" },
-    { "lemma": "grow", "pos": "verb", "translation": "生长", "cefr": "A1" },
-    { "lemma": "open", "pos": "verb", "translation": "打开", "cefr": "A1" },
-    { "lemma": "walk", "pos": "verb", "translation": "走", "cefr": "A1" },
-    { "lemma": "win", "pos": "verb", "translation": "赢", "cefr": "A1" },
-    { "lemma": "offer", "pos": "verb", "translation": "提供", "cefr": "A1" },
-    { "lemma": "remember", "pos": "verb", "translation": "记得", "cefr": "A1" },
-    { "lemma": "consider", "pos": "verb", "translation": "考虑", "cefr": "A1" },
-    { "lemma": "appear", "pos": "verb", "translation": "出现", "cefr": "A1" },
-    { "lemma": "buy", "pos": "verb", "translation": "买", "cefr": "A1" },
-    { "lemma": "serve", "pos": "verb", "translation": "服务", "cefr": "A1" },
-    { "lemma": "die", "pos": "verb", "translation": "死", "cefr": "A1" },
-    { "lemma": "send", "pos": "verb", "translation": "发送", "cefr": "A1" },
-    { "lemma": "expect", "pos": "verb", "translation": "期待", "cefr": "A1" },
-    { "lemma": "build", "pos": "verb", "translation": "建造", "cefr": "A1" },
-    { "lemma": "stay", "pos": "verb", "translation": "停留", "cefr": "A1" },
-    { "lemma": "fall", "pos": "verb", "translation": "落下", "cefr": "A1" },
-    { "lemma": "cut", "pos": "verb", "translation": "切", "cefr": "A1" },
-    { "lemma": "reach", "pos": "verb", "translation": "到达", "cefr": "A1" },
-    { "lemma": "kill", "pos": "verb", "translation": "杀死", "cefr": "A1" }
+    {
+      "lemma": "result",
+      "pos": "noun",
+      "translation": "结果/成绩",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "academic",
+      "priority": 1
+    },
+    {
+      "lemma": "other",
+      "pos": "adj",
+      "translation": "其他的/另外的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "new",
+      "pos": "adj",
+      "translation": "新的/陌生的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "only",
+      "pos": "adj",
+      "translation": "唯一的/仅有的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "good",
+      "pos": "adj",
+      "translation": "好的/优良的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "high",
+      "pos": "adj",
+      "translation": "高的/高级的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "own",
+      "pos": "adj",
+      "translation": "自己的/嫡亲的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "old",
+      "pos": "adj",
+      "translation": "老的/旧的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "great",
+      "pos": "adj",
+      "translation": "大的/非常的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "same",
+      "pos": "adj",
+      "translation": "相同的/同样的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "big",
+      "pos": "adj",
+      "translation": "大的/重要的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "large"
+      ]
+    },
+    {
+      "lemma": "small",
+      "pos": "adj",
+      "translation": "小的/少的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "little"
+      ]
+    },
+    {
+      "lemma": "next",
+      "pos": "adj",
+      "translation": "下一个的/其次的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "large",
+      "pos": "adj",
+      "translation": "大的/大量的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "big"
+      ]
+    },
+    {
+      "lemma": "young",
+      "pos": "adj",
+      "translation": "年轻的/无经验的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "different",
+      "pos": "adj",
+      "translation": "不同的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "important",
+      "pos": "adj",
+      "translation": "重要的/有地位的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "bad",
+      "pos": "adj",
+      "translation": "坏的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "real",
+      "pos": "adj",
+      "translation": "真的/真实的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "sure",
+      "pos": "adj",
+      "translation": "确信/必然的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "local",
+      "pos": "adj",
+      "translation": "地方性的/当地的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "on",
+      "pos": "adv",
+      "translation": "在…之上",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "not",
+      "pos": "adv",
+      "translation": "不/非",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "about",
+      "pos": "adv",
+      "translation": "大约/四处",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "when",
+      "pos": "adv",
+      "translation": "何时/什么时候",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "out",
+      "pos": "adv",
+      "translation": "在外/熄灭",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "how",
+      "pos": "adv",
+      "translation": "如何/怎样",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "then",
+      "pos": "adv",
+      "translation": "然后/当时",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "than"
+      ]
+    },
+    {
+      "lemma": "first",
+      "pos": "adv",
+      "translation": "首先/第一",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "also",
+      "pos": "adv",
+      "translation": "也/并且",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "very",
+      "pos": "adv",
+      "translation": "非常/完全",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "through",
+      "pos": "adv",
+      "translation": "穿越/从头至尾",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "still",
+      "pos": "adv",
+      "translation": "仍然/更",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "too",
+      "pos": "adv",
+      "translation": "也/非常",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "really",
+      "pos": "adv",
+      "translation": "实际上/真实地",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "why",
+      "pos": "adv",
+      "translation": "为什么",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "where",
+      "pos": "adv",
+      "translation": "在哪里",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "again",
+      "pos": "adv",
+      "translation": "再一次/又",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "off",
+      "pos": "adv",
+      "translation": "走开/休息",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "around",
+      "pos": "adv",
+      "translation": "兜着圈子/在附近",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "away",
+      "pos": "adv",
+      "translation": "离去",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "ever",
+      "pos": "adv",
+      "translation": "曾经/究竟",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "however",
+      "pos": "adv",
+      "translation": "然而/无论如何",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "later",
+      "pos": "adv",
+      "translation": "以后/随后",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "once",
+      "pos": "adv",
+      "translation": "一次/曾经",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "ago",
+      "pos": "adv",
+      "translation": "以前",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "together",
+      "pos": "adv",
+      "translation": "一起/共同",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "across",
+      "pos": "adv",
+      "translation": "交叉/到另一边",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "probably",
+      "pos": "adv",
+      "translation": "大概/或许",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "behind",
+      "pos": "adv",
+      "translation": "在后地",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "art",
+      "pos": "noun",
+      "translation": "艺术/人文科学",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "art",
+      "priority": 1
+    },
+    {
+      "lemma": "back",
+      "pos": "noun",
+      "translation": "背部/后面",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 1
+    },
+    {
+      "lemma": "eye",
+      "pos": "noun",
+      "translation": "眼睛/视力",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 1
+    },
+    {
+      "lemma": "head",
+      "pos": "noun",
+      "translation": "头/头脑",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 1
+    },
+    {
+      "lemma": "body",
+      "pos": "noun",
+      "translation": "身体/人",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 1
+    },
+    {
+      "lemma": "face",
+      "pos": "noun",
+      "translation": "脸/面容",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 1
+    },
+    {
+      "lemma": "foot",
+      "pos": "noun",
+      "translation": "脚/步调",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 1
+    },
+    {
+      "lemma": "black",
+      "pos": "adj",
+      "translation": "黑色的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "color",
+      "priority": 1
+    },
+    {
+      "lemma": "white",
+      "pos": "adj",
+      "translation": "白色的/纯洁的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "color",
+      "priority": 1
+    },
+    {
+      "lemma": "say",
+      "pos": "verb",
+      "translation": "说/讲",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1,
+      "semanticConflicts": [
+        "speak",
+        "talk",
+        "tell"
+      ]
+    },
+    {
+      "lemma": "tell",
+      "pos": "verb",
+      "translation": "告诉/说",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1,
+      "semanticConflicts": [
+        "say",
+        "speak",
+        "talk"
+      ]
+    },
+    {
+      "lemma": "call",
+      "pos": "noun",
+      "translation": "呼叫/访问",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1
+    },
+    {
+      "lemma": "ask",
+      "pos": "verb",
+      "translation": "问/要求",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1
+    },
+    {
+      "lemma": "question",
+      "pos": "noun",
+      "translation": "问题/询问",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1
+    },
+    {
+      "lemma": "information",
+      "pos": "noun",
+      "translation": "消息/知识",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1
+    },
+    {
+      "lemma": "speak",
+      "pos": "verb",
+      "translation": "说/说话",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 1,
+      "semanticConflicts": [
+        "say",
+        "talk",
+        "tell"
+      ]
+    },
+    {
+      "lemma": "and",
+      "pos": "conj",
+      "translation": "和/与",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "that",
+      "pos": "conj",
+      "translation": "以致/因为",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "but",
+      "pos": "conj",
+      "translation": "但是",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "or",
+      "pos": "conj",
+      "translation": "或/或者",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "if",
+      "pos": "conj",
+      "translation": "如果/是否",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "than",
+      "pos": "conj",
+      "translation": "比/除…外",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "then"
+      ]
+    },
+    {
+      "lemma": "because",
+      "pos": "conj",
+      "translation": "因为",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "until",
+      "pos": "conj",
+      "translation": "直到…时/在…以前",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "conj_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "the",
+      "pos": "det",
+      "translation": "那",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "a",
+      "pos": "det",
+      "translation": "加法器/地址",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "this",
+      "pos": "det",
+      "translation": "这/本",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "his",
+      "pos": "det",
+      "translation": "他的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "what",
+      "pos": "det",
+      "translation": "什么",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "their",
+      "pos": "det",
+      "translation": "他们的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "her",
+      "pos": "det",
+      "translation": "她的/她",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "my",
+      "pos": "det",
+      "translation": "我的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "one",
+      "pos": "det",
+      "translation": "一/任何人",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "which",
+      "pos": "det",
+      "translation": "哪一个/那一个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "your",
+      "pos": "det",
+      "translation": "你的/你们的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "its",
+      "pos": "det",
+      "translation": "它的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "our",
+      "pos": "det",
+      "translation": "我们的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "another",
+      "pos": "det",
+      "translation": "另外的/再一的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "there",
+      "pos": "adv",
+      "translation": "在那里",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 1
+    },
+    {
+      "lemma": "here",
+      "pos": "adv",
+      "translation": "在这里/此时",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 1
+    },
+    {
+      "lemma": "over",
+      "pos": "adv",
+      "translation": "结束/越过",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 1
+    },
+    {
+      "lemma": "under",
+      "pos": "adv",
+      "translation": "在下面",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 1
+    },
+    {
+      "lemma": "far",
+      "pos": "adv",
+      "translation": "甚远地/很",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 1
+    },
+    {
+      "lemma": "need",
+      "pos": "verb",
+      "translation": "需要/必需",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "emotion",
+      "priority": 1
+    },
+    {
+      "lemma": "feel",
+      "pos": "verb",
+      "translation": "感觉/觉得",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "emotion",
+      "priority": 1
+    },
+    {
+      "lemma": "child",
+      "pos": "noun",
+      "translation": "孩子/产物",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "family",
+      "pos": "noun",
+      "translation": "家庭/家人",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "mother",
+      "pos": "noun",
+      "translation": "母亲/修女院长",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "father",
+      "pos": "noun",
+      "translation": "父亲/祖先",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "parent",
+      "pos": "noun",
+      "translation": "父母/父母亲",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "girl",
+      "pos": "noun",
+      "translation": "女孩/少女",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "boy",
+      "pos": "noun",
+      "translation": "男孩",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 1
+    },
+    {
+      "lemma": "water",
+      "pos": "noun",
+      "translation": "水/雨水",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "food",
+      "priority": 1
+    },
+    {
+      "lemma": "food",
+      "pos": "noun",
+      "translation": "食物/养料",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "food",
+      "priority": 1
+    },
+    {
+      "lemma": "people",
+      "pos": "noun",
+      "translation": "人/人民",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "way",
+      "pos": "noun",
+      "translation": "路/路线",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "man",
+      "pos": "noun",
+      "translation": "男人/人类",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "thing",
+      "pos": "noun",
+      "translation": "事物/东西",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "woman",
+      "pos": "noun",
+      "translation": "女人/妇女",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "life",
+      "pos": "noun",
+      "translation": "生活/生命",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "problem",
+      "pos": "noun",
+      "translation": "问题/难题",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "show",
+      "pos": "noun",
+      "translation": "显示/表现",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "point",
+      "pos": "noun",
+      "translation": "点/小数点",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "area",
+      "pos": "noun",
+      "translation": "区域/面积",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "story",
+      "pos": "noun",
+      "translation": "故事/小说",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "fact",
+      "pos": "noun",
+      "translation": "事实/真实性",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "line",
+      "pos": "noun",
+      "translation": "列/线",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "end",
+      "pos": "noun",
+      "translation": "结束/终点",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "name",
+      "pos": "noun",
+      "translation": "名字/名称",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "change",
+      "pos": "noun",
+      "translation": "变化/找回的零钱",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "stop",
+      "pos": "noun",
+      "translation": "停止/车站",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "person",
+      "pos": "noun",
+      "translation": "人/人身",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "age",
+      "pos": "noun",
+      "translation": "年龄/老年",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "plan",
+      "pos": "noun",
+      "translation": "计划/方案",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "interest",
+      "pos": "noun",
+      "translation": "兴趣/嗜好",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 1
+    },
+    {
+      "lemma": "no",
+      "pos": "det",
+      "translation": "不/拒绝",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "greeting",
+      "priority": 1
+    },
+    {
+      "lemma": "yes",
+      "pos": "intj",
+      "translation": "是",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "greeting",
+      "priority": 1
+    },
+    {
+      "lemma": "oh",
+      "pos": "intj",
+      "translation": "哦",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "greeting",
+      "priority": 1
+    },
+    {
+      "lemma": "health",
+      "pos": "noun",
+      "translation": "健康/卫生",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "health",
+      "priority": 1
+    },
+    {
+      "lemma": "room",
+      "pos": "noun",
+      "translation": "房间/空位",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "house",
+      "priority": 1
+    },
+    {
+      "lemma": "house",
+      "pos": "noun",
+      "translation": "房子/住宅",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "house",
+      "priority": 1
+    },
+    {
+      "lemma": "door",
+      "pos": "noun",
+      "translation": "门",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "house",
+      "priority": 1
+    },
+    {
+      "lemma": "game",
+      "pos": "noun",
+      "translation": "比赛/玩耍",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "leisure",
+      "priority": 1
+    },
+    {
+      "lemma": "party",
+      "pos": "noun",
+      "translation": "宴会/党",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "leisure",
+      "priority": 1
+    },
+    {
+      "lemma": "music",
+      "pos": "noun",
+      "translation": "音乐/乐曲",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "leisure",
+      "priority": 1
+    },
+    {
+      "lemma": "would",
+      "pos": "modal",
+      "translation": "将/愿意",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "modal_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "could",
+      "pos": "modal",
+      "translation": "可以/能",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "modal_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "should",
+      "pos": "modal",
+      "translation": "应该/将要",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "modal_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "must",
+      "pos": "modal",
+      "translation": "必须/未发酵葡萄汁",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "modal_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "will",
+      "pos": "modal",
+      "translation": "意志/决心",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "modal_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "leave",
+      "pos": "verb",
+      "translation": "离开/剩下",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 1
+    },
+    {
+      "lemma": "turn",
+      "pos": "noun",
+      "translation": "转弯/转动",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 1
+    },
+    {
+      "lemma": "move",
+      "pos": "verb",
+      "translation": "移动/开动",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 1
+    },
+    {
+      "lemma": "bring",
+      "pos": "verb",
+      "translation": "带来/产生",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 1,
+      "semanticConflicts": [
+        "take"
+      ]
+    },
+    {
+      "lemma": "send",
+      "pos": "verb",
+      "translation": "发送/使进入",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 1
+    },
+    {
+      "lemma": "fall",
+      "pos": "verb",
+      "translation": "倒下/落下",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 1
+    },
+    {
+      "lemma": "world",
+      "pos": "noun",
+      "translation": "世界/地球",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "nature",
+      "priority": 1
+    },
+    {
+      "lemma": "air",
+      "pos": "noun",
+      "translation": "空气/旋律",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "nature",
+      "priority": 1
+    },
+    {
+      "lemma": "to",
+      "pos": "part",
+      "translation": "到/向",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "part_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "school",
+      "pos": "noun",
+      "translation": "学校/鱼群",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "place",
+      "priority": 1
+    },
+    {
+      "lemma": "office",
+      "pos": "noun",
+      "translation": "办公室/部",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "place",
+      "priority": 1
+    },
+    {
+      "lemma": "of",
+      "pos": "prep",
+      "translation": "的/属于",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "for",
+      "pos": "prep",
+      "translation": "为/因为",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "with",
+      "pos": "prep",
+      "translation": "和…在一起/以",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "at",
+      "pos": "prep",
+      "translation": "在/向",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "from",
+      "pos": "prep",
+      "translation": "从/来自",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "by",
+      "pos": "prep",
+      "translation": "被/经",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "as",
+      "pos": "prep",
+      "translation": "做为/当作",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "into",
+      "pos": "prep",
+      "translation": "进入…之内/朝",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "after",
+      "pos": "prep",
+      "translation": "在…之后/由于",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "between",
+      "pos": "prep",
+      "translation": "在…之间",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "during",
+      "pos": "prep",
+      "translation": "在…的时候",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "without",
+      "pos": "prep",
+      "translation": "没有/不",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "before",
+      "pos": "prep",
+      "translation": "在…之前",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "prep_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "it",
+      "pos": "pron",
+      "translation": "它",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "i",
+      "pos": "pron",
+      "translation": "我",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "you",
+      "pos": "pron",
+      "translation": "你/你们",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "he",
+      "pos": "pron",
+      "translation": "他",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "they",
+      "pos": "pron",
+      "translation": "他们/它们",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "we",
+      "pos": "pron",
+      "translation": "我们",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "she",
+      "pos": "pron",
+      "translation": "她",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "who",
+      "pos": "pron",
+      "translation": "谁",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "them",
+      "pos": "pron",
+      "translation": "他们/她们",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "me",
+      "pos": "pron",
+      "translation": "我",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "him",
+      "pos": "pron",
+      "translation": "他",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "us",
+      "pos": "pron",
+      "translation": "我们",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "something",
+      "pos": "pron",
+      "translation": "某事/某物",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "nothing",
+      "pos": "pron",
+      "translation": "无/不关紧要之事",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "anything",
+      "pos": "pron",
+      "translation": "任何事",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "everything",
+      "pos": "pron",
+      "translation": "每件事物/所有事物",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "all",
+      "pos": "det",
+      "translation": "所有的/全部的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "some",
+      "pos": "det",
+      "translation": "一些/一部分",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1,
+      "semanticConflicts": [
+        "any"
+      ]
+    },
+    {
+      "lemma": "more",
+      "pos": "adv",
+      "translation": "多/更多",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "many",
+      "pos": "det",
+      "translation": "多数/多数人",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1,
+      "semanticConflicts": [
+        "much"
+      ]
+    },
+    {
+      "lemma": "any",
+      "pos": "det",
+      "translation": "任何的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1,
+      "semanticConflicts": [
+        "some"
+      ]
+    },
+    {
+      "lemma": "most",
+      "pos": "adv",
+      "translation": "最/最多",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "much",
+      "pos": "adv",
+      "translation": "多/甚",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1,
+      "semanticConflicts": [
+        "many"
+      ]
+    },
+    {
+      "lemma": "group",
+      "pos": "noun",
+      "translation": "团体/组",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "every",
+      "pos": "det",
+      "translation": "每一/所有的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "few",
+      "pos": "adj",
+      "translation": "很少的/不多的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1,
+      "semanticConflicts": [
+        "little"
+      ]
+    },
+    {
+      "lemma": "each",
+      "pos": "adv",
+      "translation": "每个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "number",
+      "pos": "noun",
+      "translation": "数/数字",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "both",
+      "pos": "det",
+      "translation": "两者的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "little",
+      "pos": "adj",
+      "translation": "小的/很少的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1,
+      "semanticConflicts": [
+        "few",
+        "small"
+      ]
+    },
+    {
+      "lemma": "enough",
+      "pos": "adv",
+      "translation": "足够",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 1
+    },
+    {
+      "lemma": "help",
+      "pos": "noun",
+      "translation": "帮忙/帮助者",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "relationship",
+      "priority": 1
+    },
+    {
+      "lemma": "friend",
+      "pos": "noun",
+      "translation": "朋友/支持者",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "relationship",
+      "priority": 1
+    },
+    {
+      "lemma": "member",
+      "pos": "noun",
+      "translation": "成员",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "relationship",
+      "priority": 1
+    },
+    {
+      "lemma": "student",
+      "pos": "noun",
+      "translation": "学生/研究者",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 1
+    },
+    {
+      "lemma": "book",
+      "pos": "noun",
+      "translation": "书/书籍",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 1
+    },
+    {
+      "lemma": "word",
+      "pos": "noun",
+      "translation": "话/消息",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 1
+    },
+    {
+      "lemma": "learn",
+      "pos": "verb",
+      "translation": "学习/认识到",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 1,
+      "semanticConflicts": [
+        "teach"
+      ]
+    },
+    {
+      "lemma": "history",
+      "pos": "noun",
+      "translation": "历史/过去",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 1
+    },
+    {
+      "lemma": "course",
+      "pos": "noun",
+      "translation": "课程/路线",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 1
+    },
+    {
+      "lemma": "market",
+      "pos": "noun",
+      "translation": "市场/交易",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "shopping",
+      "priority": 1
+    },
+    {
+      "lemma": "lose",
+      "pos": "verb",
+      "translation": "遗失/损失",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "sport",
+      "priority": 1
+    },
+    {
+      "lemma": "win",
+      "pos": "verb",
+      "translation": "赢得/打胜",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "sport",
+      "priority": 1
+    },
+    {
+      "lemma": "believe",
+      "pos": "verb",
+      "translation": "相信",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 1
+    },
+    {
+      "lemma": "idea",
+      "pos": "noun",
+      "translation": "主意/办法",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 1
+    },
+    {
+      "lemma": "understand",
+      "pos": "verb",
+      "translation": "理解/了解",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 1
+    },
+    {
+      "lemma": "reason",
+      "pos": "noun",
+      "translation": "理由/原因",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 1
+    },
+    {
+      "lemma": "remember",
+      "pos": "verb",
+      "translation": "记得/回忆起",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 1
+    },
+    {
+      "lemma": "time",
+      "pos": "noun",
+      "translation": "时间/时侯",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "year",
+      "pos": "noun",
+      "translation": "年/年度",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "now",
+      "pos": "adv",
+      "translation": "现在/刚才",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "day",
+      "pos": "noun",
+      "translation": "天/日子",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "never",
+      "pos": "adv",
+      "translation": "从不/决不",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "week",
+      "pos": "noun",
+      "translation": "星期/周",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "always",
+      "pos": "adv",
+      "translation": "总是/始终",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "night",
+      "pos": "noun",
+      "translation": "夜/夜晚",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "today",
+      "pos": "adv",
+      "translation": "今天/当今",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "month",
+      "pos": "noun",
+      "translation": "月",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "hour",
+      "pos": "noun",
+      "translation": "小时/钟头",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "often",
+      "pos": "adv",
+      "translation": "时常/常常",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "morning",
+      "pos": "noun",
+      "translation": "早晨/早上",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "early",
+      "pos": "adj",
+      "translation": "早的/早熟的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "moment",
+      "pos": "noun",
+      "translation": "片刻/瞬间",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "second",
+      "pos": "det",
+      "translation": "秒/瞬间",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 1
+    },
+    {
+      "lemma": "car",
+      "pos": "noun",
+      "translation": "汽车/客车",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "transport",
+      "priority": 1
+    },
+    {
+      "lemma": "country",
+      "pos": "noun",
+      "translation": "国家/乡村",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "travel",
+      "priority": 1
+    },
+    {
+      "lemma": "be",
+      "pos": "verb",
+      "translation": "是/表示",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "have",
+      "pos": "verb",
+      "translation": "有/怀有",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "do",
+      "pos": "verb",
+      "translation": "做/进行",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "make"
+      ]
+    },
+    {
+      "lemma": "go",
+      "pos": "verb",
+      "translation": "去/走",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "get",
+      "pos": "verb",
+      "translation": "得到/获得",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "think",
+      "pos": "verb",
+      "translation": "想/考虑",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "see",
+      "pos": "verb",
+      "translation": "看见/查看",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "look",
+        "watch"
+      ]
+    },
+    {
+      "lemma": "come",
+      "pos": "verb",
+      "translation": "过来/来",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "like",
+      "pos": "verb",
+      "translation": "喜欢/愿意",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "want",
+      "pos": "verb",
+      "translation": "要/希望",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "look",
+      "pos": "verb",
+      "translation": "看/注意",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "see",
+        "watch"
+      ]
+    },
+    {
+      "lemma": "find",
+      "pos": "verb",
+      "translation": "发现/感到",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "give",
+      "pos": "verb",
+      "translation": "给/授予",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "work",
+      "pos": "verb",
+      "translation": "工作/劳动",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "job"
+      ]
+    },
+    {
+      "lemma": "try",
+      "pos": "verb",
+      "translation": "试/尝试",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "become",
+      "pos": "verb",
+      "translation": "变成/变得",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "put",
+      "pos": "verb",
+      "translation": "放/摆",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "keep",
+      "pos": "verb",
+      "translation": "保持/保存",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "let",
+      "pos": "verb",
+      "translation": "让/假设",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "begin",
+      "pos": "verb",
+      "translation": "开始",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "talk",
+      "pos": "verb",
+      "translation": "讲话/演讲",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "say",
+        "speak",
+        "tell"
+      ]
+    },
+    {
+      "lemma": "start",
+      "pos": "verb",
+      "translation": "开始/出发",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "hear",
+      "pos": "verb",
+      "translation": "听到/倾听",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1,
+      "semanticConflicts": [
+        "listen"
+      ]
+    },
+    {
+      "lemma": "play",
+      "pos": "verb",
+      "translation": "玩/游戏",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "run",
+      "pos": "verb",
+      "translation": "跑/奔跑",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "happen",
+      "pos": "verb",
+      "translation": "发生/恰巧",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "write",
+      "pos": "verb",
+      "translation": "书写/著述",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "study",
+      "pos": "verb",
+      "translation": "学习/读书",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "sit",
+      "pos": "verb",
+      "translation": "坐/就座",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "stand",
+      "pos": "verb",
+      "translation": "站/立",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "meet",
+      "pos": "verb",
+      "translation": "遇见/引见",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "include",
+      "pos": "verb",
+      "translation": "包括/把…算入",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "follow",
+      "pos": "verb",
+      "translation": "跟随/沿行",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "create",
+      "pos": "verb",
+      "translation": "创造/建造",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "read",
+      "pos": "verb",
+      "translation": "读/阅读",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "add",
+      "pos": "verb",
+      "translation": "增加/添加",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "spend",
+      "pos": "verb",
+      "translation": "花费/浪费",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "grow",
+      "pos": "verb",
+      "translation": "种植/使长满",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "open",
+      "pos": "verb",
+      "translation": "打开/公开",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "walk",
+      "pos": "verb",
+      "translation": "走路/步行",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "love",
+      "pos": "verb",
+      "translation": "爱/爱好",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "buy",
+      "pos": "verb",
+      "translation": "买/获得",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "wait",
+      "pos": "verb",
+      "translation": "等候/期待",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "die",
+      "pos": "verb",
+      "translation": "死亡/消逝",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "build",
+      "pos": "verb",
+      "translation": "建立/建筑",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "stay",
+      "pos": "verb",
+      "translation": "制止/延缓",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "cut",
+      "pos": "verb",
+      "translation": "切/割",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 1
+    },
+    {
+      "lemma": "company",
+      "pos": "noun",
+      "translation": "公司/友伴",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 1
+    },
+    {
+      "lemma": "money",
+      "pos": "noun",
+      "translation": "金钱/一笔款",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 1
+    },
+    {
+      "lemma": "job",
+      "pos": "noun",
+      "translation": "工作/零活",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 1,
+      "semanticConflicts": [
+        "work"
+      ]
+    },
+    {
+      "lemma": "business",
+      "pos": "noun",
+      "translation": "生意/事情",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 1
+    },
+    {
+      "lemma": "pay",
+      "pos": "verb",
+      "translation": "支付/付清",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 1
+    },
+    {
+      "lemma": "team",
+      "pos": "noun",
+      "translation": "队/组",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 1
+    },
+    {
+      "lemma": "hard",
+      "pos": "adj",
+      "translation": "坚硬的/硬的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "better",
+      "pos": "adj",
+      "translation": "较好的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "strong",
+      "pos": "adj",
+      "translation": "强壮的/坚固的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "possible",
+      "pos": "adj",
+      "translation": "可能的/潜在的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "free",
+      "pos": "adj",
+      "translation": "自由的/享受政治权力的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "full",
+      "pos": "adj",
+      "translation": "充满的/完全的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "special",
+      "pos": "adj",
+      "translation": "特别的/专门的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "easy",
+      "pos": "adj",
+      "translation": "容易的/缓缓的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "difficult",
+      "pos": "adj",
+      "translation": "困难的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "final",
+      "pos": "adj",
+      "translation": "最后的/终极的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "main",
+      "pos": "adj",
+      "translation": "主要的/重要的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "complete",
+      "pos": "adj",
+      "translation": "完全的/十足的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "quick",
+      "pos": "adj",
+      "translation": "快的/迅速的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "true",
+      "pos": "adj",
+      "translation": "真实的/正确的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "personal",
+      "pos": "adj",
+      "translation": "私人的/涉及隐私的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "wrong",
+      "pos": "adj",
+      "translation": "错误的/不正当的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "poor",
+      "pos": "adj",
+      "translation": "贫穷的/贫乏的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "natural",
+      "pos": "adj",
+      "translation": "自然的/自然界的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "similar",
+      "pos": "adj",
+      "translation": "相似的/类似的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "ready",
+      "pos": "adj",
+      "translation": "准备好的/备用的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "pretty",
+      "pos": "adj",
+      "translation": "漂亮的/优美的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "nice",
+      "pos": "adj",
+      "translation": "美好的/和蔼的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "popular",
+      "pos": "adj",
+      "translation": "通俗的/流行的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "beautiful",
+      "pos": "adj",
+      "translation": "美丽的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "modern",
+      "pos": "adj",
+      "translation": "现代的/时髦的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "positive",
+      "pos": "adj",
+      "translation": "肯定的/积极的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "rich",
+      "pos": "adj",
+      "translation": "富裕的/富饶的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "fast",
+      "pos": "adj",
+      "translation": "快速的/紧的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "perfect",
+      "pos": "adj",
+      "translation": "完美的/完好的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "wonderful",
+      "pos": "adj",
+      "translation": "令人惊奇的/奇妙的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "quiet",
+      "pos": "adj",
+      "translation": "安静的/静止的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2,
+      "semanticConflicts": [
+        "quite"
+      ]
+    },
+    {
+      "lemma": "dangerous",
+      "pos": "adj",
+      "translation": "危险的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "famous",
+      "pos": "adj",
+      "translation": "出名的/极好的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "clean",
+      "pos": "adj",
+      "translation": "干净的/清白的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "extra",
+      "pos": "adj",
+      "translation": "额外的/特别的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "fat",
+      "pos": "adj",
+      "translation": "肥的/胖的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "slow",
+      "pos": "adj",
+      "translation": "慢的/缓慢的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "correct",
+      "pos": "adj",
+      "translation": "正确的/合适的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "terrible",
+      "pos": "adj",
+      "translation": "可怕的/令人恐惧的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "useful",
+      "pos": "adj",
+      "translation": "有用的/有益的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "well",
+      "pos": "adj",
+      "translation": "健康的/良好的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "fine",
+      "pos": "adj",
+      "translation": "好的/晴朗的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "interested",
+      "pos": "adj",
+      "translation": "感兴趣的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "else",
+      "pos": "adv",
+      "translation": "另外/否则",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "quite",
+      "pos": "adv",
+      "translation": "相当/完全",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adv_basic",
+      "priority": 2,
+      "semanticConflicts": [
+        "quiet"
+      ]
+    },
+    {
+      "lemma": "twice",
+      "pos": "adv",
+      "translation": "两次/两倍",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "in",
+      "pos": "adv",
+      "translation": "进入/朝里",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "so",
+      "pos": "adv",
+      "translation": "如此/如是",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "maybe",
+      "pos": "adv",
+      "translation": "也许/大概",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "lot",
+      "pos": "adv",
+      "translation": "运气/签",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "tonight",
+      "pos": "adv",
+      "translation": "今晚/今夜",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adv_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "animal",
+      "pos": "noun",
+      "translation": "动物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "animal",
+      "priority": 2
+    },
+    {
+      "lemma": "dog",
+      "pos": "noun",
+      "translation": "狗/坏蛋",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "animal",
+      "priority": 2
+    },
+    {
+      "lemma": "fish",
+      "pos": "noun",
+      "translation": "鱼/鱼肉",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "animal",
+      "priority": 2
+    },
+    {
+      "lemma": "bird",
+      "pos": "noun",
+      "translation": "鸟/羽毛球",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "animal",
+      "priority": 2
+    },
+    {
+      "lemma": "horse",
+      "pos": "noun",
+      "translation": "马/骑兵",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "animal",
+      "priority": 2
+    },
+    {
+      "lemma": "design",
+      "pos": "noun",
+      "translation": "设计/图样",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "art",
+      "priority": 2
+    },
+    {
+      "lemma": "artist",
+      "pos": "noun",
+      "translation": "艺术家/画家",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "art",
+      "priority": 2
+    },
+    {
+      "lemma": "arm",
+      "pos": "noun",
+      "translation": "手臂/袖子",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "hand",
+      "pos": "noun",
+      "translation": "手/爪",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "heart",
+      "pos": "noun",
+      "translation": "心/心脏",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "hair",
+      "pos": "noun",
+      "translation": "头发/毛发",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "leg",
+      "pos": "noun",
+      "translation": "腿/假腿",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "shoulder",
+      "pos": "noun",
+      "translation": "肩/肩膀",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "finger",
+      "pos": "noun",
+      "translation": "手指/指状物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "mouth",
+      "pos": "noun",
+      "translation": "嘴/口",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "ear",
+      "pos": "noun",
+      "translation": "耳朵/倾听",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 2
+    },
+    {
+      "lemma": "product",
+      "pos": "noun",
+      "translation": "产品/结果",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "business",
+      "priority": 2
+    },
+    {
+      "lemma": "share",
+      "pos": "verb",
+      "translation": "均分/分担",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "business",
+      "priority": 2
+    },
+    {
+      "lemma": "capital",
+      "pos": "adj",
+      "translation": "首都的/重要的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "city",
+      "priority": 2
+    },
+    {
+      "lemma": "address",
+      "pos": "noun",
+      "translation": "住址/演说",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "city",
+      "priority": 2
+    },
+    {
+      "lemma": "wear",
+      "pos": "verb",
+      "translation": "穿着/戴",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "clothing",
+      "priority": 2
+    },
+    {
+      "lemma": "bag",
+      "pos": "noun",
+      "translation": "袋子/袋状物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "clothing",
+      "priority": 2
+    },
+    {
+      "lemma": "clothes",
+      "pos": "noun",
+      "translation": "衣服",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "clothing",
+      "priority": 2
+    },
+    {
+      "lemma": "dress",
+      "pos": "noun",
+      "translation": "服装/覆盖物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "clothing",
+      "priority": 2
+    },
+    {
+      "lemma": "watch",
+      "pos": "noun",
+      "translation": "观察/手表",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "clothing",
+      "priority": 2,
+      "semanticConflicts": [
+        "look",
+        "see"
+      ]
+    },
+    {
+      "lemma": "shoe",
+      "pos": "noun",
+      "translation": "鞋/靴",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "clothing",
+      "priority": 2
+    },
+    {
+      "lemma": "red",
+      "pos": "adj",
+      "translation": "红的/红色的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "blue",
+      "pos": "adj",
+      "translation": "蓝色的/下流的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "green",
+      "pos": "adj",
+      "translation": "绿色的/未成熟的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "brown",
+      "pos": "adj",
+      "translation": "褐色的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "dark",
+      "pos": "adj",
+      "translation": "黑暗的/暗的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "gold",
+      "pos": "adj",
+      "translation": "金的/似金的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "grey",
+      "pos": "adj",
+      "translation": "灰色的/阴沉的",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "color",
+      "priority": 2
+    },
+    {
+      "lemma": "report",
+      "pos": "noun",
+      "translation": "报告/报道",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "news",
+      "pos": "noun",
+      "translation": "新闻/消息",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "answer",
+      "pos": "noun",
+      "translation": "答案/回答",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "phone",
+      "pos": "noun",
+      "translation": "电话/受话器",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "computer",
+      "pos": "noun",
+      "translation": "电脑",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "message",
+      "pos": "noun",
+      "translation": "消息/通讯",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "discuss",
+      "pos": "verb",
+      "translation": "讨论/论述",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "magazine",
+      "pos": "noun",
+      "translation": "杂志/仓库",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "newspaper",
+      "pos": "noun",
+      "translation": "报纸",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "telephone",
+      "pos": "noun",
+      "translation": "电话/电话机",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "conversation",
+      "pos": "noun",
+      "translation": "会话/说话",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "text",
+      "pos": "noun",
+      "translation": "文本/正文",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 2
+    },
+    {
+      "lemma": "last",
+      "pos": "det",
+      "translation": "最后的/末尾的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "det_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "west",
+      "pos": "adj",
+      "translation": "西方的/向西的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "near",
+      "pos": "adj",
+      "translation": "近的/近亲的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "east",
+      "pos": "adj",
+      "translation": "东方的/向东的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "outside",
+      "pos": "adv",
+      "translation": "外面/外表",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "front",
+      "pos": "adj",
+      "translation": "前面/开头",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "north",
+      "pos": "adj",
+      "translation": "北的/北方的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "south",
+      "pos": "adj",
+      "translation": "南的/向南的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "above",
+      "pos": "adv",
+      "translation": "在上面",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "below",
+      "pos": "adv",
+      "translation": "在下面",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "up",
+      "pos": "adv",
+      "translation": "向上/上涨",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "down",
+      "pos": "adv",
+      "translation": "下/下去",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "left",
+      "pos": "adj",
+      "translation": "左边的/左倾的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "direction",
+      "priority": 2
+    },
+    {
+      "lemma": "hope",
+      "pos": "verb",
+      "translation": "希望/期望",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "happy",
+      "pos": "adj",
+      "translation": "快乐的/幸福的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "feeling",
+      "pos": "noun",
+      "translation": "摸/触觉",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "enjoy",
+      "pos": "verb",
+      "translation": "享受/喜欢",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "sad",
+      "pos": "adj",
+      "translation": "忧愁的/悲哀的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "interesting",
+      "pos": "adj",
+      "translation": "有趣的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "afraid",
+      "pos": "adj",
+      "translation": "害怕的/恐怕的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "emotion",
+      "priority": 2
+    },
+    {
+      "lemma": "wife",
+      "pos": "noun",
+      "translation": "妻子/太太",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "son",
+      "pos": "noun",
+      "translation": "儿子/女婿",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "brother",
+      "pos": "noun",
+      "translation": "兄弟",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "daughter",
+      "pos": "noun",
+      "translation": "女儿",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "sister",
+      "pos": "noun",
+      "translation": "姐妹/姐",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "baby",
+      "pos": "noun",
+      "translation": "婴孩",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "husband",
+      "pos": "noun",
+      "translation": "丈夫/管理人",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "cousin",
+      "pos": "noun",
+      "translation": "堂兄弟姊妹/表兄弟姊妹",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "aunt",
+      "pos": "noun",
+      "translation": "阿姨/姨妈",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "family",
+      "priority": 2
+    },
+    {
+      "lemma": "cup",
+      "pos": "noun",
+      "translation": "杯子/茶杯",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "glass",
+      "pos": "noun",
+      "translation": "玻璃/玻璃杯",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "dinner",
+      "pos": "noun",
+      "translation": "晚餐/正餐",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "egg",
+      "pos": "noun",
+      "translation": "蛋/卵",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "cook",
+      "pos": "verb",
+      "translation": "烹调/煮饭",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "wine",
+      "pos": "noun",
+      "translation": "葡萄酒/果酒",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "lunch",
+      "pos": "noun",
+      "translation": "午餐",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "fruit",
+      "pos": "noun",
+      "translation": "水果/果类",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "bottle",
+      "pos": "noun",
+      "translation": "瓶子/酒瓶",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "diet",
+      "pos": "noun",
+      "translation": "日常饮食/议会",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "tea",
+      "pos": "noun",
+      "translation": "茶/茶叶",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "coffee",
+      "pos": "noun",
+      "translation": "咖啡/咖啡色",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "food",
+      "priority": 2
+    },
+    {
+      "lemma": "return",
+      "pos": "noun",
+      "translation": "回来/返回",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "break",
+      "pos": "noun",
+      "translation": "休息/中断",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "action",
+      "pos": "noun",
+      "translation": "行动/活动",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "event",
+      "pos": "noun",
+      "translation": "事件/结果",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "situation",
+      "pos": "noun",
+      "translation": "情形/境遇",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "land",
+      "pos": "noun",
+      "translation": "陆地/地面",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "rule",
+      "pos": "noun",
+      "translation": "规则/统治",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "list",
+      "pos": "noun",
+      "translation": "目录/名单",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "example",
+      "pos": "noun",
+      "translation": "例子/样本",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "laugh",
+      "pos": "noun",
+      "translation": "笑/笑声",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "visit",
+      "pos": "noun",
+      "translation": "拜访/访问",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "club",
+      "pos": "noun",
+      "translation": "俱乐部/木棍",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "pound",
+      "pos": "noun",
+      "translation": "磅/英镑",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "difference",
+      "pos": "noun",
+      "translation": "不同/差异",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "model",
+      "pos": "noun",
+      "translation": "模型/模范",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "space",
+      "pos": "noun",
+      "translation": "位置/空间",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "activity",
+      "pos": "noun",
+      "translation": "活动/行动",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "practice",
+      "pos": "noun",
+      "translation": "实践/练习",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "type",
+      "pos": "noun",
+      "translation": "类型/样式",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "order",
+      "pos": "noun",
+      "translation": "次序/规则",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "note",
+      "pos": "noun",
+      "translation": "笔记/记录",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "article",
+      "pos": "noun",
+      "translation": "文章/冠词",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "success",
+      "pos": "noun",
+      "translation": "成功/成就",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "section",
+      "pos": "noun",
+      "translation": "区段/部分",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "skill",
+      "pos": "noun",
+      "translation": "技术/技巧",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "ball",
+      "pos": "noun",
+      "translation": "球/舞会",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "statement",
+      "pos": "noun",
+      "translation": "陈述/指令",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "style",
+      "pos": "noun",
+      "translation": "风格/时尚",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "adult",
+      "pos": "noun",
+      "translation": "成人/成虫",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "detail",
+      "pos": "noun",
+      "translation": "细节/详情",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "video",
+      "pos": "noun",
+      "translation": "影像/电视",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "object",
+      "pos": "noun",
+      "translation": "物体/目标",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "date",
+      "pos": "noun",
+      "translation": "日期/约会",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "farm",
+      "pos": "noun",
+      "translation": "农场/农田",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "reader",
+      "pos": "noun",
+      "translation": "读者/读物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "band",
+      "pos": "noun",
+      "translation": "带子/队",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "title",
+      "pos": "noun",
+      "translation": "头衔/名称",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "quarter",
+      "pos": "noun",
+      "translation": "四分之一/一刻钟",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "mistake",
+      "pos": "noun",
+      "translation": "错误/误会",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "writing",
+      "pos": "noun",
+      "translation": "书写/著作",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "paint",
+      "pos": "noun",
+      "translation": "油漆/颜料",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "centre",
+      "pos": "noun",
+      "translation": "中心/中心点",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "colour",
+      "pos": "noun",
+      "translation": "颜色/面色",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "dollar",
+      "pos": "noun",
+      "translation": "美元",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "programme",
+      "pos": "noun",
+      "translation": "节目/节目单",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "advice",
+      "pos": "noun",
+      "translation": "忠告/劝告",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "fun",
+      "pos": "noun",
+      "translation": "乐趣/玩笑",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "sentence",
+      "pos": "noun",
+      "translation": "句子/命题",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "form",
+      "pos": "noun",
+      "translation": "形状/形体",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "place",
+      "pos": "noun",
+      "translation": "地方/地点",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "beginning",
+      "pos": "noun",
+      "translation": "开始",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 2
+    },
+    {
+      "lemma": "thank",
+      "pos": "verb",
+      "translation": "谢谢/感谢",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "greeting",
+      "priority": 2
+    },
+    {
+      "lemma": "please",
+      "pos": "intj",
+      "translation": "请",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "greeting",
+      "priority": 2
+    },
+    {
+      "lemma": "sorry",
+      "pos": "adj",
+      "translation": "难过的/悲哀的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "greeting",
+      "priority": 2
+    },
+    {
+      "lemma": "welcome",
+      "pos": "adj",
+      "translation": "受欢迎的/可随意的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "greeting",
+      "priority": 2
+    },
+    {
+      "lemma": "exercise",
+      "pos": "noun",
+      "translation": "行使/执行",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "health",
+      "priority": 2
+    },
+    {
+      "lemma": "building",
+      "pos": "noun",
+      "translation": "建筑物/建筑",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "wall",
+      "pos": "noun",
+      "translation": "墙/墙壁",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "table",
+      "pos": "noun",
+      "translation": "桌子/餐桌",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "picture",
+      "pos": "noun",
+      "translation": "图画/照片",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "window",
+      "pos": "noun",
+      "translation": "窗户/窗子",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "floor",
+      "pos": "noun",
+      "translation": "地板/楼层",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "bed",
+      "pos": "noun",
+      "translation": "床/睡眠处",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "box",
+      "pos": "noun",
+      "translation": "盒子/箱",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "chair",
+      "pos": "noun",
+      "translation": "椅子/显要的席位",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "kitchen",
+      "pos": "noun",
+      "translation": "厨房/全套炊具",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "key",
+      "pos": "adj",
+      "translation": "钥匙/键",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "desk",
+      "pos": "noun",
+      "translation": "书桌/办公桌",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "flat",
+      "pos": "noun",
+      "translation": "扁平物/平面",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "light",
+      "pos": "adj",
+      "translation": "轻的/少量的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "apartment",
+      "pos": "noun",
+      "translation": "房间/公寓",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "house",
+      "priority": 2
+    },
+    {
+      "lemma": "film",
+      "pos": "noun",
+      "translation": "软片/薄膜",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "radio",
+      "pos": "noun",
+      "translation": "无线电/收音机",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "movie",
+      "pos": "noun",
+      "translation": "电影",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "sport",
+      "pos": "noun",
+      "translation": "运动/游戏",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "tv",
+      "pos": "noun",
+      "translation": "电视",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "television",
+      "pos": "noun",
+      "translation": "电视",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "song",
+      "pos": "noun",
+      "translation": "歌/曲",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "camera",
+      "pos": "noun",
+      "translation": "照相机/摄影机",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "sing",
+      "pos": "verb",
+      "translation": "唱/唱歌",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "painting",
+      "pos": "noun",
+      "translation": "画/绘画",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "photograph",
+      "pos": "noun",
+      "translation": "相片/照片",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "football",
+      "pos": "noun",
+      "translation": "足球/橄榄球",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "dance",
+      "pos": "noun",
+      "translation": "跳舞/舞蹈",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "festival",
+      "pos": "noun",
+      "translation": "节日/庆祝",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "photo",
+      "pos": "noun",
+      "translation": "相片/照片",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "leisure",
+      "priority": 2
+    },
+    {
+      "lemma": "can",
+      "pos": "modal",
+      "translation": "装罐",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "modal_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "carry",
+      "pos": "verb",
+      "translation": "携带/运送",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 2
+    },
+    {
+      "lemma": "arrive",
+      "pos": "verb",
+      "translation": "到达/抵达",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "movement",
+      "priority": 2
+    },
+    {
+      "lemma": "lie",
+      "pos": "verb",
+      "translation": "躺着/说谎",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "movement",
+      "priority": 2
+    },
+    {
+      "lemma": "star",
+      "pos": "noun",
+      "translation": "星/恒星",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "plant",
+      "pos": "noun",
+      "translation": "植物/作物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "tree",
+      "pos": "noun",
+      "translation": "树/木料",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "sea",
+      "pos": "noun",
+      "translation": "海/海洋",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "mountain",
+      "pos": "noun",
+      "translation": "山/山脉",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "river",
+      "pos": "noun",
+      "translation": "河/江",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "flower",
+      "pos": "noun",
+      "translation": "花/开花植物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "island",
+      "pos": "noun",
+      "translation": "岛/岛屿",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "nature",
+      "priority": 2
+    },
+    {
+      "lemma": "two",
+      "pos": "num",
+      "translation": "二/二个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "three",
+      "pos": "num",
+      "translation": "三/三个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "million",
+      "pos": "num",
+      "translation": "百万",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "four",
+      "pos": "num",
+      "translation": "四/四个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "five",
+      "pos": "num",
+      "translation": "五/五个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "six",
+      "pos": "num",
+      "translation": "六/六个",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "hundred",
+      "pos": "num",
+      "translation": "百/百个",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "thousand",
+      "pos": "num",
+      "translation": "千",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "seven",
+      "pos": "num",
+      "translation": "七/七个",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "eight",
+      "pos": "num",
+      "translation": "八/八个",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "ten",
+      "pos": "num",
+      "translation": "十/十个",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "nine",
+      "pos": "num",
+      "translation": "九/九个",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "twenty",
+      "pos": "num",
+      "translation": "二十/二十个",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 2
+    },
+    {
+      "lemma": "street",
+      "pos": "noun",
+      "translation": "街道/马路",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "hospital",
+      "pos": "noun",
+      "translation": "医院",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "city",
+      "pos": "noun",
+      "translation": "城市/市",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "church",
+      "pos": "noun",
+      "translation": "教堂/礼拜",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "store",
+      "pos": "noun",
+      "translation": "商店/贮藏",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "station",
+      "pos": "noun",
+      "translation": "车站/站",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "hotel",
+      "pos": "noun",
+      "translation": "旅馆/客栈",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "garden",
+      "pos": "noun",
+      "translation": "花园/果园",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "restaurant",
+      "pos": "noun",
+      "translation": "餐馆/饭店",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "village",
+      "pos": "noun",
+      "translation": "村庄",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "museum",
+      "pos": "noun",
+      "translation": "博物馆",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "airport",
+      "pos": "noun",
+      "translation": "飞机场",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "park",
+      "pos": "noun",
+      "translation": "公园/停车处",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "place",
+      "priority": 2
+    },
+    {
+      "lemma": "everyone",
+      "pos": "pron",
+      "translation": "每个人/人人",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "pron_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "anyone",
+      "pos": "pron",
+      "translation": "任何人",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "pron_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "yourself",
+      "pos": "pron",
+      "translation": "你自己",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "pron_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "somebody",
+      "pos": "pron",
+      "translation": "有人/某人",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "pron_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "nobody",
+      "pos": "pron",
+      "translation": "无人/没有人",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "pron_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "someone",
+      "pos": "pron",
+      "translation": "有人/某人",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "pron_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "half",
+      "pos": "det",
+      "translation": "一半/半场",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "quantity",
+      "priority": 2
+    },
+    {
+      "lemma": "piece",
+      "pos": "noun",
+      "translation": "块/片",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "quantity",
+      "priority": 2
+    },
+    {
+      "lemma": "part",
+      "pos": "noun",
+      "translation": "部分/局部",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "quantity",
+      "priority": 2
+    },
+    {
+      "lemma": "pair",
+      "pos": "noun",
+      "translation": "一双/一对",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "quantity",
+      "priority": 2
+    },
+    {
+      "lemma": "partner",
+      "pos": "noun",
+      "translation": "合伙人/股东",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "relationship",
+      "priority": 2
+    },
+    {
+      "lemma": "class",
+      "pos": "noun",
+      "translation": "班级/阶级",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "paper",
+      "pos": "noun",
+      "translation": "纸/文件",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "test",
+      "pos": "noun",
+      "translation": "测试/试验",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "letter",
+      "pos": "noun",
+      "translation": "信/字母",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "page",
+      "pos": "noun",
+      "translation": "页/记录",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "university",
+      "pos": "noun",
+      "translation": "大学",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "college",
+      "pos": "noun",
+      "translation": "学院/大学",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "teach",
+      "pos": "verb",
+      "translation": "教/讲授",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2,
+      "semanticConflicts": [
+        "learn"
+      ]
+    },
+    {
+      "lemma": "subject",
+      "pos": "noun",
+      "translation": "科目/主题",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "language",
+      "pos": "noun",
+      "translation": "语言/文字",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "science",
+      "pos": "noun",
+      "translation": "科学/学科",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "holiday",
+      "pos": "noun",
+      "translation": "假日/假期",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "lesson",
+      "pos": "noun",
+      "translation": "课/课业",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 2
+    },
+    {
+      "lemma": "price",
+      "pos": "noun",
+      "translation": "价格/代价",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "shopping",
+      "priority": 2,
+      "semanticConflicts": [
+        "cost"
+      ]
+    },
+    {
+      "lemma": "cost",
+      "pos": "noun",
+      "translation": "代价/价值",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "shopping",
+      "priority": 2,
+      "semanticConflicts": [
+        "price"
+      ]
+    },
+    {
+      "lemma": "card",
+      "pos": "noun",
+      "translation": "卡片/纸牌",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "shopping",
+      "priority": 2
+    },
+    {
+      "lemma": "customer",
+      "pos": "noun",
+      "translation": "消费者",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "shopping",
+      "priority": 2
+    },
+    {
+      "lemma": "shop",
+      "pos": "noun",
+      "translation": "商店/工厂",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "shopping",
+      "priority": 2
+    },
+    {
+      "lemma": "expensive",
+      "pos": "adj",
+      "translation": "贵的/奢华的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "shopping",
+      "priority": 2
+    },
+    {
+      "lemma": "cheap",
+      "pos": "adj",
+      "translation": "便宜的/不值钱的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "shopping",
+      "priority": 2
+    },
+    {
+      "lemma": "bill",
+      "pos": "noun",
+      "translation": "帐单/清单",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "shopping",
+      "priority": 2
+    },
+    {
+      "lemma": "culture",
+      "pos": "noun",
+      "translation": "文化/修养",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "society",
+      "priority": 2
+    },
+    {
+      "lemma": "right",
+      "pos": "adj",
+      "translation": "正确的/对的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "society",
+      "priority": 2
+    },
+    {
+      "lemma": "player",
+      "pos": "noun",
+      "translation": "竞赛者/上场队员",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "sport",
+      "priority": 2
+    },
+    {
+      "lemma": "draw",
+      "pos": "verb",
+      "translation": "拉/拖",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "sport",
+      "priority": 2
+    },
+    {
+      "lemma": "match",
+      "pos": "noun",
+      "translation": "比赛/火柴",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "sport",
+      "priority": 2
+    },
+    {
+      "lemma": "machine",
+      "pos": "noun",
+      "translation": "机器/机械装置",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "technology",
+      "priority": 2
+    },
+    {
+      "lemma": "decide",
+      "pos": "verb",
+      "translation": "决定/判决",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "choose",
+      "pos": "verb",
+      "translation": "选择/宁愿",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "guess",
+      "pos": "noun",
+      "translation": "猜测/臆测",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "forget",
+      "pos": "verb",
+      "translation": "忘记/忽略",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "imagine",
+      "pos": "verb",
+      "translation": "想像/设想",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "opinion",
+      "pos": "noun",
+      "translation": "意见/评价",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "mean",
+      "pos": "verb",
+      "translation": "意谓/想要",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "thinking",
+      "priority": 2
+    },
+    {
+      "lemma": "late",
+      "pos": "adj",
+      "translation": "迟的/晚的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "century",
+      "pos": "noun",
+      "translation": "世纪/百年",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "soon",
+      "pos": "adv",
+      "translation": "不久/早",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "future",
+      "pos": "noun",
+      "translation": "未来/将来",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "past",
+      "pos": "adj",
+      "translation": "过去的/结束的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "may",
+      "pos": "noun",
+      "translation": "五月",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "yesterday",
+      "pos": "adv",
+      "translation": "昨天",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "sometimes",
+      "pos": "adv",
+      "translation": "有时/时常",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "period",
+      "pos": "noun",
+      "translation": "时期/节段",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "summer",
+      "pos": "noun",
+      "translation": "夏季/全盛时期",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "usually",
+      "pos": "adv",
+      "translation": "通常/大抵",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "spring",
+      "pos": "noun",
+      "translation": "春天/弹簧",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "evening",
+      "pos": "noun",
+      "translation": "傍晚/晚间",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "afternoon",
+      "pos": "noun",
+      "translation": "午后/下午",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "weekend",
+      "pos": "noun",
+      "translation": "周末/周末休假",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "tomorrow",
+      "pos": "adv",
+      "translation": "明天/未来地",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "winter",
+      "pos": "noun",
+      "translation": "冬季/萧条期",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 2
+    },
+    {
+      "lemma": "road",
+      "pos": "noun",
+      "translation": "路/道路",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "drive",
+      "pos": "verb",
+      "translation": "开车/驱使",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "trip",
+      "pos": "noun",
+      "translation": "旅行/绊倒",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "transport",
+      "priority": 2,
+      "semanticConflicts": [
+        "journey",
+        "travel"
+      ]
+    },
+    {
+      "lemma": "plane",
+      "pos": "noun",
+      "translation": "平面/扁平物",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "boat",
+      "pos": "noun",
+      "translation": "船",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "ride",
+      "pos": "verb",
+      "translation": "骑/乘坐",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "train",
+      "pos": "noun",
+      "translation": "火车/列车",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "ticket",
+      "pos": "noun",
+      "translation": "票/券",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "bus",
+      "pos": "noun",
+      "translation": "公共汽车",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "transport",
+      "priority": 2
+    },
+    {
+      "lemma": "town",
+      "pos": "noun",
+      "translation": "城镇/市",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "travel",
+      "priority": 2
+    },
+    {
+      "lemma": "travel",
+      "pos": "noun",
+      "translation": "旅行/游历",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "travel",
+      "priority": 2,
+      "semanticConflicts": [
+        "journey",
+        "trip"
+      ]
+    },
+    {
+      "lemma": "flight",
+      "pos": "noun",
+      "translation": "飞行/射程",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "travel",
+      "priority": 2
+    },
+    {
+      "lemma": "sell",
+      "pos": "verb",
+      "translation": "卖/背叛",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "join",
+      "pos": "verb",
+      "translation": "参加/结合",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "agree",
+      "pos": "verb",
+      "translation": "同意/赞成",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "describe",
+      "pos": "verb",
+      "translation": "描述/描绘",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "use",
+      "pos": "verb",
+      "translation": "使用/利用",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "fly",
+      "pos": "verb",
+      "translation": "飞/飞翔",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "make",
+      "pos": "verb",
+      "translation": "制造/安排",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 2,
+      "semanticConflicts": [
+        "do"
+      ]
+    },
+    {
+      "lemma": "know",
+      "pos": "verb",
+      "translation": "知道/了解",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "explain",
+      "pos": "verb",
+      "translation": "解释/说明",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "eat",
+      "pos": "verb",
+      "translation": "吃/腐蚀",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "listen",
+      "pos": "verb",
+      "translation": "听/倾听",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2,
+      "semanticConflicts": [
+        "hear"
+      ]
+    },
+    {
+      "lemma": "fill",
+      "pos": "verb",
+      "translation": "装满/填充",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "prepare",
+      "pos": "verb",
+      "translation": "准备/筹备",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "miss",
+      "pos": "verb",
+      "translation": "未得到/未达到",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "check",
+      "pos": "verb",
+      "translation": "检查/阻止",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "finish",
+      "pos": "verb",
+      "translation": "完成/结束",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "improve",
+      "pos": "verb",
+      "translation": "改良/提高…的价值",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "sleep",
+      "pos": "verb",
+      "translation": "睡觉/睡眠",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "introduce",
+      "pos": "verb",
+      "translation": "介绍/引入",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "drink",
+      "pos": "verb",
+      "translation": "喝/喝酒",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "live",
+      "pos": "verb",
+      "translation": "活/生存",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "repeat",
+      "pos": "verb",
+      "translation": "重做/重复",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "prefer",
+      "pos": "verb",
+      "translation": "宁可/较喜欢",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "close",
+      "pos": "verb",
+      "translation": "关/结束",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "compare",
+      "pos": "verb",
+      "translation": "比较/比喻",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 2
+    },
+    {
+      "lemma": "hot",
+      "pos": "adj",
+      "translation": "热的/热心的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "cold",
+      "pos": "adj",
+      "translation": "寒冷的/冷淡的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "wind",
+      "pos": "noun",
+      "translation": "风/气息",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "ice",
+      "pos": "noun",
+      "translation": "冰/冰淇淋",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "warm",
+      "pos": "adj",
+      "translation": "暖和的/暖的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "cool",
+      "pos": "adj",
+      "translation": "凉爽的/冷淡的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "rain",
+      "pos": "noun",
+      "translation": "雨/下雨",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "weather",
+      "pos": "noun",
+      "translation": "天气/气象",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "weather",
+      "priority": 2
+    },
+    {
+      "lemma": "police",
+      "pos": "noun",
+      "translation": "警察/警察当局",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "worker",
+      "pos": "noun",
+      "translation": "工人/劳动者",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "meeting",
+      "pos": "noun",
+      "translation": "会议/会面",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "project",
+      "pos": "noun",
+      "translation": "计划/设计",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "doctor",
+      "pos": "noun",
+      "translation": "医生/博士",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "career",
+      "pos": "noun",
+      "translation": "事业/生涯",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "interview",
+      "pos": "noun",
+      "translation": "面谈/访问",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "scientist",
+      "pos": "noun",
+      "translation": "科学家",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "farmer",
+      "pos": "noun",
+      "translation": "农夫/农场主",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "work",
+      "priority": 2
+    },
+    {
+      "lemma": "negative",
+      "pos": "adj",
+      "translation": "否定的/消极的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "tall",
+      "pos": "adj",
+      "translation": "高的/长的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "favourite",
+      "pos": "adj",
+      "translation": "喜爱的/宠爱的",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "long",
+      "pos": "adj",
+      "translation": "长的/长久的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "busy",
+      "pos": "adj",
+      "translation": "忙碌的/热闹的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "opposite",
+      "pos": "adj",
+      "translation": "相对的/相反的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "amazing",
+      "pos": "adj",
+      "translation": "令人惊异的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "false",
+      "pos": "adj",
+      "translation": "错误的/虚伪的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "friendly",
+      "pos": "adj",
+      "translation": "友好的/亲切的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "dirty",
+      "pos": "adj",
+      "translation": "肮脏的/卑鄙的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "exciting",
+      "pos": "adj",
+      "translation": "令人兴奋的/刺激的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "dear",
+      "pos": "adj",
+      "translation": "亲爱的/昂贵的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "short",
+      "pos": "adj",
+      "translation": "短的/近的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "common",
+      "pos": "adj",
+      "translation": "通常的/共同的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "boring",
+      "pos": "adj",
+      "translation": "烦人的/无聊的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "blonde",
+      "pos": "adj",
+      "translation": "淡色的/白肤金发碧眼的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "fantastic",
+      "pos": "adj",
+      "translation": "奇妙的/稀奇的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "best",
+      "pos": "adj",
+      "translation": "最好的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adj_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "just",
+      "pos": "adv",
+      "translation": "刚刚/正好",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "even",
+      "pos": "adv",
+      "translation": "甚至/实际上",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "adv_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "upstairs",
+      "pos": "adv",
+      "translation": "在楼上/向楼上",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "adv_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "o'clock",
+      "pos": "adv",
+      "translation": "钟头",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "adv_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "quickly",
+      "pos": "adv",
+      "translation": "很快地",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "adv_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "downstairs",
+      "pos": "adv",
+      "translation": "在楼下",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "adv_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "chicken",
+      "pos": "noun",
+      "translation": "小鸡/鸡肉",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "cat",
+      "pos": "noun",
+      "translation": "猫/恶妇",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "cow",
+      "pos": "noun",
+      "translation": "母牛/母兽",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "mouse",
+      "pos": "noun",
+      "translation": "老鼠/胆小羞怯的人",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "snake",
+      "pos": "noun",
+      "translation": "蛇/阴险的人",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "pig",
+      "pos": "noun",
+      "translation": "猪/猪肉",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "sheep",
+      "pos": "noun",
+      "translation": "羊/胆小者",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "spider",
+      "pos": "noun",
+      "translation": "蜘蛛/设圈套者",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "bear",
+      "pos": "noun",
+      "translation": "熊",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "deer",
+      "pos": "noun",
+      "translation": "鹿",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "duck",
+      "pos": "noun",
+      "translation": "鸭子",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "lion",
+      "pos": "noun",
+      "translation": "狮子",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "elephant",
+      "pos": "noun",
+      "translation": "象",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "rabbit",
+      "pos": "noun",
+      "translation": "兔子",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "monkey",
+      "pos": "noun",
+      "translation": "猴子/猿",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "butterfly",
+      "pos": "noun",
+      "translation": "蝴蝶",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "wolf",
+      "pos": "noun",
+      "translation": "狼/残忍贪婪之人",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "shark",
+      "pos": "noun",
+      "translation": "鲨鱼/骗子",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "frog",
+      "pos": "noun",
+      "translation": "青蛙",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "ant",
+      "pos": "noun",
+      "translation": "蚂蚁",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "turtle",
+      "pos": "noun",
+      "translation": "海龟",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "animal",
+      "priority": 3
+    },
+    {
+      "lemma": "writer",
+      "pos": "noun",
+      "translation": "作家/撰稿者",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "art",
+      "priority": 3
+    },
+    {
+      "lemma": "knee",
+      "pos": "noun",
+      "translation": "膝/膝盖",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "neck",
+      "pos": "noun",
+      "translation": "脖子/衣领",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "nose",
+      "pos": "noun",
+      "translation": "鼻子/突出部分",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "tooth",
+      "pos": "noun",
+      "translation": "牙齿/齿状物",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "stomach",
+      "pos": "noun",
+      "translation": "胃/食欲",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "toe",
+      "pos": "noun",
+      "translation": "足趾/趾部",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "elbow",
+      "pos": "noun",
+      "translation": "手肘/弯头",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "body",
+      "priority": 3
+    },
+    {
+      "lemma": "ring",
+      "pos": "noun",
+      "translation": "环/环形物",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "shirt",
+      "pos": "noun",
+      "translation": "衬衫/内衣",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "hat",
+      "pos": "noun",
+      "translation": "帽子",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "coat",
+      "pos": "noun",
+      "translation": "外套",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "jacket",
+      "pos": "noun",
+      "translation": "夹克/外套",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "boot",
+      "pos": "noun",
+      "translation": "长靴/踢",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "glove",
+      "pos": "noun",
+      "translation": "手套",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "jeans",
+      "pos": "noun",
+      "translation": "工装裤/牛仔裤",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "skirt",
+      "pos": "noun",
+      "translation": "裙子/下摆",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "sweater",
+      "pos": "noun",
+      "translation": "毛衣/毛线衫",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "umbrella",
+      "pos": "noun",
+      "translation": "伞/雨伞",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "trousers",
+      "pos": "noun",
+      "translation": "裤子/长裤",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "pants",
+      "pos": "noun",
+      "translation": "裤子/长裤",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "scarf",
+      "pos": "noun",
+      "translation": "围巾/头巾",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "glasses",
+      "pos": "noun",
+      "translation": "眼镜/双筒望远镜",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "socks",
+      "pos": "noun",
+      "translation": "短袜/袜子",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "shoes",
+      "pos": "noun",
+      "translation": "鞋",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "clothing",
+      "priority": 3
+    },
+    {
+      "lemma": "yellow",
+      "pos": "adj",
+      "translation": "黄色的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 3
+    },
+    {
+      "lemma": "silver",
+      "pos": "adj",
+      "translation": "银的/银制的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 3
+    },
+    {
+      "lemma": "pink",
+      "pos": "adj",
+      "translation": "粉红的/石竹科的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 3
+    },
+    {
+      "lemma": "orange",
+      "pos": "adj",
+      "translation": "橘色的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 3
+    },
+    {
+      "lemma": "purple",
+      "pos": "adj",
+      "translation": "紫色的/帝王的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 3
+    },
+    {
+      "lemma": "gray",
+      "pos": "adj",
+      "translation": "灰色的/灰白的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "color",
+      "priority": 3
+    },
+    {
+      "lemma": "internet",
+      "pos": "noun",
+      "translation": "互联网",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "communication",
+      "priority": 3
+    },
+    {
+      "lemma": "website",
+      "pos": "noun",
+      "translation": "网站",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "communication",
+      "priority": 3
+    },
+    {
+      "lemma": "email",
+      "pos": "noun",
+      "translation": "电子信函",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "communication",
+      "priority": 3
+    },
+    {
+      "lemma": "hate",
+      "pos": "verb",
+      "translation": "憎恨/憎恶",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "emotion",
+      "priority": 3
+    },
+    {
+      "lemma": "angry",
+      "pos": "adj",
+      "translation": "生气的/愤怒的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "emotion",
+      "priority": 3
+    },
+    {
+      "lemma": "funny",
+      "pos": "adj",
+      "translation": "好笑的/有趣的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "emotion",
+      "priority": 3
+    },
+    {
+      "lemma": "bored",
+      "pos": "adj",
+      "translation": "无聊的/烦人的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "emotion",
+      "priority": 3
+    },
+    {
+      "lemma": "excited",
+      "pos": "adj",
+      "translation": "兴奋的/已励磁的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "emotion",
+      "priority": 3
+    },
+    {
+      "lemma": "married",
+      "pos": "adj",
+      "translation": "已婚的/婚姻的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "dad",
+      "pos": "noun",
+      "translation": "爸爸/爹爹",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "uncle",
+      "pos": "noun",
+      "translation": "叔父/伯父",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "mom",
+      "pos": "noun",
+      "translation": "妈妈",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "grandmother",
+      "pos": "noun",
+      "translation": "祖母/女祖先",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "grandfather",
+      "pos": "noun",
+      "translation": "祖父/始祖",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "grandparent",
+      "pos": "noun",
+      "translation": "祖父母",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "family",
+      "priority": 3
+    },
+    {
+      "lemma": "salt",
+      "pos": "noun",
+      "translation": "盐/风趣",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "sugar",
+      "pos": "noun",
+      "translation": "糖/糖块",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "meal",
+      "pos": "noun",
+      "translation": "一餐/膳食",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "meat",
+      "pos": "noun",
+      "translation": "肉/餐",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "beer",
+      "pos": "noun",
+      "translation": "啤酒",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "pepper",
+      "pos": "noun",
+      "translation": "胡椒粉/胡椒",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "vegetable",
+      "pos": "noun",
+      "translation": "蔬菜/植物",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "dish",
+      "pos": "noun",
+      "translation": "盘子/碟",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "milk",
+      "pos": "noun",
+      "translation": "奶/乳状物",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "cheese",
+      "pos": "noun",
+      "translation": "乳酪",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "bread",
+      "pos": "noun",
+      "translation": "面包/生计",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "potato",
+      "pos": "noun",
+      "translation": "马铃薯",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "juice",
+      "pos": "noun",
+      "translation": "汁/活力",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "breakfast",
+      "pos": "noun",
+      "translation": "早餐",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "butter",
+      "pos": "noun",
+      "translation": "奶油/黄油",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "cake",
+      "pos": "noun",
+      "translation": "蛋糕/块",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "chocolate",
+      "pos": "noun",
+      "translation": "巧克力",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "apple",
+      "pos": "noun",
+      "translation": "苹果/家伙",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "rice",
+      "pos": "noun",
+      "translation": "米/米饭",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "tomato",
+      "pos": "noun",
+      "translation": "番茄/西红柿",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "onion",
+      "pos": "noun",
+      "translation": "洋葱",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "salad",
+      "pos": "noun",
+      "translation": "色拉",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "soup",
+      "pos": "noun",
+      "translation": "汤/马力",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "menu",
+      "pos": "noun",
+      "translation": "菜单",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "hungry",
+      "pos": "adj",
+      "translation": "饥饿的/荒年的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "carrot",
+      "pos": "noun",
+      "translation": "胡萝卜",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "thirsty",
+      "pos": "adj",
+      "translation": "口渴的/渴望的",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "banana",
+      "pos": "noun",
+      "translation": "香蕉",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "delicious",
+      "pos": "adj",
+      "translation": "美味的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "cafe",
+      "pos": "noun",
+      "translation": "咖啡馆/酒店",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "pizza",
+      "pos": "noun",
+      "translation": "比萨饼",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "food",
+      "priority": 3
+    },
+    {
+      "lemma": "actor",
+      "pos": "noun",
+      "translation": "男演员/行动者",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "pool",
+      "pos": "noun",
+      "translation": "池/水塘",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "kind",
+      "pos": "noun",
+      "translation": "种类/性质",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "reading",
+      "pos": "noun",
+      "translation": "阅读/知识",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "mile",
+      "pos": "noun",
+      "translation": "英里/很大距离",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "meaning",
+      "pos": "noun",
+      "translation": "意义/含义",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "visitor",
+      "pos": "noun",
+      "translation": "参观者/游客",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "cream",
+      "pos": "noun",
+      "translation": "乳酪/奶油",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "description",
+      "pos": "noun",
+      "translation": "描述/说明",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "routine",
+      "pos": "noun",
+      "translation": "常规/日常工作",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "phrase",
+      "pos": "noun",
+      "translation": "惯用语/词组",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "chart",
+      "pos": "noun",
+      "translation": "图表/海图",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "singer",
+      "pos": "noun",
+      "translation": "歌手",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "sound",
+      "pos": "noun",
+      "translation": "声音/语音",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "cooking",
+      "pos": "noun",
+      "translation": "烹饪",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "cd",
+      "pos": "noun",
+      "translation": "镭射碟/镭射唱片",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "kilometre",
+      "pos": "noun",
+      "translation": "公里/千米",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "metre",
+      "pos": "noun",
+      "translation": "公尺/格律",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "topic",
+      "pos": "noun",
+      "translation": "主题/论题",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "post",
+      "pos": "noun",
+      "translation": "柱/杆",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "piano",
+      "pos": "noun",
+      "translation": "钢琴",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "girlfriend",
+      "pos": "noun",
+      "translation": "女朋友",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "mum",
+      "pos": "noun",
+      "translation": "菊花/沉默",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "dancer",
+      "pos": "noun",
+      "translation": "舞蹈演员/跳舞者",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "teenager",
+      "pos": "noun",
+      "translation": "十三岁到十九岁的少年",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "dialogue",
+      "pos": "noun",
+      "translation": "对话",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "cent",
+      "pos": "noun",
+      "translation": "分",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "ice cream",
+      "pos": "noun",
+      "translation": "冰淇淋",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "actress",
+      "pos": "noun",
+      "translation": "女演员",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "guitar",
+      "pos": "noun",
+      "translation": "吉他",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "boyfriend",
+      "pos": "noun",
+      "translation": "男朋友",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "policeman",
+      "pos": "noun",
+      "translation": "警察",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "spelling",
+      "pos": "noun",
+      "translation": "拼/拼字",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "sandwich",
+      "pos": "noun",
+      "translation": "三明治/夹心面包",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "gym",
+      "pos": "noun",
+      "translation": "体育训练/体育课",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "paragraph",
+      "pos": "noun",
+      "translation": "段落/短评",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "t-shirt",
+      "pos": "noun",
+      "translation": "圆领汗衫/T恤",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "dvd",
+      "pos": "noun",
+      "translation": "DVD 光盘",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "euro",
+      "pos": "noun",
+      "translation": "欧元",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "blog",
+      "pos": "noun",
+      "translation": "博客/部落格",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "general",
+      "priority": 3
+    },
+    {
+      "lemma": "hi",
+      "pos": "intj",
+      "translation": "喂",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "hello",
+      "pos": "intj",
+      "translation": "喂/嘿",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "bye",
+      "pos": "intj",
+      "translation": "再会/回头见",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "goodbye",
+      "pos": "intj",
+      "translation": "再见",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "hey",
+      "pos": "intj",
+      "translation": "嗨",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "ok",
+      "pos": "adj",
+      "translation": "好/不错",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "yeah",
+      "pos": "intj",
+      "translation": "是的",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "thanks",
+      "pos": "intj",
+      "translation": "谢谢/谢谢你",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "greeting",
+      "priority": 3
+    },
+    {
+      "lemma": "healthy",
+      "pos": "adj",
+      "translation": "健康的/有益健康的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "health",
+      "priority": 3
+    },
+    {
+      "lemma": "sick",
+      "pos": "adj",
+      "translation": "不舒服/有病的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "health",
+      "priority": 3
+    },
+    {
+      "lemma": "tired",
+      "pos": "adj",
+      "translation": "疲累的/疲乏的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "health",
+      "priority": 3
+    },
+    {
+      "lemma": "bedroom",
+      "pos": "noun",
+      "translation": "卧室",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 3
+    },
+    {
+      "lemma": "bathroom",
+      "pos": "noun",
+      "translation": "浴室/厕所",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 3
+    },
+    {
+      "lemma": "clock",
+      "pos": "noun",
+      "translation": "时钟/计时器",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 3
+    },
+    {
+      "lemma": "bath",
+      "pos": "noun",
+      "translation": "沐浴/浴室",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 3
+    },
+    {
+      "lemma": "shower",
+      "pos": "noun",
+      "translation": "阵雨/淋浴",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 3
+    },
+    {
+      "lemma": "toilet",
+      "pos": "noun",
+      "translation": "厕所/梳妆",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "house",
+      "priority": 3
+    },
+    {
+      "lemma": "theatre",
+      "pos": "noun",
+      "translation": "戏院/电影院",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "birthday",
+      "pos": "noun",
+      "translation": "生日",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "concert",
+      "pos": "noun",
+      "translation": "音乐会/和声",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "cinema",
+      "pos": "noun",
+      "translation": "电影院/电影",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "vacation",
+      "pos": "noun",
+      "translation": "假期/休假",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "swimming",
+      "pos": "noun",
+      "translation": "游泳/眩晕",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "hobby",
+      "pos": "noun",
+      "translation": "嗜好/癖好",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "tennis",
+      "pos": "noun",
+      "translation": "网球",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "dancing",
+      "pos": "noun",
+      "translation": "舞蹈",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "leisure",
+      "priority": 3
+    },
+    {
+      "lemma": "cannot",
+      "pos": "modal",
+      "translation": "无法/不能",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "modal_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "have to",
+      "pos": "modal",
+      "translation": "不得不/只好",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "modal_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "climb",
+      "pos": "verb",
+      "translation": "攀登/上升",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "movement",
+      "priority": 3
+    },
+    {
+      "lemma": "take",
+      "pos": "verb",
+      "translation": "拿/取",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "movement",
+      "priority": 3,
+      "semanticConflicts": [
+        "bring"
+      ]
+    },
+    {
+      "lemma": "fire",
+      "pos": "noun",
+      "translation": "火/炉火",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "nature",
+      "priority": 3
+    },
+    {
+      "lemma": "thirty",
+      "pos": "num",
+      "translation": "三十/三十个",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "fifteen",
+      "pos": "num",
+      "translation": "十五/十五个",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "fifty",
+      "pos": "num",
+      "translation": "五十/五十个",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "twelve",
+      "pos": "num",
+      "translation": "十二/十二个",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "third",
+      "pos": "num",
+      "translation": "第三/三分之一",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "forty",
+      "pos": "num",
+      "translation": "四十/四十个",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "eleven",
+      "pos": "num",
+      "translation": "十一/十一个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "sixteen",
+      "pos": "num",
+      "translation": "十六/十六个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "eighteen",
+      "pos": "num",
+      "translation": "十八/十八个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "fourteen",
+      "pos": "num",
+      "translation": "十四/十四个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "sixty",
+      "pos": "num",
+      "translation": "六十/六十个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "thirteen",
+      "pos": "num",
+      "translation": "十三/十三个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "seventeen",
+      "pos": "num",
+      "translation": "十七/十七个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "eighty",
+      "pos": "num",
+      "translation": "八十/八十个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "nineteen",
+      "pos": "num",
+      "translation": "十九/十九个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "seventy",
+      "pos": "num",
+      "translation": "七十/七十个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "ninety",
+      "pos": "num",
+      "translation": "九十/九十个",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "fourth",
+      "pos": "num",
+      "translation": "第四/四分之一",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "fifth",
+      "pos": "num",
+      "translation": "第五/五分之一",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "number",
+      "priority": 3
+    },
+    {
+      "lemma": "beach",
+      "pos": "noun",
+      "translation": "海滩",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "place",
+      "priority": 3
+    },
+    {
+      "lemma": "library",
+      "pos": "noun",
+      "translation": "图书馆/藏书",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "place",
+      "priority": 3
+    },
+    {
+      "lemma": "home",
+      "pos": "noun",
+      "translation": "家/避难所",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "place",
+      "priority": 3
+    },
+    {
+      "lemma": "bank",
+      "pos": "noun",
+      "translation": "银行/堤",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "place",
+      "priority": 3
+    },
+    {
+      "lemma": "post office",
+      "pos": "noun",
+      "translation": "邮局",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "place",
+      "priority": 3
+    },
+    {
+      "lemma": "next to",
+      "pos": "prep",
+      "translation": "几乎",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "prep_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "everybody",
+      "pos": "pron",
+      "translation": "每个人/人人",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "pron_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "no one",
+      "pos": "pron",
+      "translation": "没有人",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "pron_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "neighbour",
+      "pos": "noun",
+      "translation": "邻居/邻接的东西",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "relationship",
+      "priority": 3
+    },
+    {
+      "lemma": "pen",
+      "pos": "noun",
+      "translation": "钢笔/笔",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "classroom",
+      "pos": "noun",
+      "translation": "教室",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "exam",
+      "pos": "noun",
+      "translation": "考试/测验",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "pencil",
+      "pos": "noun",
+      "translation": "铅笔/色笔",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "geography",
+      "pos": "noun",
+      "translation": "地理学/地理",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "dictionary",
+      "pos": "noun",
+      "translation": "字典/词典",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "teacher",
+      "pos": "noun",
+      "translation": "教师/老师",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "homework",
+      "pos": "noun",
+      "translation": "家庭作业/家里做的工作",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "school",
+      "priority": 3
+    },
+    {
+      "lemma": "shopping",
+      "pos": "noun",
+      "translation": "买东西/购物",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "shopping",
+      "priority": 3
+    },
+    {
+      "lemma": "supermarket",
+      "pos": "noun",
+      "translation": "超级市场",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "shopping",
+      "priority": 3
+    },
+    {
+      "lemma": "online",
+      "pos": "adj",
+      "translation": "在线的",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "technology",
+      "priority": 3
+    },
+    {
+      "lemma": "april",
+      "pos": "noun",
+      "translation": "四月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "august",
+      "pos": "noun",
+      "translation": "八月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "december",
+      "pos": "noun",
+      "translation": "十二月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "february",
+      "pos": "noun",
+      "translation": "二月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "friday",
+      "pos": "noun",
+      "translation": "星期五",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "january",
+      "pos": "noun",
+      "translation": "一月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "july",
+      "pos": "noun",
+      "translation": "七月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "june",
+      "pos": "noun",
+      "translation": "六月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "monday",
+      "pos": "noun",
+      "translation": "星期一",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "november",
+      "pos": "noun",
+      "translation": "十一月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "october",
+      "pos": "noun",
+      "translation": "十月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "saturday",
+      "pos": "noun",
+      "translation": "星期六",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "september",
+      "pos": "noun",
+      "translation": "九月",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "sunday",
+      "pos": "noun",
+      "translation": "星期日",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "thursday",
+      "pos": "noun",
+      "translation": "星期四",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "tuesday",
+      "pos": "noun",
+      "translation": "星期二",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "wednesday",
+      "pos": "noun",
+      "translation": "星期三",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "midnight",
+      "pos": "noun",
+      "translation": "午夜/子夜",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "march",
+      "pos": "noun",
+      "translation": "三月/进行",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "autumn",
+      "pos": "noun",
+      "translation": "秋天/成熟期",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "present",
+      "pos": "adj",
+      "translation": "现在的/出席的",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "minute",
+      "pos": "noun",
+      "translation": "分/分钟",
+      "cefr": "A1",
+      "frequency": 1,
+      "topic": "time",
+      "priority": 3
+    },
+    {
+      "lemma": "traffic",
+      "pos": "noun",
+      "translation": "交通/通行",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "transport",
+      "priority": 3
+    },
+    {
+      "lemma": "journey",
+      "pos": "noun",
+      "translation": "旅程/旅行",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "transport",
+      "priority": 3,
+      "semanticConflicts": [
+        "travel",
+        "trip"
+      ]
+    },
+    {
+      "lemma": "bicycle",
+      "pos": "noun",
+      "translation": "自行车",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "transport",
+      "priority": 3
+    },
+    {
+      "lemma": "taxi",
+      "pos": "noun",
+      "translation": "出租车",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "transport",
+      "priority": 3
+    },
+    {
+      "lemma": "bike",
+      "pos": "noun",
+      "translation": "自行车/脚踏车",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "transport",
+      "priority": 3
+    },
+    {
+      "lemma": "driver",
+      "pos": "noun",
+      "translation": "驾驶员/驱动器",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "transport",
+      "priority": 3
+    },
+    {
+      "lemma": "map",
+      "pos": "noun",
+      "translation": "地图/天体图",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "travel",
+      "priority": 3
+    },
+    {
+      "lemma": "tourist",
+      "pos": "noun",
+      "translation": "观光客/旅行者",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "travel",
+      "priority": 3
+    },
+    {
+      "lemma": "passport",
+      "pos": "noun",
+      "translation": "护照/手段",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "travel",
+      "priority": 3
+    },
+    {
+      "lemma": "wake",
+      "pos": "verb",
+      "translation": "叫醒/激发",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "wash",
+      "pos": "verb",
+      "translation": "洗/洗涤",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "swim",
+      "pos": "verb",
+      "translation": "游泳/游",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "relax",
+      "pos": "verb",
+      "translation": "放松/松懈",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "born",
+      "pos": "verb",
+      "translation": "bear的过去分词",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "spell",
+      "pos": "verb",
+      "translation": "拼写/拼成",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "practise",
+      "pos": "verb",
+      "translation": "实践/实行",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "verb_basic",
+      "priority": 3
+    },
+    {
+      "lemma": "storm",
+      "pos": "noun",
+      "translation": "暴风雨/骚动",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "snow",
+      "pos": "noun",
+      "translation": "雪/积雪",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "cloud",
+      "pos": "noun",
+      "translation": "云/阴暗",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "sun",
+      "pos": "noun",
+      "translation": "太阳/日",
+      "cefr": "A1",
+      "frequency": 2,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "sunny",
+      "pos": "adj",
+      "translation": "阳光充足的/乐观的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "fog",
+      "pos": "noun",
+      "translation": "雾/迷惑",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "rainy",
+      "pos": "adj",
+      "translation": "下雨的/多雨的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "windy",
+      "pos": "adj",
+      "translation": "多风的/风强的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "snowy",
+      "pos": "adj",
+      "translation": "多雪的/雪的",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "cloudy",
+      "pos": "adj",
+      "translation": "多云的/有愁容的",
+      "cefr": "A1",
+      "frequency": 5,
+      "topic": "weather",
+      "priority": 3
+    },
+    {
+      "lemma": "nurse",
+      "pos": "noun",
+      "translation": "护士/保姆",
+      "cefr": "A1",
+      "frequency": 3,
+      "topic": "work",
+      "priority": 3
+    },
+    {
+      "lemma": "waiter",
+      "pos": "noun",
+      "translation": "侍者",
+      "cefr": "A1",
+      "frequency": 4,
+      "topic": "work",
+      "priority": 3
+    }
   ]
 }
