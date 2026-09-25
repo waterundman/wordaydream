@@ -22,6 +22,14 @@ interface WordlistRowProps {
   lemma: string;
   pos?: string;
   translation?: string;
+  /**
+   * v1.6.2 Stage 3: 真实语料例句 + 中文译文。**全可选**，且一律「存在才渲染」：
+   * 旧词表 / CSV 自定义词表没有这两个字段时，展开区行为与 v1.6.1 **完全一致**。
+   * 契约上二者同生同灭（`verify-wordlists` R1），这里仍按「**两个都有才渲染**」兜底 ——
+   * 异常数据（只有 example 无译文）宁可少显示，也不显示半截内容。
+   */
+  example?: string;
+  exampleTranslation?: string;
   status: WordStatus;
   isExpanded: boolean;
   /**
@@ -108,6 +116,8 @@ function WordlistRowBase({
   lemma,
   pos,
   translation,
+  example,
+  exampleTranslation,
   status,
   isExpanded,
   onToggle,
@@ -147,6 +157,19 @@ function WordlistRowBase({
       </div>
       {isExpanded && translation ? (
         <div className={styles.translation}>{translation}</div>
+      ) : null}
+      {/*
+        v1.6.2 Stage 3: 例句区。两个字段**都有**才渲染 —— 契约 R1 保证同生同灭，
+        此处再兜一层，异常数据只显示译文，不显示半截例句。
+        用 <blockquote>/<p> 而非纯 div：例句是引用性质的语料，语义上更准确。
+      */}
+      {isExpanded && example && exampleTranslation ? (
+        <div className={styles.example}>
+          <p className={styles.exampleText} lang="en">
+            {example}
+          </p>
+          <p className={styles.exampleTranslation}>{exampleTranslation}</p>
+        </div>
       ) : null}
     </div>
   );

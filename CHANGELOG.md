@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.2] — 2026-09-25
+
+### 例句层与数据契约回填 (v1.6.2)
+
+本轮把词表数据的**语境价值**打通：`数据 → 契约 → 校验 → 消费`。v1.6.0 做出了真数据词表（英 4070 / 德 4011 词条），v1.6.1 修好了感知层负载，但词条的「怎么用」始终是空的 —— 更糟的是 `de/a1` 的 645 条例句属于**死数据**（类型系统不承认、零消费、零校验，生成脚本一重跑就静默丢失）。
+
+> **语料许可声明**：英语例句来自 **Tatoeba**（`tatoeba-sentence-pairs-in-mandarin-chinese-english@0.20260520.0`）。该 npm 包声明 MIT，但**上游 Tatoeba 句子为 CC-BY 2.0 FR，署名是许可条件而非可选项**，且包内未附 LICENSE 文件。我方以每条例句的 `exampleSource`（`tatoeba:<sentenceId>`）+ 本文件与本轮 Vault 报告履行署名义务。
+
+#### Stage 1 数据契约扩展 + 校验规则 + SPEC 回填
+
+- `WordlistEntry` 新增三个**全可选**字段：`example` / `exampleTranslation` / `exampleSource`
+- `verify-wordlists.mjs` 新增 5 条规则：R1 同生同灭（禁止半截数据）· R1b `exampleSource` 不得孤立存在 · R2 存在即非空 · R3 例句须含 lemma 的某可接受词形（**弱校验/下界**） · R4 译文须含 CJK · R5 `exampleSource` 须形如 `<source>:<id>`
+- 新增 `scripts/lib/lemmaForms.mjs`：**校验器与生成器共用**的词形逻辑。若两处各写一份，生成器认得的变形与校验器认得的不一致 ⇒ 生成即校验失败（或校验放水）
+- **SPEC 数据契约回填**：`docs/spec/v1.6.0/main.md` §4.1 / §16.2 加勘误注记（起草期快照，字段集与 `total` 均已失效），权威口径迁至 `docs/spec/v1.6.2/main.md` 附录 A
+
+#### Stage 2 英语例句语料生成与接入
+
+- 新增 `scripts/generate-en-examples.mjs`（纯函数可测 + `--dry-run` 默认 / `--write` / `--report`）；新增 `scripts/activate-de-a1-examples.mjs`（**逐行改写**，保留文件既有排版风格，diff 仅 645 行增删）
+- **例句覆盖率 96.5%（3928 / 4070）**：A1 **100%** · A2 99.8% · B1 98.1% · B2 91.2%。超过 SPEC 硬指标（≥94.0%）
+- 繁简归一化用 `opencc-js`（`MIT AND Apache-2.0`，**仅生成期 devDependency，不进产物**）：B2 覆盖 76.8% → 87.0%，是 B2 是否可用的分水岭
+- **`de/a1` 645 条死数据活化**：补齐 `exampleSource`，纳入类型 + 校验 + UI 保护。出处记 `unknown:de-a1` —— 仓库内无德语词表生成脚本、无来源记录，**不伪造 tatoeba id**
+
+#### Stage 3 例句 UI 消费 + 测试契约
+
+- `WordlistRow` 新增可选 props `example` / `exampleTranslation`，展开区「**两个都有才渲染**」（异常数据宁可少显示，也不显示半截内容）；`WordlistPage` 透传
+- 词表 JSON 导出**零代码改动**自动含新字段（导出是整体序列化）—— 但补了 2 条断言把这个「巧合」钉成契约
+- E2E 新增 **T20**：A1 展开 `hope` → 显示 `I hope so.` + `我希望如此。`；B2 展开无例句词 → 例句区 `<p>` 计数为 0
+
+#### 执行期发现（详见 `docs/spec/v1.6.2/main.md` §12，每条附实测数字）
+
+- **多词短语（10 个）词干机制结构性失效**：`tokenize` 按空格切词 ⇒ `no one` 永远不可能作为一个 token 出现，实测 6 个短语条目零覆盖，且 `no one` 拿到语义无关的 `It is just noon.`（词干剥尾 `e` 得 `noon`）。新增 `isMultiWord` / `containsPhrase` 走「词序列连续 / 连写等价」独立规则后，10 个条目全部正确，覆盖 3922 → 3928
+- **`NOISE_SUBJECT` 的 `mr\.` / `mrs\.` 是死分支**：`\b` 要求一侧是单词字符，而 `.` 与空格都是非单词字符 ⇒ 该分支恒不成立。由单测抓出
+- **句长下限 `--min-words=3`**（对 SPEC D3 的加严，非改写）：按 D3 原样实现时 17.5%（686 条）是 ≤2 词碎片句（如 `jump → "Jump."`）。加下限后**覆盖率完全不变**（3922）而碎片句归零，代价仅 +9.7 KB —— 严格占优
+- **选句排序细化为四级**（原形 / 屈折 / 同根派生 / 兜底）：原先两级把「真屈折」与「同根派生」混在一起，抽样发现 `similarly` 的例句里是 `similar`；拆分后同根派生成为**可观测指标**（51 条 / 1.3%）
+- **译文句末半角标点归一化**：3928 条里 64 条以 `.`/`?` 结尾，一并归一为全角（只动句末一个字符）
+- **SPEC 两处基线勘误**：§2.3 / 附录 A.3 的体积表把 en / de 两行**写反**（§12 R1）；§2.2「译文含繁体字 = 3」是起草期粗筛表的假阳性，四种 OpenCC 口径复核真值为 **0**（§12 R2）
+
+#### 已知限制（诚实声明）
+
+- **德语 a2–b2 例句（3366 词条）显式 NOT DELIVERED**：无 zh-de 语料源，拒绝「de→en→zh」二次转译合成
+- **人工抽查弃用率**：60 条抽样中结构性缺陷 **2 条（3.3%）**，源语料误译 1 条；**不宣称零缺陷**
+- **`exampleSource` 未做 UI 展示**：CC-BY 署名本轮由数据字段 + 文档履行，界面呈现留作审批议题
+- **德语多词短语（`sich freuen` / `in der Tat` …）若日后接入例句会大面积失败** —— 真实德语里会分离/变格（`Ich freue mich`），需专门规则
+- **en 词表源文件 +576.6 KB（+75.0%）**（远超 SPEC 估算的 +333.2 KB，估算漏了 `exampleSource` 与 pretty-print 结构开销）；**产物口径 +467.2 KB**（Vite 内联 JSON 时会丢掉空白）。词表按需 `import()`，**首屏不受影响**
+
+### 测试与构建证据
+
+- vitest **163 files / 1493 tests 全绿**（v1.6.1 基线 158 files / 1465 tests，**+5 files / +28 tests，零回归**）
+- E2E web **20/20**（chromium；T20 为 critical）
+- `tsc --noEmit` 0 errors · `oxlint` 0 warnings 0 errors（374 files / 104 rules）
+- `check:versions` PASS（web 3.6.2 / harmony 1.6.2 / versionCode 1000075）
+- `verify:wordlists` PASS（含新 R1–R5；11 处 warning 均为 `de/a1` 既有同形异义）
+
+### 产物体积
+
+| 指标 | v1.6.1 | v1.6.2 | 变化 |
+|---|---|---|---|
+| **首屏 JS** | 306.2 KB | **306.2 KB** | **0（不回退）** |
+| 全量 JS | 2281.7 KB | 2748.9 KB | **+467.2 KB（+20.5%）** |
+| CSS | 178.0 KB | 178.7 KB | +0.7 KB |
+| 公共静态资源 | 511.9 KB | 511.9 KB | 0 |
+
+> **两个「+467.2 / +576.6」为什么不一样**：`en/*.json` 源文件增长 **+576.6 KB**（含 pretty-print 的空格与换行），
+> 而打进 chunk 后只 **+467.2 KB** —— Vite 把 JSON 内联为 JS 对象字面量时会**丢掉那些空白**。
+> 报「+467.2 KB」是**产物口径**，报「+576.6 KB」是**源文件口径**，两者都对，不该混用。
+> 首屏 JS 完全不变，因为词表是 `import()` 按需加载的（v1.6.0 已确立）。
+
 ## [3.6.1] — 2026-09-25
 
 ### 前端优化 · 动画与交互升级 (v1.6.1)

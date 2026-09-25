@@ -22,6 +22,19 @@ export interface WordlistEntry {
   topic?: string;
   /** v1.6.1 Stage 2: 与此词语义混淆的 lemma 数组 (双向标注). 可选, v1 词表无此字段时 getUnlearnedWordsSync 跳过过滤. */
   semanticConflicts?: string[];
+  /**
+   * v1.6.2: 例句 (真实语料, 非人工编造). 可选 —— 词表内并非每个词条都能匹配到合格例句,
+   * 覆盖率见 docs/vault/v1.6.2-EXAMPLE-LAYER-REPORT.md. UI 一律「存在才渲染」.
+   */
+  example?: string;
+  /** v1.6.2: 例句中文译文. 与 example **同时存在或同时缺失** (verify-wordlists R1 强制). 可选. */
+  exampleTranslation?: string;
+  /**
+   * v1.6.2: 例句出处, 形如 `<source>:<id>` (如 `tatoeba:413789`).
+   * 存在的理由是**许可合规**: Tatoeba 数据为 CC-BY 2.0 FR, 署名是许可条件而非可选项.
+   * 来源不可考时记 `unknown` —— 不伪造 id.
+   */
+  exampleSource?: string;
 }
 
 export interface Wordlist {

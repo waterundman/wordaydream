@@ -688,10 +688,13 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
                 // 遮挡后续行. overflow: visible 让 translation 可见.
                 aria-expanded={expandedLemma === entry.lemma || undefined}
               >
+                {/* v1.6.2 Stage 3: 例句与译文透传; 是否渲染由 WordlistRow 内判定 (存在才渲染) */}
                 <WordlistRow
                   lemma={entry.lemma}
                   pos={entry.pos}
                   translation={entry.translation}
+                  example={entry.example}
+                  exampleTranslation={entry.exampleTranslation}
                   status={getStatus(entry.lemma)}
                   isExpanded={expandedLemma === entry.lemma}
                   onToggle={handleToggle}

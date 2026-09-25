@@ -13,14 +13,23 @@
  *   - 等级内 lemma 不重复
  *   - v2 (英语必须): priority ∈ {1,2,3}; topic 非空; frequency ∈ {1..5}
  *   - semanticConflicts: 字符串数组, 每一项必须存在于同一等级词表中, 且双向标注
+ *   - v1.6.2 例句字段 (R1-R5):
+ *       R1  example / exampleTranslation 同时存在或同时缺失; exampleSource 不得孤立存在
+ *       R2  存在时非空 (trim 后)
+ *       R3  example 须含 lemma 的某个可接受词形 (**弱校验/下界**, 见 scripts/lib/lemmaForms.mjs)
+ *       R4  exampleTranslation 须含 CJK 字符
+ *       R5  exampleSource 须形如 "<source>:<id>"
  *
  * 退出码: 0 = 全部通过; 1 = 存在违规
  *
  * 用法: node scripts/verify-wordlists.mjs    (或 npm run verify:wordlists)
- */
+ *
+ * 单测可 import `validateWordlist` 并注入自己的收集器 (被直接执行时才跑 main, 见文件末尾) */
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// v1.6.2 Stage 1: 例句弱校验 (R3) 的词形逻辑必须与生成器**共用同一实现**, 否则必然漂移.
+import { containsLemma } from './lib/lemmaForms.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const WL_BASE = join(projectRoot, 'src', 'data', 'wordlists');
@@ -40,6 +49,8 @@ const errors = [];
 const warnings = [];
 const fail = (msg) => errors.push(msg);
 const warn = (msg) => warnings.push(msg);
+/** 默认收集器 —— 让 `validateWordlist` 可被单测注入自己的收集器 (不污染模块级 state) */
+const defaultSink = { fail, warn };
 
 /**
  * 等级内 lemma 唯一性强制范围.
@@ -53,7 +64,68 @@ async function readJson(p) {
   return JSON.parse(await readFile(p, 'utf8'));
 }
 
-function validateWordlist(language, { key, level, difficulty }, data) {
+/**
+ * v1.6.2 Stage 1: 例句字段契约 (R1–R5).
+ *
+ * 设计原则: **弱校验（下界）**。R3 命中不等于例句正确, 但**不命中几乎一定是错配**
+ * (数据生成是 lemma→句子 的 join, 真实风险是接错词)。不要把它当"例句质量保证"。
+ *
+ * @returns {boolean} 是否全部通过
+ */
+function validateExampleFields(w, at, fail) {
+  const hasExample = w.example !== undefined;
+  const hasTranslation = w.exampleTranslation !== undefined;
+  const hasSource = w.exampleSource !== undefined;
+  let ok = true;
+
+  // R1: example / exampleTranslation 同时存在或同时缺失 (禁止半截数据)
+  if (hasExample !== hasTranslation) {
+    fail(`${at}: example 与 exampleTranslation 必须同时存在或同时缺失 (example=${hasExample}, exampleTranslation=${hasTranslation})`);
+    ok = false;
+  }
+  // R1b: exampleSource 不得孤立存在
+  if (hasSource && !hasExample) {
+    fail(`${at}: exampleSource 存在但 example 缺失 (出处附着在不存在的内容上)`);
+    ok = false;
+  }
+  // R2: 存在时非空 (trim 后)
+  if (hasExample) {
+    if (typeof w.example !== 'string' || w.example.trim() === '') {
+      fail(`${at}: example 存在但为空/非字符串`);
+      ok = false;
+    }
+    if (typeof w.exampleTranslation !== 'string' || w.exampleTranslation.trim() === '') {
+      fail(`${at}: exampleTranslation 存在但为空/非字符串`);
+      ok = false;
+    }
+  }
+  // R4: exampleTranslation 须含 CJK 字符
+  if (hasTranslation && typeof w.exampleTranslation === 'string' && w.exampleTranslation.trim() !== '') {
+    if (!/[\u4e00-\u9fff]/.test(w.exampleTranslation)) {
+      fail(`${at}: exampleTranslation 不含中文字符 ("${w.exampleTranslation.slice(0, 30)}")`);
+      ok = false;
+    }
+  }
+  // R3: example 须含 lemma 的某个可接受词形 (弱匹配, 见 lemmaForms.mjs)
+  if (hasExample && typeof w.example === 'string' && w.example.trim() !== '') {
+    if (!containsLemma(String(w.lemma ?? ''), w.example)) {
+      fail(`${at}: example 不含 lemma "${w.lemma}" 的任何可接受词形 ("${w.example.slice(0, 40)}")`);
+      ok = false;
+    }
+  }
+  // R5: exampleSource 若存在须形如 <source>:<id>
+  if (hasSource) {
+    if (typeof w.exampleSource !== 'string' || !/^[a-z][a-z0-9-]*:.+$/i.test(w.exampleSource)) {
+      fail(`${at}: exampleSource 格式非法 (需形如 "<source>:<id>", 实为 ${JSON.stringify(w.exampleSource)})`);
+      ok = false;
+    }
+  }
+  return ok;
+}
+
+export function validateWordlist(language, { key, level, difficulty }, data, sink = defaultSink) {
+  // 函数级遮蔽模块级收集器, 使单测可注入自己的 sink
+  const { fail, warn } = sink;
   const where = `${language}/${key}.json`;
   const isV2 = V2_LANGUAGES.has(language);
 
@@ -105,6 +177,9 @@ function validateWordlist(language, { key, level, difficulty }, data) {
         conflicts.set(lemmaKey, w.semanticConflicts.map((s) => s.toLowerCase()));
       }
     }
+
+    // v1.6.2 Stage 1: 例句字段契约 (R1-R5)
+    validateExampleFields(w, at, fail);
   });
 
   // --- semanticConflicts 引用完整性 + 双向标注 ---
@@ -203,4 +278,13 @@ async function main() {
   console.log('\n✓ 词表契约校验通过');
 }
 
-await main();
+/**
+ * 只有**直接执行本文件**时才跑 main()；被 `import`（单测）时只暴露 `validateWordlist`，
+ * 否则 import 会导致进程真的去校验并 `process.exit()`。
+ */
+const invokedDirectly =
+  typeof process.argv[1] === 'string' && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (invokedDirectly) {
+  await main();
+}

@@ -959,4 +959,64 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
     await page.screenshot({ path: `${SHOTS_DIR}/T19-route-focus-${testInfo.project.name}.png`, fullPage: true });
   });
+
+  // ==========================================================================
+  // v1.6.2 Stage 3: 新增 T20 —— 例句层的端到端证据
+  // ==========================================================================
+
+  /**
+   * T20 [critical]: 词表页展开行显示真实语料例句 + 中文译文；无例句的词不出现例句区。
+   *
+   * 为什么必须有这条 E2E：
+   *   单元测试（WordlistRow.example.test.tsx）证明的是"给了 props 会渲染"，
+   *   证明不了**数据真的流到了组件**。本页的 props 来自 `loadWordlist()` 按需加载的
+   *   真实 JSON —— 一旦词表字段名漂移、或接线漏传，单元测试全绿而用户什么都看不到。
+   *   这条用例把「数据 → 组件 → 画面」这条链一次钉住。
+   */
+  test('T20 [critical]: 词表链 — 展开行显示例句与译文, 无例句的词不显示例句区', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 20_000 });
+    await page.getByRole('button', { name: '查看词表' }).click();
+
+    // 切到 A1: 真实词表 942 词中 942 词带例句 (覆盖率 100%), 便于稳定取样
+    await page.getByRole('group', { name: '难度' }).getByRole('button', { name: 'A1' }).click();
+    const header = page.getByText(/词表 · \d+ 词/);
+    await header.waitFor({ state: 'visible', timeout: 20_000 });
+
+    // 用搜索缩小到已知带例句的词: hope → "I hope so. / 我希望如此。"
+    const search = page.getByLabel('搜索词表');
+    await search.fill('hope');
+
+    const row = page.getByRole('button', { name: /hope/ }).first();
+    await row.waitFor({ state: 'visible', timeout: 20_000 });
+    // 展开前不应出现例句
+    await expect(page.getByText('I hope so.')).toHaveCount(0);
+
+    await row.click();
+    // 例句区: 英文例句 + 中文译文同时可见
+    await expect(
+      page.getByText('I hope so.'),
+      '展开行应显示真实语料例句 —— 数据没流到组件时这里会空',
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('我希望如此。')).toBeVisible({ timeout: 10_000 });
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T20-wordlist-example-${testInfo.project.name}.png`, fullPage: true });
+
+    // 反向: 换一个**无例句**的词。B2 真实数据有 125 条无例句 (A1 为 100% 覆盖),
+    // `dramatic` 是其一 —— 该下界由数据侧钉住, 见 docs/spec/v1.6.2 §12。
+    await page.getByRole('group', { name: '难度' }).getByRole('button', { name: 'B2' }).click();
+    await expect.poll(async () => {
+      const text = (await header.textContent()) ?? '';
+      return Number(/词表 · (\d+) 词/.exec(text)?.[1] ?? '0');
+    }, { timeout: 20_000 }).toBeGreaterThanOrEqual(1400);
+
+    await search.fill('dramatic');
+    const noExampleRow = page.getByRole('button', { name: /dramatic/ }).first();
+    await noExampleRow.waitFor({ state: 'visible', timeout: 20_000 });
+    await noExampleRow.click();
+    // 该词条无例句: 例句区的 <p> 不应出现 (释义仍是 <div>)
+    await expect(page.locator('[aria-expanded="true"]').locator('p')).toHaveCount(0);
+  });
 });

@@ -369,8 +369,39 @@
   }
 }
 
+/* v1.6.2 Stage 3: 展开行例句区. 左侧细竖线把「语料」与上方的「释义」在视觉上分开 ——
+   释义是词典措辞, 例句是真实语料, 两者来源不同, 不该看起来像同一段文本. */
+.example {
+  padding-top: var(--space-2);
+  padding-left: 36px;  /* 与 .translation 对齐 (24px icon + 12px gap) */
+  margin-top: var(--space-2);
+  border-left: 2px solid var(--color-border, #e8e4dc);
+  padding-inline-start: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  animation: translationEnter 240ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+.exampleText {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: var(--text-sm, 0.875rem);
+  font-style: italic;
+  color: var(--color-text-primary, #2a2622);
+  line-height: var(--leading-snug, 1.5);
+}
+
+.exampleTranslation {
+  margin: 0;
+  font-size: var(--text-xs, 0.8125rem);
+  color: var(--color-text-secondary, #4a4540);
+  line-height: var(--leading-snug, 1.5);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .translation {
+  .translation,
+  .example {
     animation: none;
     opacity: 1;
     transform: none;
