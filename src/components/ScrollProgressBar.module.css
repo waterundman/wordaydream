@@ -32,7 +32,9 @@
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 80ms linear;
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 收敛为 transform。本元素是滚动热路径上的 O(1) 单例
+     (每次滚动都可能改 scaleX), 永久 hint 有实际收益; 但 opacity 从不变化, 去掉。 */
+  will-change: transform;
 }
 
 /* Dark theme: 进度条轨道用低透明度白色微调, 在深色背景上仍可感知 */

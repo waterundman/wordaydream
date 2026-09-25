@@ -20,6 +20,8 @@
   transition:
     opacity 0.3s ease-out,
     transform 0.3s ease-out;
+  /* v1.6.1 Stage 4 (P2-3) 判定保留: opacity 与 transform **都**参与入场动画 (声明为真),
+     且 .hero 是 O(1) 单例 —— 不构成合成层数量随数据增长的问题。 */
   will-change: opacity, transform;
 }
 
@@ -148,6 +150,8 @@
   transition:
     opacity 0.4s ease-out,
     transform 0.4s ease-out;
+  /* v1.6.1 Stage 4 (P2-3) 判定保留: 同上 —— opacity + transform 均为真, 且这组
+     入场元素是固定 5 个 (fleuron/heading/underline/dropcap/cta), O(1)。 */
   will-change: opacity, transform;
 }
 

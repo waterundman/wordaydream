@@ -11,6 +11,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  /* v1.6.1 Stage 1: 首屏之下 section 渲染隔离 (见 TodayCard.module.css 说明). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 .header {

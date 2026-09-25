@@ -28,7 +28,8 @@
 .paperTexture {
   position: absolute;
   inset: 0;
-  background-image: url('/assets/img/paper-texture-dark.jpg');
+  /* v1.6.1 Stage 2: 纹理现代化为 WebP (原 JPG 302 KB -> 160.7 KB, -46.8%). */
+  background-image: url('/assets/img/paper-texture-dark.webp');
   background-size: cover;
   background-position: center;
   opacity: 0.2;

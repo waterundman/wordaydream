@@ -58,7 +58,7 @@
   color: var(--color-text-tertiary);
   transition: transform var(--transition-fast);
   flex-shrink: 0;
-  will-change: transform, opacity;
+  will-change: transform; /* v1.6.1 S4 (P2-3): 收敛 (opacity 从未动画) */
 }
 
 .expanded .chevron {
@@ -150,7 +150,9 @@
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--transition-normal);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 删除 will-change —— 本元素按 FSRS 状态**逐桶重复**渲染,
+     永久 hint 会让每个桶都成为常驻合成层 (层数随数据规模增长)。transform 过渡在
+     真正开始时浏览器会自行提升, 无需提前永久声明。 */
 }
 
 /* FSRS 状态分布颜色 */
@@ -218,7 +220,8 @@
   transform: scaleY(0);
   transform-origin: bottom center;
   transition: transform var(--transition-normal);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 删除 will-change —— 本元素**逐天**重复渲染 (最多 30 根),
+     永久 hint 意味着 30 个常驻合成层, 而它们绝大多数在视口外且从不动画。 */
 }
 
 .durationBar {

@@ -242,6 +242,7 @@ export function HomePage({
           className={`${styles.wordlistBtn} ${todayClassName}`}
           onClick={onViewWordlist}
           type="button"
+          data-prefetch-route="wordlist"
         >
           <svg
             viewBox="0 0 24 24"

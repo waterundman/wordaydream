@@ -23,7 +23,9 @@
   transform: scaleY(0.6);
   transform-origin: bottom center;
   transition: background-color var(--transition-fast), transform var(--transition-fast);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 删除 will-change —— 本伪元素**逐词**重复 (一篇 A2 文章可命中
+     数十个词), 永久 hint 会让每个词条都成为常驻合成层; 而它只在 hover 时做一次
+     0.1s 级的 transform 微动与 background-color 变化 (后者根本不吃合成层)。 */
 }
 
 .highlight:hover {

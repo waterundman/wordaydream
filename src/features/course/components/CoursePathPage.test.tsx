@@ -448,15 +448,24 @@ describe('T06: 路由 #/course 注册', () => {
     expect(VALID_APP_MODES).toContain('course');
   });
 
-  it('App.tsx 导入并渲染 CoursePathPage (源码静态检查)', () => {
-    const appSource = readFileSync(
-      resolve(__dirname, '../../../App.tsx'),
-      'utf-8'
-    );
+  it('App.tsx 经 ROUTE_LOADERS 接入 CoursePathPage (源码静态检查)', () => {
+    const appSource = readFileSync(resolve(__dirname, '../../../App.tsx'), 'utf-8');
 
-    // v0.4.0-harmony Stage 3 (D3): CoursePathPage 改为 React.lazy 动态导入.
-    // 匹配 lazy(() => import('...CoursePathPage')) 模式 (兼容旧静态 import 写法).
-    expect(appSource).toMatch(/(?:import\s+\{[^}]*CoursePathPage[^}]*\}\s+from|import\(['"][^']*CoursePathPage['"]\))[^;]*CoursePathPage/);
+    // v1.6.1 Stage 4: 5 条懒加载工厂收敛到 src/platform/routePrefetch.ts 的 ROUTE_LOADERS
+    // (App 与空闲/意图预取共用**同一个说明符**, 因此预取到的 chunk 就是路由要的那一个)。
+    // v1.6.1 Stage 5: 路由容器由 `lazy()` 换成 `createRouteComponent()` —— 后者在模块
+    // 已预取时同步渲染, 不再闪 LoadingFallback (根因见 routePrefetch.ts 注释)。
+    // 断言随之拆成两跳, 比原先"在 App.tsx 里找 import(...)"更强: 不仅要求 App 接入了
+    // course 路由, 还要求该 loader 真的指向 CoursePathPage 模块。
+    expect(appSource).toMatch(/createRouteComponent\(\s*ROUTE_LOADERS\.course\s*\)/);
+
+    const loaderSource = readFileSync(
+      resolve(__dirname, '../../../platform/routePrefetch.ts'),
+      'utf-8',
+    );
+    expect(loaderSource).toMatch(
+      /import\(['"][^'"]*CoursePathPage['"]\)/,
+    );
 
     // 应有 appMode === 'course' 分支
     expect(appSource).toMatch(/appMode\s*===\s*['"]course['"]/);

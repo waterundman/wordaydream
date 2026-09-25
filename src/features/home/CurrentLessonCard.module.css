@@ -24,6 +24,9 @@
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
   font-family: var(--font-sans, system-ui, sans-serif);
   color: var(--color-ink, #1c1917);
+  /* v1.6.1 Stage 1: 首屏之下 section 渲染隔离 (见 TodayCard.module.css 说明). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
 }
 
 .info {

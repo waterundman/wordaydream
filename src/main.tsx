@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { TooltipProvider } from '@radix-ui/react-tooltip'
 import './index.css'
 import './styles/animations.css'
 import App from './App.tsx'
@@ -42,11 +41,14 @@ if (typeof window !== 'undefined') {
 // 通过 detectPlatform().supportsServiceWorker() 降级为纯网络模式.
 registerServiceWorker()
 
+// v1.6.1 Stage 1: TooltipProvider 已从根部下沉到 ReadingSessionPage.
+// 全仓仅 InteractivePassage (只用于阅读页) 消费 @radix-ui/react-tooltip,
+// 而根级挂载会把 58 KB 的 radix chunk 拖进首屏依赖图 (entry 静态图 → modulepreload).
+// 下沉后 radix 随懒加载的阅读路由 chunk 按需加载; 无 Provider 时 Radix 走默认上下文,
+// 因此既有直接渲染 InteractivePassage 的测试不受影响.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <TooltipProvider delayDuration={300} skipDelayDuration={100}>
-      <HarmonyContentReady />
-      <App />
-    </TooltipProvider>
+    <HarmonyContentReady />
+    <App />
   </StrictMode>,
 )

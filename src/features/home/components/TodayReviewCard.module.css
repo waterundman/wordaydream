@@ -8,6 +8,9 @@
   border-radius: 0.75rem;
   font-size: 0.95rem;
   color: var(--color-ink, #1c1917);
+  /* v1.6.1 Stage 1: 首屏之下 section 渲染隔离 (见 TodayCard.module.css 说明). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 90px;
 }
 
 .icon {

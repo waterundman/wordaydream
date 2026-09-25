@@ -273,7 +273,7 @@
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--duration-normal) var(--ease-out-quart);
-  will-change: transform, opacity;
+  will-change: transform; /* v1.6.1 S4 (P2-3): 收敛 (opacity 从未动画) */
 }
 
 /* Sidebar footer (history + analytics) */

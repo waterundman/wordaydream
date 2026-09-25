@@ -10,6 +10,11 @@
   transition: border-color 0.2s var(--ease-out-quart);
   max-width: 720px;
   width: 100%;
+  /* v1.6.1 Stage 1: 首屏之下 section 渲染隔离 —— 屏外时跳过 layout/paint.
+     `auto <估计值>`: 首次用估计高度占位, 之后浏览器记住实测尺寸, 兼顾不跳动与准确性.
+     不支持 content-visibility 的引擎直接忽略, 属渐进增强. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
 }
 
 .card:hover {

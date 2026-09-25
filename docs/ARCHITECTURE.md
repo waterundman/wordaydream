@@ -528,7 +528,8 @@ function safeNotify(toast, key, message): void {
 - 阅读区 ≥60% 总宽度
 - 阅读区最大宽度 42rem (672px), 居中
 - `.page` class flexbox 容器, sidebar 为 `flex-shrink: 0` flex child (非 fixed)
-- PageTransition 容器 `width: 100%` + `height: 100%`
+- InkWipeTransition 容器 `width: 100%` + `height: 100%`
+  （v1.6.1 Stage 3: 原 `PageTransition` 已确认为死代码并删除，实际过渡容器是 `InkWipeTransition`）
 
 ### 断点配置
 

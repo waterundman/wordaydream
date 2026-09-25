@@ -131,7 +131,8 @@
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--transition-normal);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 删除 will-change —— **逐行**重复渲染 (历史条目数增长即层数增长),
+     而 transform 过渡只在数据变化时一次性播放。 */
 }
 
 .progressText {

@@ -145,7 +145,8 @@
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--duration-normal) var(--ease-out-quart);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 删除 will-change —— **逐课**重复渲染, 且填充值只在数据
+     变化时一次性过渡 (不是每帧变化), 永久合成层的代价远大于收益。 */
 }
 
 .completed .progressFill {

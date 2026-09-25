@@ -144,7 +144,9 @@
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
   transition: border-color var(--transition-fast), transform var(--transition-fast);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 原为 `transform, opacity` —— opacity 在本块从未被动画
+     (transition 只列 border-color / transform), 属假声明, 收敛为 transform。 */
+  will-change: transform;
 }
 
 .input::placeholder {
@@ -173,7 +175,9 @@
   font-family: var(--font-sans);
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast);
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 收敛为实际动画的 transform (原 `transform, opacity` 中
+     opacity 从未变化)。 */
+  will-change: transform;
 }
 
 .submitBtn:hover:not(:disabled) {

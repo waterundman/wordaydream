@@ -791,4 +791,172 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
     await page.screenshot({ path: `${SHOTS_DIR}/T16-wordlist-${testInfo.project.name}.png`, fullPage: true });
   });
+
+  // ==========================================================================
+  // v1.6.1 Stage 5: 新增 T17-T19 —— 为 S1/S4 的承诺补上端到端证据
+  // ==========================================================================
+
+  /**
+   * 在页面内装一个 MutationObserver, 记录"加载中"占位的**出现次数**与**累计可见毫秒**。
+   *
+   * 为什么需要它: `LoadingFallback` 是 Suspense 的瞬时占位, `toHaveCount(0)` 只能证明
+   * "断言那一刻它不在", 无法刻画切换过程中闪了几下、闪了多久 —— 而这才是用户感知的量。
+   * 用 MutationObserver 在页面内以 `performance.now()` 计时: 插入/移除都发生在 DOM
+   * 层面, observer 的微任务回调看得见 (Suspense 的 fallback 必然跨越动态 `import()`
+   * 的 Promise 边界, 不会与重渲染落在同一宏任务内, 所以不漏记)。
+   */
+  interface FallbackProbe {
+    appearances: number;
+    visibleMs: number;
+    stillPresent: boolean;
+  }
+
+  async function installFallbackProbe(page: Page): Promise<void> {
+    await page.evaluate(() => {
+      const probe = { appearances: 0, visibleMs: 0, present: false, since: 0 };
+      (window as unknown as { __fbProbe?: typeof probe }).__fbProbe = probe;
+      const check = (): void => {
+        const now = performance.now();
+        const isPresent = document.querySelector('[role="status"][aria-label="加载中"]') !== null;
+        if (isPresent && !probe.present) {
+          probe.present = true;
+          probe.since = now;
+          probe.appearances += 1;
+        } else if (!isPresent && probe.present) {
+          probe.present = false;
+          probe.visibleMs += now - probe.since;
+        }
+      };
+      check();
+      new MutationObserver(check).observe(document.body, { childList: true, subtree: true });
+    });
+  }
+
+  /** 读取探针结果 (若此刻仍可见, 把当前这一段也算进累计时长)。 */
+  async function readFallbackProbe(page: Page): Promise<FallbackProbe> {
+    return page.evaluate(() => {
+      const probe = (
+        window as unknown as {
+          __fbProbe: { appearances: number; visibleMs: number; present: boolean; since: number };
+        }
+      ).__fbProbe;
+      const visibleMs = probe.visibleMs + (probe.present ? performance.now() - probe.since : 0);
+      return {
+        appearances: probe.appearances,
+        visibleMs: Math.round(visibleMs),
+        stillPresent: probe.present,
+      };
+    });
+  }
+
+  // T17 [critical]: 空闲预取命中 —— 阅读页 chunk 在点击 CTA 之前就已经拉取
+  test('T17 [critical]: 空闲预取 — 阅读页 chunk 在点击 CTA 之前已拉取且不闪加载态', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
+    // 监听动态 chunk 的请求时刻 (preview 模式: assets/ReadingSessionPage-<hash>.js)
+    const chunkRequestedAt: number[] = [];
+    page.on('request', (req) => {
+      if (req.resourceType() === 'script' && req.url().includes('ReadingSessionPage')) {
+        chunkRequestedAt.push(Date.now());
+      }
+    });
+
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 20_000 });
+
+    // 判定性断言 1: 首页空闲窗口内应自动预取阅读页 chunk
+    // (scheduleIdleTask -> prefetchRoute('reading'))。若 S4 的预取没生效, 这里会超时。
+    await expect
+      .poll(() => chunkRequestedAt.length, {
+        timeout: 30_000,
+        message: '首页空闲时未预取阅读页 chunk —— routePrefetch 的空闲调度未生效',
+      })
+      .toBeGreaterThan(0);
+
+    const clickedAt = Date.now();
+    expect(
+      chunkRequestedAt.every((t) => t <= clickedAt),
+      '阅读页 chunk 应全部在点击 CTA **之前**完成请求 (即真预取, 不是点后才拉)',
+    ).toBe(true);
+
+    await installFallbackProbe(page);
+    await page.locator('[data-testid="hero-cta"]').dispatchEvent('click');
+
+    // 阅读页直达
+    await page
+      .locator('button', { hasText: '生成新文本' })
+      .waitFor({ state: 'visible', timeout: 20_000 });
+
+    // 判定性断言 2: chunk 已在缓存时, 切换过程中不该出现"加载中"占位。
+    // 用探针的"出现次数"而非瞬时快照 —— 闪一下再消失也能被抓住。
+    const probe = await readFallbackProbe(page);
+    expect(
+      probe.appearances,
+      `chunk 已预取, 切页过程中不应出现 LoadingFallback (实测探针: ${JSON.stringify(probe)})`,
+    ).toBe(0);
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T17-prefetch-${testInfo.project.name}.png`, fullPage: true });
+  });
+
+  // T18 [critical]: reduced-motion 下路由切换无动画竞态, 且不残留加载态
+  test('T18 [critical]: reduced-motion 下切页无竞态且不残留加载态', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
+    // 显式声明 (不依赖 beforeEach 的默认值): 本用例的前提就是 reduce 分支
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 20_000 });
+    await installFallbackProbe(page);
+
+    await page.locator('[data-testid="hero-cta"]').dispatchEvent('click');
+
+    // 路由容器应切到"阅读" (aria-label 由 App 依 appMode 计算)
+    await expect(page.locator('[data-route-container]')).toHaveAttribute('aria-label', '阅读', {
+      timeout: 20_000,
+    });
+
+    // 内容真实可用。v2.4.0 那类死锁 (卡在 fallback / overlay 不退场) 会在这里失败。
+    // 注意: 本用例是冷启动直达, chunk 未预取, 途中允许出现 fallback —— 断言的是
+    // "切换完成后不残留", 用 toHaveCount(0) 而非"从未出现"。
+    const generateBtn = page.locator('button', { hasText: '生成新文本' });
+    await expect(generateBtn).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('[role="status"][aria-label="加载中"]')).toHaveCount(0);
+
+    // 交互闭环: 生成文本后 token 可渲染 (证明页面不是"看起来在"的假活)
+    await generateBtn.dispatchEvent('click');
+    await page
+      .locator('[data-testid="passage-token"]')
+      .first()
+      .waitFor({ state: 'visible', timeout: 30_000 });
+
+    await page.screenshot({
+      path: `${SHOTS_DIR}/T18-reduced-motion-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
+  });
+
+  // T19 [critical]: 键盘切页后焦点迁移到新页容器 (读屏可播报)
+  test('T19 [critical]: 键盘切页后焦点落在新页容器', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 20_000 });
+
+    // 走真实键盘路径 (非 dispatchEvent): Enter 在 button 上会触发 click,
+    // 而 keydown 会先把"最近一次交互来自键盘"的模态置位 —— 这正是被断言的行为前提。
+    // 反向情形 (鼠标交互后**不**抢焦点) 由单元测试 App.routeFocus.test.tsx T02 覆盖。
+    const cta = page.locator('[data-testid="hero-cta"]');
+    await cta.focus();
+    await page.keyboard.press('Enter');
+
+    const container = page.locator('[data-route-container]');
+    await expect(container).toHaveAttribute('aria-label', '阅读', { timeout: 20_000 });
+    await expect(
+      container,
+      '键盘用户切页后焦点应落在新页容器 —— 否则读屏不播报新页面, 下一次 Tab 从文档开头重来',
+    ).toBeFocused({ timeout: 20_000 });
+
+    await page.screenshot({ path: `${SHOTS_DIR}/T19-route-focus-${testInfo.project.name}.png`, fullPage: true });
+  });
 });

@@ -14,7 +14,7 @@ import { useAppModeStore, VALID_APP_MODES, type AppMode } from './useAppModeStor
  *
  * 约束:
  * - 不引入 react-router-dom, 仅加 hash 同步层
- * - 支持 prefers-reduced-motion: 本 hook 纯数据同步, 无动画; 页面过渡由 PageTransition 处理
+ * - 支持 prefers-reduced-motion: 本 hook 纯数据同步, 无动画; 页面过渡由 InkWipeTransition 处理
  *
  * 实现说明:
  * - 3 个独立 useEffect, 依赖数组最小化, 避免重复绑定

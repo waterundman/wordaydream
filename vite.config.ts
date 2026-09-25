@@ -214,9 +214,14 @@ export default defineConfig(({ mode }) => {
             ) {
               return 'data-parsers'
             }
-            if (path.includes('/node_modules/@radix-ui/react-tooltip')) {
-              return 'radix-ui'
-            }
+            // v1.6.1 Stage 1: 这里**曾经**有一条 `@radix-ui/react-tooltip -> 'radix-ui'`
+            // 的分组规则, 现已移除. 根因(实测, 见 docs/spec/v1.6.1/main.md §3 P0-1):
+            // rolldown 在为一个"孤立"包(仅被懒加载路由消费)单独建 chunk 时, 会把
+            // React 运行时(react/cjs/react.production.js 的 react.transitional.element /
+            // Symbol.for('react.portal') / __REACT_DEVTOOLS 标记)**同时**打进
+            // react-vendor(178 KB) 和 radix-ui(58 KB) 两个 chunk, 造成 React 双份.
+            // 移除该规则后, radix 代码被 rolldown 自行内联进它真正被引用的 chunk,
+            // 首屏 JS 303.1 KB vs 移除前 349.1 KB(全量 JS 零变化, 证明是去重复而非挪位置).
           },
         },
       },

@@ -68,6 +68,7 @@ export function HeroSection({
             onClick={onStart}
             type="button"
             data-testid="hero-cta"
+            data-prefetch-route="reading"
           >
             开始阅读
             <svg

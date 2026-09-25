@@ -65,7 +65,14 @@ export const InkWipeTransition = memo(function InkWipeTransition({
     // 上膛 sprig path 长度 (在 revealing 开始前设置)
     const overlay = overlayRef.current;
     if (overlay) {
-      const paths = overlay.querySelectorAll<SVGPathElement>('path');
+      // v1.6.1 Stage 3: 过滤掉无法度量长度的 path。jsdom 未实现
+      // SVGGeometryElement.getTotalLength, 直接调用会抛 TypeError —— 该异常会穿透
+      // effect 冒泡到 ErrorBoundary, 把整个应用换成错误页。sprig 纯属装饰, 量不到
+      // 长度就跳过 dash 预置 (CSS 里有 `stroke-dasharray: var(--sprig-length, 500)`
+      // 兜底), 绝不能让装饰性增强拖垮应用。
+      const paths = Array.from(overlay.querySelectorAll<SVGPathElement>('path')).filter(
+        (p) => typeof p.getTotalLength === 'function',
+      );
       paths.forEach((p) => {
         const len = p.getTotalLength();
         p.style.setProperty('--sprig-length', String(len));

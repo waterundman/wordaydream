@@ -5,6 +5,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.1] — 2026-09-25
+
+### 前端优化 · 动画与交互升级 (v1.6.1)
+
+本轮不改架构，只做**可测量的优化与体验修补**：首屏负载、静态资源格式、过渡一致性、动效守卫、焦点可达性。全部为前端代码与静态资源，无外部服务依赖。
+
+#### Stage 1 首屏负载收窄
+
+- **首屏 JS 389.8 KB → 303.1 KB（−86.6 KB / −22.2%）**，超出 SPEC 目标（≤ 350 KB）
+- `App.tsx` 静态依赖下沉：`mocks/passages`（26.2 KB chunk）/ `useCourseStore` / `achievements/buildContext` / `data/courses` 原经 `useReadingSessionStore` 静态进入首屏依赖图，收窄为只取 `mode` 后移出
+- 修 `vite.config.ts` 的 `manualChunks` 规则：`@radix-ui/react-tooltip → 'radix-ui'` 为「仅被懒加载路由消费的孤立包」单独建 chunk 时，**rolldown 会把 React 运行时同时打进 `react-vendor` 与 `radix-ui`（实测两份都含 `react.transitional.element`）**；移除该规则后 React 只剩一份。判定依据：全量 JS 仅 +1.6 KB —— 收益是「去重复」而非「挪位置」
+- 附带职责修正：`main.tsx` 根部 `TooltipProvider` 下沉至 `ReadingSessionPage`（全仓唯一消费者）
+- HomePage 首屏之下 4 个 section 落地 `content-visibility: auto` + `contain-intrinsic-size`（AchievementWall / TodayCard / TodayReviewCard / CurrentLessonCard）
+- 新增 `scripts/measure-bundle.mjs`（首屏 JS / 全量 JS / CSS / 公共静态资源 → JSON），建立 before/after 可对比基线
+
+#### Stage 2 静态资源现代化
+
+- **位图子集 1061.3 KB → 471.9 KB（−589.4 KB / −55.5%）**，达成 SPEC 目标（≤ 500 KB）
+- 3 张纹理 JPG → WebP q80（302.0→160.7 / 213.9→68.6 / 206.2→61.1 KB，−59.8%）；2 个图标 PNG → `quantize256`（294.3→157.3 / 44.9→24.2 KB，−46.5%）
+- 引用同步更新：3 处 CSS `background-image` + 1 处 `<img src>`（走 `publicAssetUrl()`）+ `publicAssetUrl.test.ts` 文件名断言
+- **回滚路径**：原 JPG 移至 `assets-sources/`（保留但不进 `public/` —— 若留在 `public/` 会被 Vite 整目录复制进 `dist/`，静态资源合计变成 1211.3 KB，验收直接不达标）；新增 `scripts/optimize-static-assets.mjs` 与 `verify:static-assets --check`
+- 每张转换图均目视复核（重点确认 icon-512 无色带）
+
+#### Stage 3 动画与过渡升级
+
+- 删除死代码 `PageTransition.tsx` / `PageTransition.module.css`（全仓零引用，仅被注释提及）
+- `App.tsx` 的 5 份 `<InkWipeTransition>` 包裹 → **单层包裹 + 内层按 mode `key` 切内容**（实测 `<InkWipeTransition>` 使用点 5 → 1）
+- 修 `navigateTo` 一致性缺陷：`isTransitioning` 期间不再静默同步换页，改为**排队 pendingMode**，消除「首屏开场窗口内导航无过渡」
+- 修 `InkWipeTransition` 一个真实健壮性缺陷：对装饰性 sprig SVG 的 `path` 直接调 `getTotalLength()`，该 API 缺失时**未捕获异常会冒泡到 `ErrorBoundary` 把整个应用替换成错误页**。改为 `typeof p.getTotalLength === 'function'` 过滤，量不到长度则由 CSS `stroke-dasharray: var(--sprig-length, 500)` 兜底
+- **View Transitions API：探针完成、判定 NOT DELIVERED**（非缺少支持 —— 鸿蒙目标内核 M132、M114 均 ≥ Chrome 111）。理由是设计收益为负：现有墨迹转场 cover 阶段已全屏遮挡内容切换，VT 作用面与之完全重叠；取代则等于把品牌化转场换成通用交叉淡入，属产品降级；叠加则需 `document.startViewTransition(async () => …)` 内 await 懒加载 chunk，与 `Suspense` 结构直接冲突
+
+#### Stage 4 交互逻辑升级
+
+- **路由切换焦点管理**：切页后把焦点迁移到新页容器（`tabIndex=-1` + 按 mode 变化的 `aria-label`，供读屏播报）；**鼠标交互不抢焦**（仅在「最近一次交互来自键盘」时迁移）
+- `useCursorGlow` 守卫：`pointer: coarse` 不挂载 / `prefers-reduced-motion: reduce` 不挂载；删除死类名 `'cursor-glow'`（全仓无 CSS 规则命中），改 `aria-hidden="true"` + `data-cursor-glow`。守卫的失败方向是「`matchMedia` 不可用时照旧挂载」
+- **路由预取**（P2-2）：空闲预取（复用 `scheduleIdleTask`，串行，单次上限 3 chunk）+ 委托式意图预取（`[data-prefetch-route]` 的 `pointerover`/`focusin`）；`navigator.connection.saveData` 时完全不做；预取失败静默
+- **`will-change` 逐站点审计**：审计面 20 站点 / 14 文件 → **9 处属性收敛**（`transform, opacity` → `transform`，因这些块的 transition 只列 `transform`）、**5 处整条删除**（元素数随数据规模增长，如逐词高亮、逐天柱、逐课进度条）、**6 处判定保留**（无限动画 / O(1) 入场揭示 / JS 真实改写的内联声明）
+- 新增 `src/__tests__/willChangeAudit.test.ts`（5 项）把审计纪律固化为机械断言（解析 `will-change` 站点 + 变体/后代块的 `transition`/`animation` 目标 + 被引用 `@keyframes` 实际变化的属性）
+
+#### Stage 5 验证与归档
+
+- **`React.lazy` 首次渲染必定挂起一次** → 以 `createRouteComponent` 取代（本轮最重要的发现）
+  - E2E T17 探针实测：**chunk 确实已在点击前预取完成**（请求时刻早于点击），但 `LoadingFallback` 仍出现 **1 次 / 可见约 54 ms**（`{"appearances":1,"visibleMs":54}`）
+  - 根因：`React.lazy` 在首次渲染时才调工厂，拿到的是**崭新的 `import()` promise**（不是已落定的那个），于是首次渲染必然挂起一次。预取只能让这次 `import()` 瞬间落定，不能消除挂起
+  - 该 54 ms 在正常动效下被墨迹覆盖层遮住，但 **`prefers-reduced-motion` 用户没有覆盖层、会直接看到** → 判定为**必须修实现，不能放宽断言**
+  - `createRouteComponent` 把「模块是否已就绪」变成渲染时可知的事实：已 resolved → **同步渲染真实组件**；pending → `throw promise`（Suspense 语义不变）；rejected → `throw error`（交给 `ErrorBoundary`）
+- 新增 `src/platform/routePrefetch.ts` / `routePrefetch.test.ts`（9 项）、`src/__tests__/staticAssets.test.ts`（5）、`src/hooks/useCursorGlow.guard.test.ts`（4）、`App.routeFocus.test.tsx`（3）、`App.transition.test.tsx`（3）、`willChangeAudit.test.ts`（5）、`scripts/measure-bundle.test.mjs`（2）
+- E2E `e2e/web.spec.ts` 新增 T17（空闲预取命中且不闪加载态）/ T18（reduced-motion 下切页无竞态且不残留加载态）/ T19（键盘切页后焦点落在新页容器），**19/19 通过**
+
+### 测试与构建证据
+
+- vitest **158 files / 1465 tests 全绿**（v1.6.0 基线 151 files / 1434 tests，**+7 files / +31 tests，零回归**）
+- E2E web **19/19**（chromium；T17–T19 为 critical）
+- tsc 0 错误；oxlint 0 警告 0 错误；`npm run build` 与 `npm run build:harmony` 均通过
+- `check:versions` PASS；`npm run verify:wordlists` PASS；`npm run verify:static-assets` PASS
+- **判别力验证（变异测试，非声明）**：
+  - 把 `will-change: transform, opacity` 加回 `AnalyticsPanel .accuracyBar,.durationBar` → `willChangeAudit.test.ts` **转红 2 项**（T01 给出属性级定位「声明 "opacity" 但在本元素上看不到对应 transition/@keyframes」），回滚后 5/5 恢复绿
+  - 去掉 `createRouteComponent` 的 `resolved` 快路径（即退回 `React.lazy` 行为）→ `routePrefetch.test.ts` **转红**（T07 的 `queryByTestId('fb')` 拿到 `加载中` fallback），回滚后 9/9 恢复绿
+- **产物体积（before → after，`measure-bundle` 实测）**：
+
+  | 指标 | v1.6.0 基线 | v1.6.1 | Δ | Δ% |
+  |---|---|---|---|---|
+  | 首屏 JS | 389.8 KB | **306.2 KB** | −83.6 KB | −21.5% |
+  | 全量 JS | 2276.9 KB | 2281.7 KB | +4.8 KB | +0.2% |
+  | CSS | 178 KB | 178 KB | 0 | 0% |
+  | 公共静态资源 | 1101.3 KB | **511.9 KB** | −589.4 KB | −53.5% |
+  | 　其中位图 | 1061.3 KB | **471.9 KB** | −589.4 KB | −55.5% |
+
+### 已知限制（诚实声明）
+
+- **自动测试沿用既有 Web / 桥接回归套件 + Web E2E（chromium），未做模拟器或真机运行验证**
+- **`will-change` 收敛的收益边界**：本环境无法读取 compositor 层内存 / 合成耗时。9 处**属性收敛**是语义与维护性收敛 —— 两种写法都会提升同一合成层，**无度量差异**，不应记作性能优化；5 处**删除**的收益是「合成层数量从 O(N数据) 降到 0」，属**原理推算而非实测**，残余风险是这些元素过渡的起始帧可能多一次提升动作。已对课程页（逐课进度条）与统计面板（逐天柱）做过目视抽查
+- **未做**：没有为入场类元素引入 `transitionend` → 加 `.settled` → `will-change: auto` 的释放管线（这些站点是 O(1)，管线引入的额外状态与生命周期管理收益不抵复杂度）。已作为**有意的非目标**留档
+- **View Transitions API 未交付**（判定理由见 Stage 3），探针证据与鸿蒙内核版本对照表已留档
+- **`versionCode` 在 1.x 线没有机器校验**：`check-version-alignment.mjs` 的线性公式 `1000000 + (minor - 3) * 5 + patch` 只对 harmony `major === 0` 成立（对 1.x 会给出 `1000015` 而非实际的 `1000065`），脚本在 `major !== 0` 时**跳过校验**。1.x 线实际节奏为**每版 +5**（0.5.0→1000010 … 1.5.0→1000060、1.6.0→1000065），故 `1.6.1 → 1000070`。**「`check:versions` PASS」不等于「versionCode 已被校验」**，已列为 v1.6.2 候选改进项
+- SPEC §2.2 记录的 `icon-512.png` 为「用无损 PNG 存了照片型内容」，量化到 256 色后仍占 157 KB（占位图子集的 33%）；进一步的体积下降需要改格式（WebP/AVIF 图标）或换图源，超出本轮范围
+- 版本对齐维护：web `3.6.1`、AppScope / entry `1.6.1`、versionCode `1000070`（harmony major≠0 时 versionCode 校验自动跳过）
+
 ## [3.6.0] — 2026-09-25
 
 ### 英语词表数据工程：80 词占位 → 真实 CEFR 词表 (v1.6.0 Stage 1)

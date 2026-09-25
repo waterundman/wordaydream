@@ -92,7 +92,7 @@
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast);
   transform-origin: center;
-  will-change: transform, opacity;
+  will-change: transform; /* v1.6.1 S4 (P2-3): 收敛 (opacity 从未动画) */
 }
 
 .btn:hover:not(:disabled) {

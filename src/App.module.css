@@ -1,42 +1,16 @@
-.app {
-  min-height: 100vh;
-  background: var(--color-bg);
-}
-
-.rightPanel {
-  position: fixed;
-  top: 2rem;
-  right: 2rem;
-  width: 18rem;
-  max-height: calc(100vh - 4rem);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
-  overflow-y: auto;
-  box-shadow: var(--shadow-sm);
-  z-index: var(--z-elevated);
-}
-
-.rightPanelInner {
-  padding: var(--space-6) var(--space-5);
-}
-
-/* Responsive: small screens hide right panel, medium narrow it */
-@media (max-width: 767px) {
-  .rightPanel {
-    display: none;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .rightPanel {
-    width: 14rem;
-    right: var(--space-4);
-    top: var(--space-4);
-    max-height: calc(100vh - var(--space-8));
-  }
-
-  .rightPanelInner {
-    padding: var(--space-4) var(--space-3);
-  }
+/**
+ * v1.6.1 Stage 4 (D4): 路由焦点容器.
+ *
+ * 切页后把焦点移到这个容器上, 让读屏播报新页面 (aria-label), 键盘用户的下一次
+ * Tab 从新页面开头继续 —— 而不是像以前那样落回 <body>。
+ *
+ * `outline: none` 是必要的: 该容器是 tabIndex={-1} 的程序化焦点目标, 不是可交互
+ * 控件。触发聚焦的前提恰好是"最近一次交互来自键盘", 此时 Chrome 会让
+ * :focus-visible 命中, 从而在整个视口外围画一圈焦点环 —— 那是纯噪音。
+ *
+ * 说明: 本文件原先的 `.app` / `.rightPanel` / `.rightPanelInner` 三条规则经核实
+ * 全仓零引用 (无任何模块 import 本文件), 属历史遗留, 已随本次改动清理。
+ */
+.routeContainer {
+  outline: none;
 }

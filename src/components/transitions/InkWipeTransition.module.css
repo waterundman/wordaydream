@@ -23,7 +23,9 @@
   opacity: 1;
   overflow: hidden;
   pointer-events: none;
-  will-change: transform, opacity;
+  /* v1.6.1 Stage 4 (P2-3): 收敛为 transform —— 覆层 opacity 恒为 1, 从不参与动画;
+     覆盖/揭开都只走 transform: scaleX (见下方 .covering / .revealing)。 */
+  will-change: transform;
 }
 
 /* 阶段 1: cover — 从左向右覆盖全屏 */
@@ -41,7 +43,9 @@
 .texture {
   position: absolute;
   inset: 0;
-  background-image: url('/assets/img/paper-texture-dark.jpg');
+  /* v1.6.1 Stage 2: 纹理现代化为 WebP (原 JPG 302 KB -> 160.7 KB, -46.8%).
+     素材留存在 assets-sources/img/, 由 scripts/optimize-static-assets.mjs 生成. */
+  background-image: url('/assets/img/paper-texture-dark.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

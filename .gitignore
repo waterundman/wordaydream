@@ -65,3 +65,9 @@ test-results/
 # v1.6.0 S1: 词表生成用的上游数据源 (npm pack 产物, 约 300MB, 不入库)
 # 复现: npm pack @polyglot-bundles/en-word-lists && npm pack ecdict
 .tmp-wl/
+
+# v1.6.1 S1/S2: 本地度量与静态资源优化中间产物 (before/after 报告、对比图)
+# 复现: node scripts/measure-bundle.mjs --out .tmp-metrics/<label>.json
+#       node scripts/optimize-static-assets.mjs --dry-run
+.tmp-metrics/
+.tmp-assets/

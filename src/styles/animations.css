@@ -37,6 +37,13 @@
 [data-breathing] {
   animation: breathe 4000ms ease-in-out infinite;
   animation-delay: var(--breathing-delay, 0ms);
+  /* v1.6.1 Stage 4 (P2-3) 判定保留: @keyframes breathe 同时动画 transform 与 opacity
+     (见文件顶部), 两条声明均为真; 且这是**无限循环**动画 —— hint 的收益贯穿元素整个
+     生命周期, 与"一次性入场动画"的浪费模式不同。
+     现状注记: 截至 v1.6.1 全仓没有 JSX 使用 data-breathing / .breathing-effect
+     (仅 useBreathingEffect 查询选择器), 因此当前 0 个匹配元素, 零合成层开销;
+     规则保留作为已交付的 utility。
+     唯一能安全跳过动画的因素是用户在 OS 层开了 reduce-motion, 见下方媒体查询。 */
   will-change: transform, opacity;
 }
 

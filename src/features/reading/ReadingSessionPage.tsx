@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { InteractivePassage } from './components/InteractivePassage';
 import { ReadingHistoryPanel } from './components/ReadingHistoryPanel';
 import { useReadingSessionStore } from './store/useReadingSessionStore';
@@ -591,7 +592,12 @@ export function ReadingSessionPage() {
                   </div>
                 )}
                 <ReviewPromptBanner language={language} onGenerate={handleGenerate} />
-                <InteractivePassage isReplay={session?.isReplay ?? false} hideTitle />
+                {/* v1.6.1 Stage 1: TooltipProvider 由 main.tsx 根部下沉至此.
+                    InteractivePassage 是全仓唯一的 @radix-ui/react-tooltip 消费者,
+                    根部挂载会把 58 KB radix chunk 拖进首屏依赖图; 下沉后随本懒加载路由按需加载. */}
+                <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+                  <InteractivePassage isReplay={session?.isReplay ?? false} hideTitle />
+                </TooltipProvider>
                 {session?.isReplay && (
                   <div className={styles.replayCta}>
                     <p className={styles.replayText}>这是历史重读模式，词汇作答已禁用。</p>

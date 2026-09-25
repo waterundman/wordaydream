@@ -54,7 +54,8 @@
 .paperTexture {
   position: absolute;
   inset: 0;
-  background-image: url('/assets/img/paper-texture-warm.jpg');
+  /* v1.6.1 Stage 2: 纹理现代化为 WebP (原 JPG 213.9 KB -> 68.6 KB, -67.9%). */
+  background-image: url('/assets/img/paper-texture-warm.webp');
   background-size: cover;
   opacity: 0.15;
   border-radius: inherit;

@@ -15,8 +15,9 @@ describe('publicAssetUrl', () => {
   });
 
   it('normalizes base and asset separators', () => {
-    expect(publicAssetUrl('/assets/img/paper-texture-warm.jpg', '/wordaydream')).toBe(
-      '/wordaydream/assets/img/paper-texture-warm.jpg',
+    // v1.6.1 Stage 2: 样例文件名同步为实际存在的优化后纹理 (原 .jpg 已现代化为 .webp)
+    expect(publicAssetUrl('/assets/img/paper-texture-warm.webp', '/wordaydream')).toBe(
+      '/wordaydream/assets/img/paper-texture-warm.webp',
     );
   });
 });

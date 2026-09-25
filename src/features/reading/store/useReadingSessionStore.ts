@@ -8,14 +8,51 @@ import type {
   Passage,
   GrammarPoint,
 } from '../../../types';
-import { getMockPassage } from '../../../mocks/passages';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useReadingHistoryStore } from './useReadingHistoryStore';
 import { useStreakStore } from '../../streak/store/useStreakStore';
 import { useAchievementStore } from '../../achievements/store/useAchievementStore';
 import { buildAchievementContext } from '../../achievements/services/buildContext';
-import { useCourseStore } from '../../course/store/useCourseStore';
-import { getLessonById } from '../../../data/courses';
+
+/**
+ * v1.6.1 Stage 1: 重依赖懒加载 —— 把它们移出首屏依赖图.
+ *
+ * 背景: 本 store 被 App.tsx 静态导入 (只为读 mode), 于是它的全部静态 import 都进入
+ * entry 静态图, 进而被 Vite 推导进 `modulepreload` 清单 —— 首屏白下载 ~42 KB:
+ *   - `mocks/passages`  (26.2 KB chunk): 仅 LLM 失败时的同步兜底语料
+ *   - `useCourseStore`  (15.9 KB chunk) + `data/courses`: 仅 lessonId 非空时使用
+ * 两者都只在 `loadSession` (async) 内部使用, 故改为按需动态导入并缓存 Promise
+ * (ESM 本身也缓存, 这里缓存 Promise 是为了避免重复构造 import 调用).
+ *
+ * 与本文件既有的 `await import('../services/passageGenerator')` (见 loadSession)
+ * 是同一设计意图: 让非首屏必需的重模块留在懒加载边界之后.
+ */
+type CourseModule = {
+  useCourseStore: typeof import('../../course/store/useCourseStore')['useCourseStore'];
+  getLessonById: typeof import('../../../data/courses')['getLessonById'];
+};
+
+let courseModulePromise: Promise<CourseModule> | null = null;
+function loadCourseModule(): Promise<CourseModule> {
+  if (!courseModulePromise) {
+    courseModulePromise = Promise.all([
+      import('../../course/store/useCourseStore'),
+      import('../../../data/courses'),
+    ]).then(([course, courses]) => ({
+      useCourseStore: course.useCourseStore,
+      getLessonById: courses.getLessonById,
+    }));
+  }
+  return courseModulePromise;
+}
+
+let mockPassagesPromise: Promise<typeof import('../../../mocks/passages')> | null = null;
+function loadMockPassages(): Promise<typeof import('../../../mocks/passages')> {
+  if (!mockPassagesPromise) {
+    mockPassagesPromise = import('../../../mocks/passages');
+  }
+  return mockPassagesPromise;
+}
 
 /**
  * v2.2.4 Stage 3 (Bug 14): 从(可能不完整的)JSON 文本中增量提取 "text" 字段的当前值.
@@ -223,6 +260,8 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         // targetLemmas 注入 prompt). 不改变 loadSession 签名, 仅内部读取课程静态定义.
         let targetLemmas: string[] | undefined;
         if (lessonId) {
+          // v1.6.1 Stage 1: 按需加载课程模块 (不再静态导入, 见文件头注释).
+          const { useCourseStore, getLessonById } = await loadCourseModule();
           const courseState = useCourseStore.getState();
           if (courseState.currentCourseId && courseState.currentModuleId) {
             const found = getLessonById(
@@ -270,6 +309,8 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
           );
         } catch {
           if (controller.signal.aborted) return;
+          // v1.6.1 Stage 1: 按需加载 mock 兜底语料 (不再静态导入, 见文件头注释).
+          const { getMockPassage } = await loadMockPassages();
           const basePassage = getMockPassage(language, difficulty);
           const reviewTokens = buildReviewTokens(basePassage, dueCards);
           passage = {
@@ -331,6 +372,8 @@ export const useReadingSessionStore = create<ReadingSessionState>()(
         // 只调用 recordEncounter; recordLearning 在答题答对后才调用.
         // lessonId 为空或未提供时完全跳过 (向后兼容, 不调用 useCourseStore).
         if (lessonId) {
+          // v1.6.1 Stage 1: 按需加载课程模块 (不再静态导入, 见文件头注释).
+          const { useCourseStore } = await loadCourseModule();
           const courseStore = useCourseStore.getState();
           const seenLemmas = new Set<string>();
           for (const token of passage.tokens) {

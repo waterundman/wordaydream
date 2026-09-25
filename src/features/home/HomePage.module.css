@@ -229,6 +229,9 @@
   transition:
     opacity var(--duration-normal) var(--ease-out-quart),
     transform var(--duration-normal) var(--ease-out-quart);
+  /* v1.6.1 Stage 4 (P2-3) 判定保留: 滚动揭示只作用于首页少数几个区块 (O(1)),
+     opacity + transform 均为真动画。下方 reduced-motion 块用 `will-change: auto`
+     在"无过渡"分支正确释放该 hint。 */
   will-change: opacity, transform;
 }
 

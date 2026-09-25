@@ -146,9 +146,9 @@ export function AchievementUnlockOverlay({ visible, streak, title, onDismiss }: 
       aria-label={`成就解锁：连续 ${streak} 天，${title}`}
       onClick={handleDismiss}
     >
-      {/* 墨溅底纹 (位于徽章之后) */}
+      {/* 墨溅底纹 (位于徽章之后) — v1.6.1 Stage 2: JPG -> WebP (206.2 KB -> 61.1 KB) */}
       <img
-        src={publicAssetUrl('assets/img/ink-splash-terracotta.jpg')}
+        src={publicAssetUrl('assets/img/ink-splash-terracotta.webp')}
         className={`${styles.inkSplash} ${inkVisible ? styles.visible : ''}`}
         alt=""
         aria-hidden="true"
