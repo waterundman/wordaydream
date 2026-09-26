@@ -50,22 +50,44 @@ export function buildSkipReport(reason, args) {
   });
 }
 
-/** 从 hilog 行提取最早/最晚时间戳 (HH:MM:SS.mmm) 并计算毫秒差 (纯函数). */
-export function computeColdStartMs(logWindow) {
-  const ts = [...logWindow.matchAll(/(\d{2}):(\d{2}):(\d{2})\.(\d{3})/g)].map((m) => {
-    const [, h, mi, s, ms] = m;
-    return Number(h) * 3600000 + Number(mi) * 60000 + Number(s) * 1000 + Number(ms);
-  });
-  if (ts.length < 2) return null;
-  const min = Math.min(...ts);
-  const max = Math.max(...ts);
-  // 跨午夜保护: 差值异常大 (>1h) 视为无效.
-  return max - min > 3600000 ? null : max - min;
+/** 解析 hilog 行首 `MM-DD HH:MM:SS.mmm` 为毫秒时间戳 (真实日期数学, 跨午夜/跨月正确; 纯函数). */
+const HILOG_TS_RE = /(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+
+export function lineEpochMs(line) {
+  const m = line.match(HILOG_TS_RE);
+  if (!m) return null;
+  const [, mo, d, h, mi, s, ms] = m;
+  return Date.UTC(2020, Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s), Number(ms));
 }
 
-/** 从 hidumper 输出提取 PSS 合计行 (纯函数). */
+/**
+ * 冷启动耗时 (纯函数): 口径 = 最后一条 `Page begin` → 最后一条 `Web content ready` 的
+ * 时间戳差. 必须按关键词过滤 —— hilog 窗口内混有大量无关系统日志, 直接取全窗口
+ * min/max 时间戳跨度会把系统日志间隔当成冷启动 (实测会得出 188s 假值).
+ * 任一关键词缺失、时间戳乱序 (差<0) 或差 >1h 均返回 null.
+ */
+export function computeColdStartMs(logWindow) {
+  if (typeof logWindow !== 'string' || logWindow.length === 0) return null;
+  const lastTsOf = (label) => {
+    const rows = logWindow.split('\n').filter((l) => l.includes(label));
+    if (rows.length === 0) return null;
+    return lineEpochMs(rows[rows.length - 1]);
+  };
+  const begin = lastTsOf('Page begin');
+  const ready = lastTsOf('Web content ready');
+  if (begin === null || ready === null) return null;
+  const diff = ready - begin;
+  return diff >= 0 && diff <= 3600000 ? diff : null;
+}
+
+/**
+ * 从 hidumper --mem 输出提取进程 PSS 合计 (KB, 纯函数).
+ * API 22 实测格式为三行表头 + `Total  <pssTotal> ...` 行 (Pss Total 列);
+ * 兼容旧 `TOTAL PSS:` 单行格式.
+ */
 export function extractPssKb(hidumperOutput) {
-  const m = hidumperOutput.match(/TOTAL PSS:\s*(\d+)/i) || hidumperOutput.match(/TOTAL:\s*(\d+)/i);
+  const m =
+    hidumperOutput.match(/TOTAL PSS:\s*(\d+)/i) || hidumperOutput.match(/^\s*Total\s+(\d+)/m);
   return m ? Number(m[1]) : null;
 }
 

@@ -88,7 +88,7 @@ describe('Stage 4 — T03 [non-critical]: collect-perf script units', () => {
     expect(r.ok).toBe(true);
   });
 
-  it('computeColdStartMs: 同分钟时间戳差正确', () => {
+  it('computeColdStartMs: Page begin -> Web content ready 关键词时间戳差正确', () => {
     const log = [
       '09-09 17:00:00.100  Page begin',
       '09-09 17:00:02.600  Web content ready',
@@ -96,18 +96,70 @@ describe('Stage 4 — T03 [non-critical]: collect-perf script units', () => {
     expect(computeColdStartMs(log)).toBe(2500);
   });
 
-  it('computeColdStartMs: 无时间戳返回 null (跨午夜保护)', () => {
+  it('computeColdStartMs: 关键词缺失返回 null', () => {
     expect(computeColdStartMs('no timestamps here')).toBeNull();
-    // HH:MM:SS 无日期: 跨午夜窗口的 min/max 差 > 1h, 被 1h 保护正确拦截为 null.
-    const crossMidnight = [
-      '09-09 23:59:59.900  a',
-      '09-10 00:01:59.900  b',
-    ].join('\n');
-    expect(computeColdStartMs(crossMidnight)).toBeNull();
+    expect(computeColdStartMs('09-09 17:00:00.100  Page begin')).toBeNull();
+    expect(computeColdStartMs('09-09 17:00:00.100  Web content ready')).toBeNull();
+    expect(computeColdStartMs('')).toBeNull();
   });
 
-  it('extractPssKb: 解析 TOTAL PSS 行, 未命中返回 null', () => {
+  it('computeColdStartMs: 跨午夜/跨月由真实日期数学正确计算 (不再误判 null)', () => {
+    const crossMidnight = [
+      '09-09 23:59:59.900  Page begin',
+      '09-10 00:00:59.900  Web content ready',
+    ].join('\n');
+    expect(computeColdStartMs(crossMidnight)).toBe(60000);
+    const crossMonth = [
+      '09-30 23:59:58.000  Page begin',
+      '10-01 00:00:08.000  Web content ready',
+    ].join('\n');
+    expect(computeColdStartMs(crossMonth)).toBe(10000);
+  });
+
+  it('computeColdStartMs: 时间戳乱序 (begin 晚于 ready) 或差 >1h 返回 null', () => {
+    // 逆序形态: 最后一条 Page begin 的时间戳晚于最后一条 Web content ready (如新一轮启动只打 Page begin).
+    const reversed = [
+      '09-09 17:00:00.100  Web content ready',
+      '09-09 17:00:05.100  Page begin',
+    ].join('\n');
+    expect(computeColdStartMs(reversed)).toBeNull();
+    const tooLong = [
+      '09-09 10:00:00.000  Page begin',
+      '09-09 12:00:00.000  Web content ready',
+    ].join('\n');
+    expect(computeColdStartMs(tooLong)).toBeNull();
+  });
+
+  it('computeColdStartMs: 无关系统日志不污染口径 (2026-09-26 实测 188s 假值回归)', () => {
+    // 真实故障形态: 窗口内混有系统服务日志, 其时间戳跨度远大于应用冷启动.
+    const noisy = [
+      '09-26 16:42:09.500   787   787 E RSScreenManager: IsAllScreensPowerOff',
+      '09-26 16:43:00.000   900   900 I chromium: [somewhere] noise',
+      '09-26 16:45:17.199  4130  4130 I A00001/Index: Page begin: https://app.wordaydream.invalid/index.html',
+      '09-26 16:45:17.531  4130  4130 I A00001/HarmonyBridge: Web content ready',
+    ].join('\n');
+    expect(computeColdStartMs(noisy)).toBe(332);
+  });
+
+  it('computeColdStartMs: 同一关键词多次出现取最后一次 (陈旧运行日志免疫)', () => {
+    const stale = [
+      '09-26 16:44:25.148  4001  4001 I A00001/Index: Page begin: https://app.wordaydream.invalid/index.html',
+      '09-26 16:44:25.806  4001  4001 I A00001/HarmonyBridge: Web content ready',
+      '09-26 16:45:17.199  4130  4130 I A00001/Index: Page begin: https://app.wordaydream.invalid/index.html',
+      '09-26 16:45:17.531  4130  4130 I A00001/HarmonyBridge: Web content ready',
+    ].join('\n');
+    expect(computeColdStartMs(stale)).toBe(332);
+  });
+
+  it('extractPssKb: 兼容 TOTAL PSS 单行与 API 22 表格 Total 行, 未命中返回 null', () => {
     expect(extractPssKb('TOTAL PSS: 123456 KB\nother')).toBe(123456);
+    // 2026-09-26 API 22 (HarmonyOS 6.0.2) hidumper --mem 实测格式: 三行表头 + Total 行.
+    const api22Table = [
+      '                          Pss         Shared         Shared        Private        Private           Swap        SwapPss           Heap           Heap           Heap ',
+      '                        Total          Clean          Dirty          Clean          Dirty          Total          Total           Size          Alloc           Free ',
+      '         Total         144713         178176          33680          37244          58656          30708           2108              0              0              0 ',
+    ].join('\n');
+    expect(extractPssKb(api22Table)).toBe(144713);
     expect(extractPssKb('nothing')).toBeNull();
   });
 });
