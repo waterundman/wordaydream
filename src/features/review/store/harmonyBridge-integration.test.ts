@@ -104,7 +104,6 @@ describe('v0.1.0-harmony Stage 3: rateCard ↔ harmonyBridge integration', () =>
   it('T03 [critical]: window.harmonyBridge 存在时 rateCard 后调用 registerReminder 一次', async () => {
     const registerReminder = vi.fn().mockResolvedValue(undefined);
     const bridgeStub: HarmonyBridge = {
-      getDueCardsCount: () => Promise.resolve(0),
       registerReminder,
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
@@ -149,7 +148,6 @@ describe('v0.1.0-harmony Stage 3: rateCard ↔ harmonyBridge integration', () =>
   it('T04 [critical]: registerReminder 抛错时 rateCard 不传播 (try/catch)', async () => {
     const registerReminder = vi.fn().mockRejectedValue(new Error('JSBridge failure'));
     const bridgeStub: HarmonyBridge = {
-      getDueCardsCount: () => Promise.resolve(0),
       registerReminder,
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),

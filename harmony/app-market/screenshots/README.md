@@ -1,7 +1,13 @@
 # 元服务截图素材 (Stage 8)
 
+> **本文档的事实基线（版本 / SDK / 能力状态）以 [CURRENT_STATUS.md](../../CURRENT_STATUS.md) 为唯一真源；本文件仅保留「截图规格 + 场景准备清单」这一职责。**
+
 > AppGallery 元服务上架要求 5+ 张截图, 覆盖核心功能场景.
-> 沙箱约束无法生成 PNG, 用户需在 DevEco Studio 真机或模拟器内截屏.
+> 用户需在 DevEco Studio 真机或模拟器内截屏.
+
+## 当前目录实际内容（与上表的差异）
+
+本目录现有 6 个 `screenshot_0N_*_mockup.png`，它们是**同一张设计稿图标的副本**（内容等同 `../icon_512.png`，1832x1832、实为 JPEG 流），既非下表要求的场景实拍，也不满足「PNG / 1080x1920」规格。保留它们只是构图占位参考；实拍后请按下表文件名落盘。
 
 ## 截图清单
 
@@ -27,7 +33,7 @@
 
 1. 打开 DevEco Studio, 导入 `harmony/` 工程
 2. 运行 `npm run build:harmony` 生成 rawfile/dist
-3. 启动模拟器 (HarmonyOS 5.0+ 手机型号)
+3. 启动模拟器（与工程一致的 HarmonyOS 版本，见 CURRENT_STATUS §2；运行验证入口见 §6）
 4. 逐个进入场景页面, 系统截屏快捷键导出 PNG
 5. 重命名为上述文件名, 复制到本目录
 

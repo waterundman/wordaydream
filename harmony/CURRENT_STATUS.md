@@ -1,7 +1,7 @@
 # Wordaydream 鸿蒙版本当前状态
 
-> 更新日期：2026-09-25
-> 本文档描述当前工作树，作为鸿蒙实现、验证证据和后续工作的权威入口。`README.md` 中原有的 “Stage 1 / API 12” 内容是早期历史记录，不代表当前工程状态。
+> 更新日期：2026-09-26
+> 本文档描述当前工作树，是鸿蒙端版本口径、SDK、桥接契约、测试与构建数字、能力状态和验证证据的**唯一数字真源**。`harmony/README.md`、`FEATURE_PARITY_CHECKLIST.md`、`RELEASE_CHECKLIST.md`、`PERFORMANCE_BASELINE.md`、`app-market/README.md` 与 `docs/vault/` 下的阶段报告不再各自维护这些数字，只保留自身职责并链接到本文。`README.md` 中原有的 “Stage 1 / API 12” 内容是早期历史记录，不代表当前工程状态。
 
 ## 1. 当前结论
 
@@ -28,7 +28,7 @@ Wordaydream 的鸿蒙端不是 ArkUI 全量重写，而是一个 **HarmonyOS 6.0
 | 应用版本 | 单一版本真源（仓库根包 `3.6.2=harmony major+2`）；AppScope `1.6.2`、entry `1.6.2` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验；v3.0.0 起 harmony 跨入 major 1.0.0，versionCode 线性规则（major≠0 未覆盖）自动跳过校验，数值延续递增 `1000075` |
 | 原生权限 | `ohos.permission.INTERNET`、`ohos.permission.VIBRATE` |
 | 签名 | `signingConfigs` 为空；当前只能生成 unsigned HAP |
-| 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；最新 content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过 |
+| 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；此前 content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过。**Wave 1（2026-09-26）改动的运行时复证未执行**——模拟器本轮离线，见 §5「尚缺少的验证层级」 |
 
 关键路径：
 
@@ -48,7 +48,7 @@ React/Vite source (src/)
 | 能力 | 状态 | 当前实现与边界 |
 |---|---|---|
 | ArkWeb 容器 | 已实现 | 以严格的 `https://app.wordaydream.invalid/index.html` 虚拟同源入口呈现 HAP 内 `rawfile/dist`；只映射白名单路径并设置明确 MIME，同源非法请求本地返回 404/405、不会回落公网。关闭文件访问，阻止非入口主页面和子 frame 导航，提交非可信文档时立即注销原生代理。原生加载层只在 React 提交可见内容并显式发送 content-ready ACK 后撤下；12 秒未收到 ACK 或关键资源加载失败时展示错误与重试入口。Harmony 已恢复标准 ESM、路由/CSS 分包、modulepreload 与同源 module Worker。 |
-| JavaScriptProxy | 已实现 | API 22 同步/异步方法分组集中在 `BridgeMethodRegistry.ets`；同步 4 项、异步 12 项。启动处理 ready 与 React content-ready 使用相互独立的 ACK，避免仅完成模块初始化便误判页面已可见。 |
+| JavaScriptProxy | 已实现 | API 22 同步/异步方法分组集中在 `BridgeMethodRegistry.ets`（该方法清单是唯一真源）；同步 4 项、异步 16 项，与 §5 桥接注册表快照一致。异步方法的复杂返回值一律以 JSON 字符串回传（API 22 webview 的 async JSProxy 对象/数组回执不可用，见 `docs/vault/v1.6.0-EMULATOR-VERIFY-REPORT.md`）。启动处理 ready 与 React content-ready 使用相互独立的 ACK，避免仅完成模块初始化便误判页面已可见。 |
 | Web 主业务 | 已实现 | 阅读、LLM 评估、词典/语法、FSRS 复习、词表、课程、成就、连续学习和统计继续复用 React 代码。 |
 | RDB 卡片镜像 | 已实现 | 并发初始化共用 Promise；所有操作等待存储就绪；ResultSet 在 `finally` 关闭；删除按 Web Map 的 `lexemeGroupId` 对齐。 |
 | Preferences | 已实现 | 原生白名单读写并向 Web 暴露异步桥接。 |
@@ -66,6 +66,20 @@ React/Vite source (src/)
 | PWA / Service Worker | 不适用 | Harmony 构建主动禁用 PWA 和 HTTP `.br` / `.gz` sidecar；ArkWeb 使用 HAP 内 rawfile，不依赖 Web 服务器语义。 |
 
 ## 4. 本轮结构与技术债改进
+
+### 4.1 Wave 1 — API 22 通道收敛、死代码清除与构建链加固（2026-09-26）
+
+- **复杂返回通道统一**：`getRecentlyReviewedCards` / `getTodayReviewStats` / `getSpeechEngines` 由返回对象/数组改为返回 JSON 字符串，与已实证的 `getAllCards` 走同一可用通道；Web 侧消费者同步解析。
+- **卡片恢复通道合并**：`useMemoryStore.ts` 的原生推送接收器与 `getAllCards` 拉取兜底抽出共用 `applyRestoredCards`；`window.__applyNativeCardRestore` 进入 `declare global` 并标注 `TODO(API22)`，说明 async JSProxy 修复后可撤。
+- **原生健壮性**：`runJavaScript` 派发加超时复位，`pendingLaunchQueries` 设上限（16），防止 FIFO 永久卡死；`HarmonyBridge` 单例新增 `refreshContext`，供 Ability 重建时刷新 context。
+- **契约防漂移**：`bridgeRegistry.test.ts` 改为解析 `.ets` 数组字面量并与 TS 侧方法名做双向集合断言（不再写死计数）；新增 `harmonyOriginSync.test.ts` 守护三份 ArkWeb origin 白名单一致；为 `bridgeInputValidator` 补 `.ets` 镜像对照测试。
+- **死代码清除**：删除 `EntryAbility.ets` 的 emitter(10001) 服务卡刷新死链（跨进程无订阅者；真实链路 `notifyReviewCompleted` → `FormRefresher` → `updateForm` 保留）；删除 `NotificationService` 中未来触发的死逻辑 `computeTriggerAt` / `applyWindow`（改为 `isInNotificationWindow` 判定）；删除 `BridgeInputValidator.isAllowedArkWebOrigin`、`harmonyCsp.injectConnectSrcOrigin` 与 Web 侧零调用桥 wrapper；`speak` 不再向 Web 抛异常。
+- **结构**：卡片多语言文案抽到新文件 `widget/CardTextFormatter.ets`（单一真源），尺寸口径抽到 `widget/CardFormDimension.ets`（`FormDimension` 枚举/常量）；`MemoryCardStore` 提取 `withResultSet` 泛型助手统一 ResultSet 生命周期；`FormIdStore` / `ReminderAgentService` 对齐 init 失败复位模式；提醒文案 i18n 走 `notification/templates.ets`。
+- **日志脱敏**：`Index.ets` 的 `onConsole` 只转发 warn/error 或诊断前缀并截断；原生 info 日志中的 cardId / due / formId / query 明文降级或使用 `%{private}`。受保护的运行验证日志子串（`seedDebugCards done` / `Page begin` / `Web content ready` / `Web launch handler ready` / `getAllCards done: count=` / `dispatching query` / `[harmonyLaunch] openCard`）逐字保留，不断链。
+- **构建链与 CI**：`check-version-alignment.mjs` 覆盖 major≠0 盲区并新增与 `scripts/harmony/last-release.json` 的 versionCode 单调性校验；`verify-harmony-build.mjs` 优先消费新 Vite 插件导出的 `harmony-chunk-graph.json`（mapDeps 正则降为 fallback）；抽出 `scripts/harmony/lib/hdc.mjs` 去重 `seed-and-verify` / `collect-perf`，统一 `DEVECO_STUDIO_HOME` fail-fast；`package.json` 新增 `verify:harmony-runtime` / `collect:harmony-perf` / `test:harmony-scripts` 入口；`.github/workflows/netlify-deploy.yml` 的 ci job 追加纯 Node 的 `build:harmony` + verify + 脚本单测步骤。
+- **验证层级**：本轮只到「自动测试 + HAP 编译通过」层级；API 22 模拟器本轮离线，`seed-and-verify` 未执行，不构成模拟器/真机通过的证据（见 §5、§8）。
+
+### 4.2 此前轮次记录
 
 - 移除引用不存在调试 HTML 的 `IndexDebug.ets` 和 `WebTest.ets`，页面清单只保留生产入口。
 - 统一 JSBridge 方法注册表，修复 API 22 同步/异步注册差异，并限制代理暴露范围。
@@ -89,16 +103,18 @@ React/Vite source (src/)
 | 检查 | 结果 |
 |---|---|
 | `npm run typecheck` | 通过（tsc 0 errors） |
-| `npm run test:run` | 163 个测试文件、1493 项测试全部通过（v1.6.2 例句层与数据契约回填：新增 `verify-wordlists.example.test.mjs` 8 / `generate-en-examples.test.mjs` 10 / `WordlistRow.example.test.tsx` 5 / `wordlistExport.test.tsx` 2 / `index.test.ts` 3 = 5 文件 28 项，零回归） |
-| `npm run lint` | 通过（oxlint 0 个警告 0 个错误） |
+| `npm run test:run` | 167 个测试文件、1580 项测试全部通过（Wave 1 技术债修复轮：新增 `harmonyOriginSync.test.ts`、`bridgeRegistry.test.ts` 改双向集合断言、`scripts/harmony/lib/` 的 hdc/chunk-graph 与 `scripts/lib/deveco-paths` 单测；零回归） |
+| `npm run lint` | 通过（oxlint 0 个警告 0 个错误，383 文件） |
 | `npm run verify:wordlists` | 通过（en A1-B2 / de A1-B2 字段契约 + `courses/en.ts` 20 Lesson targetLemmas 命中校验；德语同形异义 11 处记为 warning） |
 | `npm run verify:static-assets` | 通过（v1.6.1 S2：3 纹理为 WebP、2 图标为量化 PNG、原图保留在 `assets-sources/` 回滚路径） |
 | `npm run check:versions` | 通过（四处版本口径一致，已接入 CI） |
 | `npm run build` | 普通 Web 生产构建通过，仍保留代码分包、module Worker 与 PWA |
 | 虚拟同源定向测试 | 通过（origin/path/MIME、双编码穿越和源码接线契约） |
-| Harmony 构建验证器 | 7/7 通过；要求标准 ESM 入口、modulepreload、两个 module Worker、多 JS/CSS 分包、严格 CSP，并从 `index.html` 遍历依赖图拒绝缺失或不可达产物 |
+| Harmony 构建验证器 | 9/9 通过；要求标准 ESM 入口、modulepreload、两个 module Worker、多 JS/CSS 分包、严格 CSP，并从 `index.html` 遍历依赖图拒绝缺失或不可达产物 |
 | HAP 日志识别器 | 3/3 通过；能识别带 ANSI 颜色的成功与失败日志 |
-| 桥接注册表快照 | 同步 4 / 异步 16（Stage 3 新增 requestNotificationPermission / scheduleReviewReminder / cancelReviewReminder），Web 与原生两侧测试镜像同步 |
+| 运行验证断言关键词静态核验 | **7/7 逐字命中**（Wave 1 收口轮新增的独立复核）：日志脱敏改动后，A1–A7 断言关键词仍逐字存在于日志源 —— A1 `seedDebugCards done`(EntryAbility) · A2 `Page begin`(Index.ets) · A3 `Web content ready`(HarmonyBridge) · A4 `getAllCards done: count=`(useMemoryStore + HarmonyBridge) · A5 `Web launch handler ready: generation=`(HarmonyBridge) · A6 `dispatching query=action=openCard`(EntryAbility) · A7 `[harmonyLaunch] openCard`(harmonyLaunch.ts + Index.ets)。**口径**：这只是「关键词 ↔ 日志源」的静态一致性证据，**不能替代** `verify:harmony-runtime` 的实机日志命中 |
+| 桥接注册表快照 | 同步 4 / 异步 16（真源为 `BridgeMethodRegistry.ets`；Stage 3 新增 requestNotificationPermission / scheduleReviewReminder / cancelReviewReminder）。Wave 1 起 Web 与原生两侧测试对方法名做双向集合断言，不再写死计数 |
+| `npm run test:harmony-scripts` | 通过（`vitest run scripts`：Wave 1 后 125 项脚本单测全绿，覆盖 seed-and-verify / check-version-alignment / `harmony/lib/hdc` / `harmony/lib/chunk-graph` / `lib/deveco-paths` / measure-bundle / generate-en-examples / verify-wordlists.example / lint.warn 共 9 个文件）。`scripts/verify-harmony-build.test.mjs` 与 `scripts/hvigor-output.test.mjs` 属 `node --test` 套件，由 `test:harmony-build-verifier`（9/9）与 `test:harmony-build-wrapper`（3/3）单独执行，已从 vitest 收集中排除 |
 
 这些测试覆盖 Web 业务回归以及 Harmony 的桥接契约、Manifest、启动队列、CSP、静态资源、通知安全守卫、TTS 镜像和服务卡数据契约，但不能替代 Harmony 运行时测试。
 
@@ -111,7 +127,7 @@ npm run build:harmony
 npm run build:harmony:hap
 ```
 
-其中：
+其中（**下列带日期的条目是各轮实测快照，只有最后一条 Wave 1 条目对应当前工作树**；引用 HAP 体积 / 测试数时一律取最新一条）：
 
 - `build:harmony` 生成 rawfile Web 资源后，检查标准 ESM 入口、modulepreload、CSP、根绝对资源路径、两个 Worker、依赖图可达性、丢失资源、source map 和 `.br` / `.gz` sidecar。
 - `build:harmony:hap` 使用 `D:\DevEco Studio` 的工具链编译 API 22 HAP，并要求日志明确出现成功结果和实际 HAP 文件。
@@ -122,6 +138,7 @@ npm run build:harmony:hap
 - 2026-09-25 v1.6.1 Stage 5 执行 `npm run build:harmony`：通过，`[verify:harmony-build] passed (60 ESM/Worker JS, 8 CSS, 86 files, 72 local references)`。同轮 `npm run verify:static-assets` PASS（5 项静态资源均已优化）；`npm run verify:wordlists` PASS；四道门 tsc 0 / oxlint 0 警告 0 错误（366 文件 / 104 规则）/ vitest 158 files 1465 tests 全绿 / E2E 19-19。**本轮未重新执行 `build:harmony:hap`**（HAP 打包与体积数字留待需要时补测），故本节上方 HAP 字节数仍为 v1.6.0 产物。
 - 2026-09-25 v1.6.2 Stage 4 完整执行 `npm run build:harmony:hap`：Hvigor `BUILD SUCCESSFUL`，产物 `entry-default-unsigned.hap` **4,515,968 bytes**（4.31 MiB；上一次实测基线为 v1.6.0 的 4,765,139 bytes ⇒ **−249,171 bytes / −5.2%**）。拆包实测：101 条目、**全部 STORED（不压缩）**；原生侧 985.5 KB（`icon.png` 350.9 / `foreground.png` 365.9 / `modules.abc` 209.7 / `widgets.abc` 31.3）、rawfile 侧 3407.5 KB（86 条目，rawfile 内 0 个 `.br`/`.gz` sidecar —— harmony 模式不启用压缩 sidecar）。**口径提示**：v1.6.1 未重测 HAP，故该差值**跨越两个版本**；已知主导项为 v1.6.1 位图 −589.4 KB 与本轮英语例句 +467.2 KB（净 −122.2 KB），**余下约 122 KB 缺少可比对的旧 HAP 产物、不予归因**。同轮 `npm run build:harmony` 通过；`check:versions` PASS（3.6.2 / 1.6.2 / 1000075）；`measure:bundle` 首屏 JS **306.2 KB 零回退**、全量 JS 2748.9 KB（+467.2 KB）、CSS 178.7 KB；四道门 tsc 0 / oxlint 0w0e（374 文件）/ vitest 163 files 1493 tests 全绿 / E2E **20-20**。
 - 构建包装器的 ANSI 控制符归一化已修复，相关测试 3/3 通过，不再因带颜色的成功日志产生假阴性。
+- **2026-09-26 Wave 1（当前工作树的构建层级）**：`npm run build:harmony` 通过，`[verify:harmony-build] passed (60 ESM/Worker JS, 8 CSS, 87 files, 72 local references)`，并优先从新 Vite 插件导出的 `harmony-chunk-graph.json` 读取依赖图（mapDeps 正则降为 fallback）。`npm run build:harmony:hap` Hvigor 报告 `BUILD SUCCESSFUL`，产物 `harmony/entry/build/default/outputs/default/entry-default-unsigned.hap` **4,649,568 bytes**（v1.6.2 的 4,515,968 bytes ⇒ +133,600 bytes / +3.0%；候选解释为本轮 ArkTS/桥接层改动与新增的 `harmony-chunk-graph.json` sidecar，未做拆包归因核对，不作为结论）。`npm run check:versions` 通过（web 3.6.2 / harmony 1.6.2 / versionCode 1000075，且 ≥ `last-release.json` 基线）。**API 22 模拟器本轮离线，`verify:harmony-runtime`（seed-and-verify）未执行**，故上述数字只构成「自动测试 + HAP 编译」层级证据，产物仍未签名。
 
 ### API 22 模拟器运行证据
 
@@ -134,6 +151,7 @@ npm run build:harmony:hap
 
 ### 尚缺少的验证层级
 
+- Wave 1（2026-09-26）改动落在 API 22 运行链路上（复杂返回通道、FIFO 超时复位、日志脱敏、卡片文案/尺寸抽取），但模拟器本轮离线，`npm run verify:harmony-runtime` 未跑：以下层级全部待补，**不得以「HAP 编译通过」替代**。
 - 已签名 HAP 的安装与启动；当前仅验证 unsigned HAP 的模拟器安装。
 - API 22 模拟器中带到期卡片的冷/热启动、RDB 原生恢复、服务卡宿主和关键页面交互验证。
 - 真机上的 TTS、振动、普通通知和多窗口/后台恢复验证。
@@ -153,12 +171,13 @@ npm run build:harmony
 npm run build:harmony:hap
 ```
 
-模拟器在线时的运行验证自动化（v0.5.0-harmony Stage 4）：
+模拟器在线时的运行验证自动化（Wave 1 起提供 npm 入口，`DEVECO_STUDIO_HOME` 缺失会 fail-fast）：
 
 ```powershell
 $hdc = "D:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
-node scripts/harmony/seed-and-verify.mjs --hdc $hdc --out seed-report.json
-node scripts/harmony/collect-perf.mjs --hdc $hdc --out perf-report.json
+npm run verify:harmony-runtime -- --hdc $hdc --out seed-report.json
+npm run collect:harmony-perf -- --hdc $hdc --out perf-report.json
+npm run test:harmony-scripts
 ```
 
 `seed-and-verify` 会安装最新 HAP、以 `action=debugSeed` 冷启动预置 5 张到期卡，
@@ -177,15 +196,18 @@ FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true`
 ## 7. 下一轮优先级
 
 1. ✅（2026-09-20 已结清）`seed-and-verify.mjs` 模拟器清账 **7/7 断言全 PASS, 退出码 0**: seed (inserted=5) → Page begin → content ready → `getAllCards done: count=5` → Web launch handler ready → onNewWant openCard 派发 + FIFO queued/dispatched → **A7 `[harmonyLaunch] openCard located cardId=debug-seed-1`** (复习页真实到达)。修复 = R-1 恢复改走原生推送通道: async JSProxy 复杂返回值在 API 22 webview 不可用 (Web 端 Promise resolve 成 number, refresh() 亦无效), content-ready 后原生 `pushCardsToWeb()` 经 runJavaScript 推 JSON, Web 端 `window.__applyNativeCardRestore` 空 store 守卫应用; web 侧 `parseBridgeRecords` 兼容数组/string, `getAllCards` 原生改返回 JSON string, 注册后补官方 `refresh()`。过程与契约详见 `docs/vault/v1.6.0-EMULATOR-VERIFY-REPORT.md`。脚本断言关键词已对齐 v1.5.0 实机日志 (A4/A5 改), openCard query 加引号防 shell 拆断 `&`, 新增 `bm clean -d` 保证干净状态出发。
-2. 运行 `collect-perf.mjs` 采集冷启动耗时与 PSS 基线；后续补 CSV/LLM Worker 的 uitest 交互级性能对比。
-3. 服务卡跨进程主动刷新实际验证（代码闭环已就绪：notifyReviewCompleted → FormRefresher → updateForm）；配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
-4. 申请 `reminderAgent` 开放能力和签名 Profile 后验证 `ReminderAgentService` 的发布/去重/取消/恢复策略（代码已就绪，无权益期间保持安全跳过）。
-5. 提供真实 Harmony LLM 代理环境，验证代理 URL、CSP、TLS、超时与弱网行为。
-6. ✅（2026-09-20 已结清）openCard 断言随 seed-and-verify 全绿: A6 (原生 onNewWant 派发) PASS, A7 (web 域层 located 日志) PASS。
-7. 持续清理仍带早期历史痕迹的文档；根包 / AppScope 版本口径已统一并由 CI 强制；versionCode 规则已 CI 化（check:versions 强制）。
+2. Wave 1 后的运行时复证：模拟器在线时重跑 `npm run verify:harmony-runtime`，确认改走 JSON 字符串的三条通道、`runJavaScript` 超时复位与 `pendingLaunchQueries` 上限、日志脱敏均未破坏受保护的断言子串（本轮未跑，见 §5）。
+3. **B1 上帝文件拆分推迟**：`HarmonyBridge.ets`（1213 行）与 `pages/Index.ets`（535 行）的拆分推迟到**有签名 HAP + 模拟器/真机在线、可做运行时回归**时执行；无运行时回归手段时拆分纯结构风险，不做。
+4. 运行 `collect-perf.mjs`（`npm run collect:harmony-perf`）采集冷启动耗时与 PSS 基线；后续补 CSV/LLM Worker 的 uitest 交互级性能对比。
+5. 服务卡跨进程主动刷新实际验证（代码闭环已就绪：notifyReviewCompleted → FormRefresher → updateForm）；配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
+6. 申请 `reminderAgent` 开放能力和签名 Profile 后验证 `ReminderAgentService` 的发布/去重/取消/恢复策略（代码已就绪，无权益期间保持安全跳过）。
+7. 提供真实 Harmony LLM 代理环境（`.env.harmony`），验证代理 URL、CSP、TLS、超时与弱网行为。
+8. ✅（2026-09-20 已结清）openCard 断言随 seed-and-verify 全绿: A6 (原生 onNewWant 派发) PASS, A7 (web 域层 located 日志) PASS。
+9. ✅（2026-09-26 已结清）文档收口：根包 / AppScope 版本口径已统一并由 CI 强制（`check:versions` + `last-release.json` 单调性护栏）；`harmony/` 其余文档已停止各自维护数字副本，统一以本文件为唯一数字真源（各文件顶部有真源声明）。
 
 ## 8. 状态维护规则
 
+- **本文件是唯一数字真源**：版本口径、SDK、桥接方法数、测试数、HAP 体积、能力状态只在此处记录。`harmony/README.md`（操作/历史）、`FEATURE_PARITY_CHECKLIST.md`（功能对照）、`RELEASE_CHECKLIST.md`（发布步骤）、`PERFORMANCE_BASELINE.md`（性能定义与填写位）、`app-market/README.md`（素材就绪度）与 `docs/vault/*`（过程报告）只保留各自职责，需要数字时链接本文件，不再维护副本；发现两处不一致，以本文件为准并修正另一处。
 - 不用百分比表示迁移进度；以能力矩阵和对应证据为准。
 - “自动测试通过”“HAP 编译通过”“模拟器通过”“真机通过”是四个不同层级，不互相替代。
 - 每次修改 Web 源码后都必须重新运行 `build:harmony`；每次修改 ArkTS、Manifest 或 profile 后都必须重新运行 `build:harmony:hap`。

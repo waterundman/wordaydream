@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   HARMONY_PROXY_ENV_NAME,
   hardenHarmonyCsp,
-  injectConnectSrcOrigin,
   parseHarmonyProxyUrl,
 } from './harmonyCsp';
 
@@ -34,40 +33,6 @@ describe('parseHarmonyProxyUrl', () => {
   );
 });
 
-describe('injectConnectSrcOrigin', () => {
-  it('adds the configured origin without changing other CSP directives', () => {
-    const html = injectConnectSrcOrigin(CSP_HTML, 'https://proxy.example.com:8443');
-
-    expect(html).toContain(
-      "connect-src 'self' arkweb://* https://proxy.example.com:8443;",
-    );
-    expect(html).toContain("default-src 'self';");
-    expect(html).toContain("img-src 'self' data:;");
-  });
-
-  it('is idempotent and removes duplicate connect-src tokens', () => {
-    const duplicated = CSP_HTML.replace(
-      "connect-src 'self' arkweb://*",
-      "connect-src 'self' arkweb://* https://proxy.example.com https://proxy.example.com",
-    );
-    const html = injectConnectSrcOrigin(duplicated, 'https://proxy.example.com');
-
-    expect(html.match(/https:\/\/proxy\.example\.com/g)).toHaveLength(1);
-  });
-
-  it('fails closed when the CSP meta or connect-src directive is missing', () => {
-    expect(() => injectConnectSrcOrigin('<html></html>', 'https://proxy.example.com')).toThrow(
-      'Content-Security-Policy meta tag',
-    );
-    expect(() =>
-      injectConnectSrcOrigin(
-        '<meta http-equiv="Content-Security-Policy" content="default-src \'self\';">',
-        'https://proxy.example.com',
-      ),
-    ).toThrow('connect-src');
-  });
-});
-
 describe('hardenHarmonyCsp', () => {
   it('removes insecure HTTP sources and keeps the configured HTTPS proxy', () => {
     const source = CSP_HTML.replace(
@@ -80,5 +45,30 @@ describe('hardenHarmonyCsp', () => {
     expect(html).not.toContain('http://localhost');
     expect(html).not.toContain('http://127.0.0.1');
     expect(html).toContain("connect-src 'self' arkweb://* https://proxy.example.com;");
+    expect(html).toContain("default-src 'self';");
+    expect(html).toContain("img-src 'self' data:;");
+  });
+
+  it('removes duplicate connect-src tokens (idempotent hardening)', () => {
+    const duplicated = CSP_HTML.replace(
+      "connect-src 'self' arkweb://*",
+      "connect-src 'self' arkweb://* https://proxy.example.com https://proxy.example.com",
+    );
+
+    const html = hardenHarmonyCsp(duplicated, 'https://proxy.example.com');
+
+    expect(html.match(/https:\/\/proxy\.example\.com/g)).toHaveLength(1);
+  });
+
+  it('fails closed when the CSP meta or connect-src directive is missing', () => {
+    expect(() => hardenHarmonyCsp('<html></html>', 'https://proxy.example.com')).toThrow(
+      'Content-Security-Policy meta tag',
+    );
+    expect(() =>
+      hardenHarmonyCsp(
+        '<meta http-equiv="Content-Security-Policy" content="default-src \'self\';">',
+        'https://proxy.example.com',
+      ),
+    ).toThrow('connect-src');
   });
 });

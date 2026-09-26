@@ -13,6 +13,8 @@
  * - T10/T11/T12: validateLaunchQuery 合法 + 非法控制字符
  * - T13/T14: validateCardRecord 16 字段全合法 / objectiveDifficulty 越界
  * - T15: CSP meta 标签存在性 (default-src / script-src / connect-src)
+ * - H7: 与 .ets BridgeInputValidator 的镜像对照 (readFileSync 提取规则常量比对,
+ *   参考 cardDataProvider.test.ts 的源文本一致性做法)
  */
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
@@ -25,9 +27,30 @@ import {
   validatePreferencesKey,
   validatePreferencesValue,
   validateReminderPayload,
+  validateSpeechLanguage,
+  validateSpeechRate,
   type MemoryCardRecordBridge,
 } from '../bridgeInputValidator';
 import type { ReminderPayload } from '../harmonyBridge';
+
+/** ArkTS 侧校验模块源文件 (H7 镜像对照读取). */
+const ETS_VALIDATOR_PATH: string = resolve(
+  process.cwd(),
+  'harmony',
+  'entry',
+  'src',
+  'main',
+  'ets',
+  'bridge',
+  'BridgeInputValidator.ets'
+);
+/** TS mirror 源文件 (H7 镜像对照读取). */
+const TS_VALIDATOR_PATH: string = resolve(
+  process.cwd(),
+  'src',
+  'platform',
+  'bridgeInputValidator.ts'
+);
 
 /** 构造全合法 MemoryCardRecordBridge (16 字段), 供 T13/T14 复用. */
 function makeValidCard(): MemoryCardRecordBridge {
@@ -186,6 +209,110 @@ describe('BridgeInputValidator (v0.2.0-harmony Stage 2)', () => {
       expect(validateCardId('a'.repeat(128))).toBe(true);
       expect(validateCardId('')).toBe(false);
       expect(validateCardId('a'.repeat(129))).toBe(false);
+    });
+  });
+
+  // ==========================================================================
+  // H7 镜像对照: ArkTS BridgeInputValidator.ets 校验规则常量与 TS mirror 一致
+  // ==========================================================================
+  describe('H7 镜像对照: .ets BridgeInputValidator 规则常量', () => {
+    const etsSource: string = readFileSync(ETS_VALIDATOR_PATH, 'utf-8');
+    const tsSource: string = readFileSync(TS_VALIDATOR_PATH, 'utf-8');
+
+    /** 提取 `const NAME ... = [ ... ]` 数组字面量元素 (字符串去引号). */
+    function parseArray(source: string, name: string): (string | number)[] {
+      const start: number = source.indexOf(`const ${name}`);
+      expect(start).toBeGreaterThan(-1);
+      const open: number = source.indexOf('[', start);
+      const close: number = source.indexOf(']', open);
+      const body: string = source.substring(open + 1, close);
+      return body
+        .split(',')
+        .map((token) => token.trim().replace(/'/g, ''))
+        .filter((token) => token.length > 0)
+        .map((token) => (/^[\d.]+$/.test(token) ? Number(token) : token));
+    }
+
+    /** 提取 `const NAME ... = <表达式>;` 标量表达式文本 (空白归一). */
+    function parseScalar(source: string, name: string): string {
+      const pattern: RegExp = new RegExp(`const ${name}[^=]*=\\s*([^;]+);`);
+      const match: RegExpMatchArray | null = source.match(pattern);
+      expect(match).not.toBeNull();
+      return (match ? match[1] : '').replace(/\s+/g, ' ').trim();
+    }
+
+    /** 提取 `const NAME: RegExp = /pattern/flags;` 的 pattern 体. */
+    function parseRegex(source: string, name: string): string {
+      const pattern: RegExp = new RegExp(`const ${name}[^=]*=\\s*/([\\s\\S]*?)/[a-z]*;`);
+      const match: RegExpMatchArray | null = source.match(pattern);
+      expect(match).not.toBeNull();
+      return match ? match[1] : '';
+    }
+
+    it('白名单数组常量逐项相等 (preferences key / intensity / TTS 语言 / 语速)', () => {
+      for (const name of [
+        'PREFERENCES_KEY_WHITELIST',
+        'INTENSITY_WHITELIST',
+        'SPEECH_LANGUAGE_WHITELIST',
+        'SPEECH_RATE_WHITELIST',
+      ]) {
+        expect(parseArray(etsSource, name)).toEqual(parseArray(tsSource, name));
+      }
+    });
+
+    it('长度上限 / 范围 / 调度提前量常量表达式一致', () => {
+      for (const name of [
+        'CARD_ID_MAX_LENGTH',
+        'PREFERENCES_VALUE_MAX_LENGTH',
+        'OBJECTIVE_DIFFICULTY_MIN',
+        'OBJECTIVE_DIFFICULTY_MAX',
+        'SPEECH_TEXT_MAX_LENGTH',
+        'REMINDER_MAX_LEAD_MS',
+      ]) {
+        expect(parseScalar(etsSource, name)).toBe(parseScalar(tsSource, name));
+      }
+    });
+
+    it('launch query 正则字面量一致', () => {
+      expect(parseRegex(etsSource, 'LAUNCH_QUERY_REGEX')).toBe(
+        parseRegex(tsSource, 'LAUNCH_QUERY_REGEX')
+      );
+    });
+
+    it('ArkTS 白名单成员在 TS 校验函数上全部放行 (行为镜像)', () => {
+      for (const key of parseArray(etsSource, 'PREFERENCES_KEY_WHITELIST')) {
+        expect(validatePreferencesKey(String(key))).toBe(true);
+      }
+      for (const intensity of parseArray(etsSource, 'INTENSITY_WHITELIST')) {
+        expect(validateIntensity(String(intensity))).toBe(true);
+      }
+      for (const lang of parseArray(etsSource, 'SPEECH_LANGUAGE_WHITELIST')) {
+        expect(validateSpeechLanguage(String(lang))).toBe(true);
+      }
+      for (const rate of parseArray(etsSource, 'SPEECH_RATE_WHITELIST')) {
+        expect(validateSpeechRate(Number(rate))).toBe(true);
+      }
+      // .ets 未列出的一律拒绝 (防白名单单向扩大后 .ets 侧漏改)
+      expect(validatePreferencesKey('evil_key')).toBe(false);
+      expect(validateIntensity('extra')).toBe(false);
+      expect(validateSpeechLanguage('fr-FR')).toBe(false);
+      expect(validateSpeechRate(3.5)).toBe(false);
+    });
+
+    it('ArkTS launch query 正则与 TS validateLaunchQuery 判定同结果', () => {
+      // .ets 字面量已含 ^...$ 锚点, 直接构造 RegExp 即为完整模式
+      const etsRegex = new RegExp(parseRegex(etsSource, 'LAUNCH_QUERY_REGEX'));
+      const samples: string[] = [
+        'action=startReview',
+        'action=openCard&cardId=abc-123',
+        'action=openCard&cardId=ab c',
+        'action=startReview;evil',
+        'action=evil',
+        '',
+      ];
+      for (const sample of samples) {
+        expect(etsRegex.test(sample)).toBe(validateLaunchQuery(sample));
+      }
     });
   });
 

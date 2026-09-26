@@ -13,6 +13,33 @@ const nativeMemoryRestoreReady: Promise<void> = new Promise((resolve) => {
 });
 
 /**
+ * v1.6.0 D1: 卡片恢复共用应用逻辑 (M1 — 推送接收器与 getAllCards 拉取路径唯一实现).
+ *
+ * 解析 (parseBridgeRecords 兼容 JSON string / 数组) → bridgeToMemoryCard 逐条转换
+ * → 按 lexemeGroupId 入 Map → setState + publish. 返回解析/应用条数供调用方打日志.
+ * 幂等与"store 非空不覆盖"守卫由各调用方负责.
+ * TODO(API22): async JSProxy 复杂返回值修复后可拆掉原生推送通道, 仅保留拉取路径.
+ */
+function applyRestoredCards(raw: unknown): { total: number; applied: number } {
+  const records = parseBridgeRecords(raw);
+  const newCards = new Map<string, MemoryCard>();
+  for (const bridgeCard of records) {
+    const memoryCard = bridgeToMemoryCard(bridgeCard);
+    if (memoryCard) {
+      newCards.set(memoryCard.lexemeGroupId, memoryCard);
+    }
+  }
+  if (newCards.size > 0) {
+    useMemoryStore.setState({ cards: newCards });
+    publish<MemoryCardsUpdatedPayload>('memory:cards-updated', {
+      cards: newCards,
+      isReview: false,
+    });
+  }
+  return { total: records.length, applied: newCards.size };
+}
+
+/**
  * v1.6.0 D1: 原生卡片推送接收器 (R-1 恢复的实机通道).
  *
  * API 22 模拟器实测: async JSProxy 返回值无论数组还是 JSON string, Web 端
@@ -28,33 +55,16 @@ function installNativeCardRestorePush(): void {
   if (typeof window === 'undefined') {
     return;
   }
-  const target = window as unknown as {
-    __applyNativeCardRestore?: (json: string) => void;
-  };
-  target.__applyNativeCardRestore = (json: string): void => {
+  window.__applyNativeCardRestore = (json: string): void => {
     try {
       if (useMemoryStore.getState().cards.size > 0) {
         console.log('[memory-restore] push skipped: store non-empty');
         return;
       }
-      const cards = parseBridgeRecords(json);
-      const newCards = new Map<string, MemoryCard>();
-      for (const bridgeCard of cards) {
-        const memoryCard = bridgeToMemoryCard(bridgeCard);
-        if (memoryCard) {
-          newCards.set(memoryCard.lexemeGroupId, memoryCard);
-        }
-      }
+      const { applied } = applyRestoredCards(json);
       console.log(
-        `[memory-restore] push rawLen=${json.length} applied=${newCards.size}`,
+        `[memory-restore] push rawLen=${json.length} applied=${applied}`,
       );
-      if (newCards.size > 0) {
-        useMemoryStore.setState({ cards: newCards });
-        publish<MemoryCardsUpdatedPayload>('memory:cards-updated', {
-          cards: newCards,
-          isReview: false,
-        });
-      }
     } catch (e) {
       console.log(
         `[memory-restore] push failed: ${e instanceof Error ? e.message : String(e)}`,
@@ -644,31 +654,17 @@ export const useMemoryStore = create<MemoryStore>()(
           void Promise.resolve()
             .then(() => bridge.getAllCards())
             .then((raw: unknown) => {
-              const cards = parseBridgeRecords(raw);
               const rawLen = Array.isArray(raw)
                 ? raw.length
                 : typeof raw === 'string'
                   ? raw.length
                   : -1;
-              const newCards = new Map<string, MemoryCard>();
-              for (const bridgeCard of cards) {
-                const memoryCard = bridgeToMemoryCard(bridgeCard);
-                if (memoryCard) {
-                  newCards.set(memoryCard.lexemeGroupId, memoryCard);
-                }
-              }
+              const { total, applied } = applyRestoredCards(raw);
               // v1.6.0 D1 运行验证日志点: 归一化前后形态一次说清,
               // 防止恢复断链再次被静默吞掉 (rawLen=-1 = 意外形态).
               console.log(
-                `[memory-restore] rawType=${typeof raw} rawLen=${rawLen} cards=${cards.length} applied=${newCards.size}`,
+                `[memory-restore] rawType=${typeof raw} rawLen=${rawLen} cards=${total} applied=${applied}`,
               );
-              if (newCards.size > 0) {
-                useMemoryStore.setState({ cards: newCards });
-                publish<MemoryCardsUpdatedPayload>('memory:cards-updated', {
-                  cards: newCards,
-                  isReview: false,
-                });
-              }
             })
             .catch((e: unknown) => {
               // 仍不传播到 Web, 但留运行日志点 — 此前 .catch 全静默,

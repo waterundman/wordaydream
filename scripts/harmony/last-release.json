@@ -1,0 +1,6 @@
+{
+  "versionCode": 1000075,
+  "versionName": "1.6.2",
+  "note": "上次已发布版本的 harmony app.versionCode 真源（来自 v1.6.2，AppScope 1.6.2 / web 3.6.2）。check-version-alignment.mjs 用它做单调性护栏：当前 versionCode 必须 >= 此值，相等仅告警、发布前需递增。发布新版本后把此文件更新为该次发布的 versionCode/versionName。",
+  "updatedAt": "2026-09-25"
+}

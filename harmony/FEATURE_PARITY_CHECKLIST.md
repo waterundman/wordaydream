@@ -1,9 +1,12 @@
 # Wordaydream Harmony Stage 4 — 14 Feature 模块功能对等清单
 
+> **本文档的事实基线（版本 / 测试数 / SDK / 权限 / 能力状态 / 验证层级）以 [CURRENT_STATUS.md](./CURRENT_STATUS.md) 为唯一真源；本文件仅保留「14 个 feature 模块 × 验收点」的功能对照结构与其勾选状态。**
+
 > **目的**: 验证 14 个 feature 模块在鸿蒙 ArkWeb 容器内全部可用, 与 Web 端功能对等, 无降级.
 > **范围**: `src/features/` 下 14 个模块 + 关键用户流程 (生成文本 → 划词 → 评估 → 建卡 → FSRS 调度 → 复习 → 成就解锁)
-> **基线**: Web 端 vitest 656/656 PASS (Stage 4 起始基线)
+> **测试基线**: 不在本文件维护数字；Web 端 vitest 当前通过数以 CURRENT_STATUS §5「当前 Web / TypeScript 工作树」为准（本文件创建时的 Stage 4 基线 656 项早已作废）。
 > **测试覆盖**: `src/__integration__/harmony-feature-parity.test.ts` 自动验证每个模块的 entry point 可加载
+> **验证层级提示**: 下文验收点均为「自动测试可覆盖」的静态/契约层；ArkWeb 容器内的运行时表现属模拟器/真机层级，判定口径见 CURRENT_STATUS §5「尚缺少的验证层级」与 §8 的四层规则。
 
 ---
 
@@ -26,7 +29,7 @@
 | 13 | streak | `src/features/streak/` | `useStreakStore` | useStreakStore.test.ts |
 | 14 | llm | `src/features/llm/` | `router`, `providerFactory`, `llmAdapter`, `llmStream`, `openaiProvider`, `anthropicProvider`, `deepseekProvider`, `mockProvider`, `streamingProvider`, `useOfflineModeStore`, `prompts`, `llmConfig`, `jsonParser`, `alignmentValidator`, `levenshtein`, `textNormalize` | router.test.ts + router.expectJson.test.ts + providerFactory.test.ts + anthropicProvider.test.ts + deepseekProvider.test.ts + openaiProvider.test.ts + mockProvider.test.ts + streamingProvider.test.ts + offlineMode.test.ts + llmConfig.test.ts + prompts.test.ts + jsonParser.test.ts + jsonParser.schema.test.ts + jsonParser.repair.test.ts + adapters.expectJson.test.ts + alignmentValidator.test.ts + alignmentValidator.integration.test.ts + levenshtein.test.ts + textNormalize.test.ts |
 
-> 注: `difficulty-coupling` (在 `src/features/difficulty-coupling/` 下) 是辅助模块, 不计入 14 个核心 feature, 但其功能 (DifficultySuggestion / difficultyEvaluator / difficultyAdvisor) 已包含在 evaluation + reading + llm 模块的用户流程中.
+> 注: `src/features/` 实有 16 个子目录, 其中 `difficulty-coupling`（DifficultySuggestion / difficultyEvaluator / difficultyAdvisor）与 `shortcuts`（`store/useShortcutsStore.ts`, 快捷键配置持久化）是辅助模块, 不计入 14 个核心 feature；前者的功能已包含在 evaluation + reading + llm 模块的用户流程中, 后者属设置类外围能力, 待补验收点。§2.1 R8 提到的 `useGlobalShortcuts` 实际位于 `src/features/reading/hooks/`, 归 reading 模块。
 
 ---
 
@@ -312,7 +315,7 @@
 
 | 测试类型 | 文件 | 覆盖范围 |
 |---|---|---|
-| 单元测试 (vitest) | `src/features/**/*.test.{ts,tsx}` | 656 测试基线 (Web 端, 不破坏) |
+| 单元测试 (vitest) | `src/features/**/*.test.{ts,tsx}` | Web 端全量回归（数字见 CURRENT_STATUS §5，本文件不维护） |
 | 集成测试 (vitest) | `src/__integration__/passage-full-pipeline.test.tsx` | 10 case 跨 stage pipeline (existing) |
 | 集成测试 (vitest) | `src/__integration__/harmony-llm-proxy.test.ts` | T01 LLM Proxy 启动 + CORS |
 | 集成测试 (vitest) | `src/__integration__/harmony-feature-parity.test.ts` | T02 14 feature 模块可加载 |
@@ -324,11 +327,12 @@
 
 ## 6. 已知限制 (Stage 4 不验证)
 
-- **module.json5 未声明 VIBRATE 权限** (Stage 3 遗留, Stage 5 补充)
+- ~~**module.json5 未声明 VIBRATE 权限**~~ — **已更正**：`ohos.permission.VIBRATE` 与 `ohos.permission.INTERNET` 均已在 `harmony/entry/src/main/module.json5` 声明（口径见 CURRENT_STATUS §2「原生权限」行）。剩余风险不是「未声明」，而是**模拟器不能证明真实触觉反馈**，故振动仍是「已实现，待真机验收」。
 - **DevEco 真机缺失** (T08 E2E soft gate, 无真机时 SKIP)
 - **ArkWeb IndexedDB 配额限制** (大 CSV 词库可能触发 quota exceeded, Stage 5+ 评估)
-- **ArkWeb SW 支持路径** (Stage 1 已禁用 PWA, rawfile 上下文 SW 不可注册)
-- **ArkWeb `prefers-reduced-motion` 媒体查询** (Stage 5 真机验证)
+- **ArkWeb SW 支持路径** — 结论已定：harmony 构建**主动禁用 PWA / Service Worker 与 `.br`/`.gz` sidecar**，ArkWeb 走虚拟 HTTPS 同源入口加载 HAP 内 rawfile（见 CURRENT_STATUS §3「PWA / Service Worker」行），不再评估 SW 路径。
+- **ArkWeb `prefers-reduced-motion` 媒体查询** (待真机验证)
+- **async JSProxy 复杂返回值**：API 22 webview 下对象/数组回执不可用，桥接层统一以 JSON 字符串回传（契约见 CURRENT_STATUS §3 JavaScriptProxy 行）。
 
 ---
 
@@ -337,3 +341,4 @@
 | 日期 | 版本 | 变更 |
 |---|---|---|
 | 2026-07-24 | v0.1.0-harmony Stage 4 | 初始创建, 14 feature × 5-10 验收点 |
+| 2026-09-26 | — | 文档收口：移除自维护的 vitest 数字（656 基线作废，改链 CURRENT_STATUS §5）；更正「未声明 VIBRATE」为已声明、待真机触觉验收；SW 项改为已定结论（harmony 禁用 PWA）；补 async JSProxy 复杂返回契约提示；澄清辅助模块为 difficulty-coupling 与 shortcuts。 |

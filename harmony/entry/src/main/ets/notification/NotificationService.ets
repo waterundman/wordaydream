@@ -5,9 +5,12 @@
  *
  * 设计要点:
  * - 单例模式 (getInstance), 全局唯一, 由 HarmonyBridge.registerReminder 调用.
- * - 时间窗约束: 仅在 [startHour, endHour) 内发布通知; 时间窗外延迟到次日 startHour.
- *   时间窗配置由 HarmonyBridge 从 preferences (notifications_config) 读取后传入 scheduleReviewReminder
- *   的隐式契约 — 本 service 仅负责"给定 dueAt + 时间窗, 决定何时 publish".
+ * - 通知能力边界: notificationManager 无延迟调度能力, 本 service 只负责
+ *   "卡片已到期 (或 1 分钟内到期) 且当前不在静音时段" 时立即 publish;
+ *   未来时刻的定时提醒由 ReminderAgentService (reminderAgentManager) 承担,
+ *   未开通 PUBLISH_AGENT_REMINDER 权益时两侧都安全跳过, 绝不降级为立即通知.
+ * - 时间窗配置 (notifications_config) 由 HarmonyBridge 从 preferences 读取后传入
+ *   scheduleReviewReminder; 本 service 仅用其判断"现在能否发布", 不做跨天延迟.
  * - 所有方法 try/catch 兜底, 异常返回安全默认值 (false / void) 不抛错,
  *   保证 ArkTS 侧异常不传播到 Web 端 JSBridge.
  * - wantAgent: 点击通知跳转 EntryAbility, parameters.query=action=startReview (API 22
@@ -27,7 +30,18 @@ const DOMAIN: number = 0x0001;
 const TAG: string = 'NotificationService';
 const REMINDER_TAG: string = 'wordaydream_review_reminder';
 const MIN_DELAY_MS: number = 60_000;
-const MS_PER_DAY: number = 86_400_000;
+
+/**
+ * 点击通知拉起的目标包名 — 与 harmony/AppScope/app.json5 的
+ * bundleName ("com.wordaydream.app") 一一对应; 改包名时两处同步.
+ */
+const BUNDLE_NAME: string = 'com.wordaydream.app';
+
+/**
+ * requestEnableNotification 在用户拒绝授权 / 通知总开关关闭时抛出的系统错误码
+ * (NotificationErrorCode.NOTIFICATION_ENABLED).
+ */
+const ERROR_NOTIFICATION_NOT_ENABLED: number = 1600004;
 
 /** 时间窗配置 (由 HarmonyBridge 从 preferences 读取后传入). */
 export interface NotificationWindow {
@@ -59,21 +73,15 @@ export class NotificationService {
   }
 
   /**
-   * 调度复习到期提醒.
+   * 发布"已到期"复习提醒通知 (立即发布, 无延迟调度能力).
    *
    * 逻辑:
    * 1. 若 window.enabled=false, 直接返回 (不发布通知).
-   * 2. 计算 triggerAt = dueAt (卡片到期时间).
-   * 3. 若 triggerAt 已过期或 < 1min 后, 立即触发 (triggerAt = now).
-   * 4. 若 triggerAt 落在时间窗外 (hour < startHour 或 hour >= endHour), 延迟到次日 startHour.
-   * 5. 通过 notificationManager.publish 发布通知 (slot=BASIC_CONTENT, actionType=router).
-   *
-   * 注: 当前实现为"立即 publish" (鸿蒙 notificationManager 无原生延迟调度,
-   *   reminderAgent 需要额外 system_grant 权限). 时间窗延迟逻辑计算 triggerAt
-   *   但实际 publish 时机由调用方决定 (Stage 7 范围内立即 publish, 真机由用户验证).
-   * SAFETY OVERRIDE: the Stage 7 note above is historical. The current guard
-   * skips every future trigger instead of publishing it immediately, until
-   * reminderAgent entitlement and signing are provisioned.
+   * 2. 若 dueAt 仍在 MIN_DELAY_MS 之后 (未来到期), 记录 warn 并跳过 —
+   *    真正的定时提醒由 ReminderAgentService.publishReminder 承担
+   *    (reminderAgent 需要 PUBLISH_AGENT_REMINDER 权益, 未开通时同样安全跳过).
+   * 3. 若当前小时落在时间窗外 ([startHour, endHour) 之外), 跳过, 不打扰用户.
+   * 4. 其余情况通过 notificationManager.publish 立即发布通知.
    */
   async scheduleReviewReminder(
     dueAt: number,
@@ -89,14 +97,22 @@ export class NotificationService {
       }
 
       const now: number = Date.now();
-      const triggerAt: number = this.computeTriggerAt(dueAt, now, win);
-      if (triggerAt > now) {
+      if (dueAt - now >= MIN_DELAY_MS) {
         hilog.warn(
           DOMAIN,
           TAG,
-          'scheduleReviewReminder skipped future delivery: dueAt=%{public}d triggerAt=%{public}d; reminderAgent capability is not provisioned',
-          dueAt,
-          triggerAt
+          'scheduleReviewReminder skipped future delivery: dueAt=%{private}d (future reminders belong to ReminderAgentService, skipped when entitlement is absent)',
+          dueAt
+        );
+        return;
+      }
+      if (!this.isInNotificationWindow(now, win)) {
+        hilog.info(
+          DOMAIN,
+          TAG,
+          'scheduleReviewReminder skipped quiet hours: window=%{public}d-%{public}d',
+          win.startHour,
+          win.endHour
         );
         return;
       }
@@ -110,7 +126,7 @@ export class NotificationService {
       let clickAgent: WantAgent | null = null;
       try {
         const want: Want = {
-          bundleName: 'com.wordaydream.app',
+          bundleName: BUNDLE_NAME,
           abilityName: 'EntryAbility',
           parameters: { 'query': 'action=startReview' },
         };
@@ -145,7 +161,7 @@ export class NotificationService {
         notificationSlotType: notificationManager.SlotType.SERVICE_INFORMATION,
         label: REMINDER_TAG,
         extraInfo: {
-          dueAt: triggerAt,
+          dueAt: dueAt,
           dueCount: dueCount,
         },
       };
@@ -157,11 +173,10 @@ export class NotificationService {
       hilog.info(
         DOMAIN,
         TAG,
-        'scheduleReviewReminder published due notification: dueAt=%{public}d dueCount=%{public}d lang=%{public}s triggerAt=%{public}d',
+        'scheduleReviewReminder published due notification: dueAt=%{private}d dueCount=%{public}d lang=%{public}s',
         dueAt,
         dueCount,
-        language,
-        triggerAt
+        language
       );
     } catch (e) {
       const err: BusinessError = e as BusinessError;
@@ -233,8 +248,8 @@ export class NotificationService {
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       // 用户拒绝授权时 requestEnableNotification 以 BusinessError 抛出,
-      // 错误码 1600004 (NOTIFICATION_ENABLED) 视为 denied, 其余视为 error.
-      if (err.code === 1600004) {
+      // 错误码 ERROR_NOTIFICATION_NOT_ENABLED 视为 denied, 其余视为 error.
+      if (err.code === ERROR_NOTIFICATION_NOT_ENABLED) {
         hilog.info(DOMAIN, TAG, 'requestEnableNotification: denied by user');
         return 'denied';
       }
@@ -271,51 +286,20 @@ export class NotificationService {
   }
 
   /**
-   * 计算实际触发时间 (考虑时间窗).
+   * 当前时刻是否落在允许发布通知的时间窗 [startHour, endHour) 内.
    *
    * 规则:
-   * - 若 dueAt 已过期或距 now < 1min, triggerAt = now (立即触发).
-   * - 否则 triggerAt = dueAt.
-   * - 若 triggerAt 的小时 < startHour, 延迟到当日 startHour.
-   * - 若 triggerAt 的小时 >= endHour, 延迟到次日 startHour.
-   * - startHour >= endHour 视为全天允许, 不延迟.
+   * - startHour >= endHour 视为全天允许 (如 0-23 或"不限制").
+   * - hour < startHour 或 hour >= endHour 视为静音时段, 不发布.
    *
    * 此函数为纯函数 (无副作用), 便于单元测试 mock.
    */
-  computeTriggerAt(dueAt: number, now: number, win: NotificationWindow): number {
-    // 已过期或 < 1min: 立即触发
-    if (dueAt <= now || dueAt - now < MIN_DELAY_MS) {
-      return this.applyWindow(now, win);
-    }
-    return this.applyWindow(dueAt, win);
-  }
-
-  /** 将时间戳对齐到时间窗内 (窗外延迟到当日/次日 startHour). */
-  private applyWindow(ts: number, win: NotificationWindow): number {
+  private isInNotificationWindow(now: number, win: NotificationWindow): boolean {
     if (win.startHour >= win.endHour) {
-      // 全天允许 (如 0-23 或 startHour >= endHour)
-      return ts;
+      return true;
     }
-    const date: Date = new Date(ts);
-    const hour: number = date.getHours();
-    if (hour < win.startHour) {
-      // 当日 startHour
-      return this.atHour(date, win.startHour);
-    }
-    if (hour >= win.endHour) {
-      // 次日 startHour
-      const nextDay: number = ts + MS_PER_DAY;
-      const nextDate: Date = new Date(nextDay);
-      return this.atHour(nextDate, win.startHour);
-    }
-    return ts;
-  }
-
-  /** 将 Date 对齐到指定 hour (0 分 0 秒 0 毫秒), 返回时间戳. */
-  private atHour(date: Date, hour: number): number {
-    const d: Date = new Date(date.getTime());
-    d.setHours(hour, 0, 0, 0);
-    return d.getTime();
+    const hour: number = new Date(now).getHours();
+    return hour >= win.startHour && hour < win.endHour;
   }
 
   /** 将字符串 hash 为合法 notification id (0-32767, int16 范围). */

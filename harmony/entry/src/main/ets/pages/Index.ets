@@ -32,6 +32,16 @@ const CSV_ACCEPT_TYPES: string[] = [
 ];
 const CSV_FILE_SUFFIX_FILTER: string = 'CSV / Text|.csv,.txt';
 
+/** M2: Web console 转发进 hilog 的最大长度 (防长文刷屏). */
+const CONSOLE_MAX_LOG_LENGTH: number = 500;
+
+/**
+ * M2: 无条件转发的 Web 诊断前缀 — 运行验证脚本按这些子串断言证据链
+ * (见 scripts/harmony/seed-and-verify.mjs 的 '[harmonyLaunch] openCard'),
+ * 不能按日志级别丢弃.
+ */
+const CONSOLE_ALWAYS_FORWARD: string[] = ['[harmonyLaunch]', '[memory-restore]'];
+
 function isCsvTextFileUri(uri: string): boolean {
   const path: string = uri.split('#')[0].split('?')[0].toLowerCase();
   let decodedPath: string = path;
@@ -184,6 +194,8 @@ struct Index {
     try {
       const ctx: common.Context =
         this.getUIContext().getHostContext() as common.Context;
+      // H5: 桥单例可跨 UIAbility 生命周期存活, getInstance 内部把 context
+      // 刷新为当前 host context (EntryAbility.onNewWant 同样经此路径).
       const bridge: HarmonyBridge = HarmonyBridge.getInstance(ctx);
       this.controller.registerJavaScriptProxy(
         bridge,
@@ -462,7 +474,25 @@ struct Index {
         .onConsole((event: OnConsoleEvent) => {
           const msg: string = event?.message?.getMessage() ?? '';
           const level: number = event?.message?.getMessageLevel() ?? 0;
-          hilog.info(DOMAIN, TAG, '[Console:%{public}d] %{public}s', level, msg);
+          // M2: 降噪 — 仅 warn/error 级 (level >= 2, 取 webview MessageLevel 与
+          // arkweb LogLevel 两套编号的保守下界) 或诊断前缀命中时进 hilog,
+          // 并截断长文; return false 保持 DevTools 原样输出.
+          const forward: boolean =
+            level >= 2 ||
+            CONSOLE_ALWAYS_FORWARD.some((prefix: string): boolean =>
+              msg.startsWith(prefix)
+            );
+          if (forward) {
+            hilog.info(
+              DOMAIN,
+              TAG,
+              '[Console:%{public}d] %{public}s',
+              level,
+              msg.length > CONSOLE_MAX_LOG_LENGTH
+                ? `${msg.substring(0, CONSOLE_MAX_LOG_LENGTH)}...`
+                : msg
+            );
+          }
           return false;
         })
 

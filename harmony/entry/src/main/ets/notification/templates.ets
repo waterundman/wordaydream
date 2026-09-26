@@ -2,8 +2,11 @@
  * notification/templates (v0.1.0-harmony Stage 7)
  *
  * 多语言通知文案模板. 鸿蒙端 NotificationService.scheduleReviewReminder 通过
- * getReviewReminderText / getPermissionRequestText 获取本地化文案, 注入
+ * getReviewReminderText 获取本地化文案, 注入
  * notificationManager.publish 的 NotificationContent.
+ *
+ * getPermissionRequestText 为权限引导文案 (当前仅 ohosTest 覆盖, 生产调用点
+ * 待权限被拒时的原生引导接入; 若长期无调用点应与对应用例一并移除).
  *
  * 支持语言: zh / en / de. 未匹配的语言 fallback 到 'en'.
  *

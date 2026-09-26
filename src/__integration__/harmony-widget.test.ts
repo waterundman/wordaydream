@@ -51,6 +51,20 @@ const PROVIDER_PATH: string = join(
   'widget',
   'CardDataProvider.ets'
 );
+// v0.5.0-harmony 技术债修复 M4: 卡片多语言文案的单一真源 (提供方与渲染进程共用).
+const TEXT_FORMATTER_PATH: string = join(
+  HARMONY_MAIN,
+  'ets',
+  'widget',
+  'CardTextFormatter.ets'
+);
+// v0.5.0-harmony 技术债修复 M4: 卡片尺寸的跨进程标签真源 (渲染进程零 Kit).
+const CARD_DIMENSION_PATH: string = join(
+  HARMONY_MAIN,
+  'ets',
+  'widget',
+  'CardFormDimension.ets'
+);
 const WIDGET_PATH: string = join(
   HARMONY_MAIN,
   'ets',
@@ -172,7 +186,7 @@ function createSampleMemoryCard(): MemoryCard {
 }
 
 /**
- * 重新实现 CardDataProvider.formatDueCountText 逻辑 (镜像 CardDataProvider.ets).
+ * 重新实现 CardTextFormatter.formatDueCountText 逻辑 (镜像 CardTextFormatter.ets).
  * 用于验证多语言文案规则, 不依赖真实 ArkTS 导入.
  */
 function formatDueCountText(count: number, language: string = 'en'): string {
@@ -201,6 +215,47 @@ function formatDueCountText(count: number, language: string = 'en'): string {
     return '1 card due';
   }
   return `${count} cards due`;
+}
+
+/** 统计正则在源码中出现的次数 (0 次时 match 返回 null). */
+function countMatches(source: string, pattern: RegExp): number {
+  return (source.match(pattern) || []).length;
+}
+
+/**
+ * 剔除 ArkTS 整行注释 (// 与 JSDoc 的 /* * / 行).
+ *
+ * MemoryCardStore 的 withResultSet 文档注释里引用了 "try { ... } catch { throw }
+ * finally { close }" 样板文本, 若不剔除会让 try/catch 计数断言失真.
+ */
+function stripArkTsCommentLines(source: string): string {
+  return source
+    .split('\n')
+    .filter((line: string) => !/^\s*(\/\/|\/\*|\*)/.test(line))
+    .join('\n');
+}
+
+/**
+ * 按 2 空格缩进的方法签名把 ArkTS class 体切分为 name -> body 映射.
+ *
+ * 用于逐方法断言异常兜底结构 (比全文计数更精确): body 取从本方法签名到下一个
+ * 方法签名之间的全部文本.
+ */
+function readArkTsMethodBodies(code: string): Map<string, string> {
+  const signature: RegExp =
+    /^ {2}(?:private |public |protected |static |async )*([A-Za-z_]\w*)\s*[<(]/gm;
+  const marks: Array<{ name: string; index: number }> = [];
+  let match: RegExpExecArray | null = signature.exec(code);
+  while (match !== null) {
+    marks.push({ name: match[1], index: match.index });
+    match = signature.exec(code);
+  }
+  const bodies: Map<string, string> = new Map<string, string>();
+  marks.forEach((mark, i) => {
+    const end: number = i + 1 < marks.length ? marks[i + 1].index : code.length;
+    bodies.set(mark.name, code.slice(mark.index, end));
+  });
+  return bodies;
 }
 
 describe('Stage 6 — T01: MemoryCardRecord 字段与 Web MemoryCard 一一对应', () => {
@@ -257,8 +312,10 @@ describe('Stage 6 — T02: CardDataProvider.formatDueCountText 多语言', () =>
     expect(formatDueCountText(1)).toBe('1 card due');
   });
 
-  it('ArkTS CardDataProvider.ets 包含相同的多语言文案', () => {
-    const content: string = readFileSync(PROVIDER_PATH, 'utf-8');
+  it('ArkTS CardTextFormatter.ets 包含相同的多语言文案 (单一真源)', () => {
+    // 文案真源 v0.5.0-harmony 技术债修复 M4 起为 CardTextFormatter.ets:
+    // 卡片提供方进程与卡片渲染进程共用同一实现, 逐行复制已消除.
+    const content: string = readFileSync(TEXT_FORMATTER_PATH, 'utf-8');
     expect(content).toContain('暂无到期');
     expect(content).toContain('1 个到期');
     expect(content).toContain('No cards');
@@ -267,6 +324,23 @@ describe('Stage 6 — T02: CardDataProvider.formatDueCountText 多语言', () =>
     expect(content).toContain('Keine Karten');
     expect(content).toContain('1 Karte fällig');
     expect(content).toContain('Karten fällig');
+    // 真源零依赖 (卡片渲染进程可安全引用): 无任何 import 语句 (Kit / RDB / preferences)
+    expect(content).not.toContain('@kit.');
+    expect(content).not.toMatch(/^\s*import\s/m);
+  });
+
+  it('ArkTS CardDataProvider.ets 仅转发文案, 不再复制字面量', () => {
+    const provider: string = readFileSync(PROVIDER_PATH, 'utf-8');
+    const widget: string = readFileSync(WIDGET_PATH, 'utf-8');
+    // 两侧进程均引用真源
+    expect(provider).toContain("from './CardTextFormatter'");
+    expect(widget).toContain("from './CardTextFormatter'");
+    // 提供方保留同名方法对外契约 (转发), 但不持有文案字面量
+    expect(provider).toContain('formatDueCountText(');
+    expect(provider).toContain('buildDueCountText(count, language)');
+    expect(provider).not.toContain('暂无到期');
+    expect(provider).not.toContain('No cards');
+    expect(widget).not.toContain('Keine Karten');
   });
 
   it('ArkTS CardDataProvider.ets 定义 getInstance 单例方法', () => {
@@ -346,12 +420,83 @@ describe('Stage 6 — T03: MemoryCardStore.getDueCardsCount SQL 逻辑', () => {
     expect(content).toContain('async clear(');
   });
 
-  it('ArkTS MemoryCardStore.ets 所有方法有 try/catch 兜底', () => {
+  it('ArkTS MemoryCardStore.ets 所有方法有 try/catch 兜底 (结果集生命周期由 withResultSet 统一 finally 接管)', () => {
     const content: string = readFileSync(STORE_PATH, 'utf-8');
-    const tryCount: number = (content.match(/try\s*{/g) || []).length;
-    const catchCount: number = (content.match(/catch\s*\(/g) || []).length;
-    expect(tryCount).toBe(catchCount);
-    expect(tryCount).toBeGreaterThanOrEqual(6);
+    // 先剔除注释行: withResultSet 的文档注释里引用了 "try { ... } catch { throw }
+    // finally { close }" 样板文本, 计入会让结构计数失真.
+    const code: string = stripArkTsCommentLines(content);
+    const bodies: Map<string, string> = readArkTsMethodBodies(code);
+
+    // (a) 每个 async 数据方法自身仍保留 try/catch 兜底 (异常降级为安全默认值, 不外抛).
+    const DATA_METHODS: string[] = [
+      'upsertCard',
+      'getDueCardsCount',
+      'getDueCards',
+      'deleteCardByLexemeGroupId',
+      'clear',
+      'getAllCards',
+      'getRecentlyReviewedCards',
+      'getTodayReviewStats',
+      'getCardById',
+    ];
+    DATA_METHODS.forEach((name: string) => {
+      const body: string = bodies.get(name) ?? '';
+      expect(body).not.toBe('');
+      expect(body).toContain('try {');
+      expect(body).toContain('} catch (');
+    });
+    // 行映射与初始化同样不得有裸奔路径
+    expect(bodies.get('mapRow') ?? '').toContain('} catch (');
+    expect(bodies.get('initializeStore') ?? '').toContain('} catch (');
+
+    // (b) 查询方法的结果集生命周期统一经泛型 withResultSet (try/finally 保证 close).
+    const QUERY_METHODS: string[] = [
+      'getDueCardsCount',
+      'getDueCards',
+      'getAllCards',
+      'getRecentlyReviewedCards',
+      'getTodayReviewStats',
+      'getCardById',
+    ];
+    QUERY_METHODS.forEach((name: string) => {
+      expect(bodies.get(name) ?? '').toContain('this.withResultSet<');
+    });
+    expect(countMatches(code, /this\.withResultSet\s*</g)).toBeGreaterThanOrEqual(
+      QUERY_METHODS.length
+    );
+    const withResultSet: string = bodies.get('withResultSet') ?? '';
+    expect(withResultSet).toContain('private async withResultSet<T>(');
+    expect(withResultSet).toContain('try {');
+    expect(withResultSet).toContain('} finally {');
+    expect(withResultSet).toContain('resultSet.close();');
+    // 全文件唯一一处 close, 就在 withResultSet 内: 无泄漏的自建/自关路径
+    expect(countMatches(code, /\.close\(\)/g)).toBe(1);
+
+    // (c) 计数不变量: try 只可多于 catch, 且差额必须逐方法可解释为 "try/finally 无 catch"
+    //     (即 withResultSet 的 close 兜底), 绝不允许出现既无 catch 也无 finally 的裸 try.
+    const tryCount: number = countMatches(code, /try\s*{/g);
+    const catchCount: number = countMatches(code, /catch\s*\(/g);
+    const finallyCount: number = countMatches(code, /finally\s*{/g);
+    expect(tryCount).toBeGreaterThanOrEqual(12);
+    expect(catchCount).toBeGreaterThanOrEqual(12);
+    expect(tryCount).toBeGreaterThanOrEqual(catchCount);
+    const unbalanced: Array<[string, number]> = Array.from(bodies.entries())
+      .map(
+        ([name, body]) =>
+          [
+            name,
+            countMatches(body, /try\s*{/g) - countMatches(body, /catch\s*\(/g),
+          ] as [string, number]
+      )
+      .filter(([, delta]) => delta > 0);
+    const tryWithoutCatch: number = unbalanced.reduce(
+      (acc: number, [, delta]) => acc + delta,
+      0
+    );
+    // 全文差额 == 逐方法差额之和 (无方法外的隐匿 try), 且这些 try 全部带 finally
+    expect(tryCount - catchCount).toBe(tryWithoutCatch);
+    expect(unbalanced.map(([name]) => name)).toEqual(['withResultSet']);
+    expect(finallyCount).toBeGreaterThanOrEqual(tryWithoutCatch);
   });
 
   it('并发初始化共享同一个 Promise，所有 Store 读写等待 ready', () => {
@@ -456,6 +601,21 @@ describe('Stage 6 — T04: form_config.json schema 校验', () => {
     expect(widget).not.toContain("from '@kit.FormKit'");
     expect(widget).not.toContain('hilog');
     expect(widget).toContain('textOverflow({ overflow: TextOverflow.Ellipsis })');
+    // 尺寸契约 (v0.5.0-harmony 技术债修复 M4): 系统 FormDimension 数值只在提供方进程
+    // 出现, 并由唯一翻译点转成 CardFormDimension 字符串标签后注入; 渲染进程零 Kit、
+    // 零数值魔数.
+    expect(ability).toContain('formInfo.FormDimension.Dimension_2_4');
+    expect(ability).toContain("from './CardFormDimension'");
+    expect(ability).toContain('private dimensionLabel(dimension: number): string');
+    expect(ability).toContain('formDimension: dimension');
+    expect(widget).toContain("from './CardFormDimension'");
+    expect(widget).not.toMatch(/dimension\s*===\s*\d/);
+    expect(widget).not.toMatch(/dimension:\s*number/);
+    // 标签真源: 零 import + 稳定字符串 (与 form_config.json 的 supportDimensions 同名)
+    const dimensionSource: string = readFileSync(CARD_DIMENSION_PATH, 'utf-8');
+    expect(dimensionSource).toContain("export const DIMENSION_2_2: string = '2*2'");
+    expect(dimensionSource).toContain("export const DIMENSION_2_4: string = '2*4'");
+    expect(dimensionSource).not.toMatch(/^\s*import\s/m);
   });
 
   it('supportDimensions 含 2*2 和 2*4', () => {

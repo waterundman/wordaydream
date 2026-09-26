@@ -15,99 +15,59 @@
  *
  * 退出码: 0 = 全部断言通过或 SKIP (模拟器不在线); 1 = 断言失败/运行错误.
  * SKIP 不视为失败 (沙箱约束: 模拟器不在线时不阻塞 CI).
+ *
+ * M6: runHdc / parseArgs / buildSkipReport / 设备在线判定 统一收敛到
+ * scripts/harmony/lib/hdc.mjs; 断言关键词收敛到 scripts/harmony/assertion-keywords.mjs
+ * (本文件仍原样再导出, 导入面与报告字段完全不变).
  */
-import { spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+import {
+  buildSkipReport as buildSkipReportBase,
+  createArgsParser,
+  isCliInvocation,
+  isDeviceOnline,
+  runHdc,
+} from './lib/hdc.mjs';
+import { ASSERTION_KEYWORDS, OPEN_CARD_ASSERTIONS, isCritical } from './assertion-keywords.mjs';
 
 const DEFAULT_BUNDLE = 'com.wordaydream.app';
 const DEFAULT_TIMEOUT_MS = 60000;
 const DEFAULT_POLL_INTERVAL_MS = 2000;
 
+/** 断言关键词真源在 assertion-keywords.mjs; 此处再导出, 保持既有 import 面不变. */
+export { ASSERTION_KEYWORDS, OPEN_CARD_ASSERTIONS, isCritical };
+
+const parseArgsImpl = createArgsParser([
+  { flag: '--hdc', key: 'hdc', default: 'hdc' },
+  {
+    flag: '--hap',
+    key: 'hap',
+    default: 'harmony/entry/build/default/outputs/default/entry-default-unsigned.hap',
+  },
+  { flag: '--bundle', key: 'bundle', default: DEFAULT_BUNDLE },
+  { flag: '--timeout', key: 'timeoutMs', type: 'number', default: DEFAULT_TIMEOUT_MS },
+  { flag: '--out', key: 'out', default: null },
+  // 空串 (--open-card "") = 跳过 openCard 阶段的标记, 因此值本身要能落进去.
+  { flag: '--open-card', key: 'openCard', type: 'optional', default: 'debug-seed-1' },
+  { flag: '--help', key: 'help', type: 'boolean', aliases: ['-h'], default: false },
+]);
+
 /** CLI 参数解析 (纯函数, 供 T03 单测). */
 export function parseArgs(argv) {
-  const args = {
-    hdc: 'hdc',
-    hap: 'harmony/entry/build/default/outputs/default/entry-default-unsigned.hap',
-    bundle: DEFAULT_BUNDLE,
-    timeoutMs: DEFAULT_TIMEOUT_MS,
-    out: null,
-    openCard: 'debug-seed-1',
-    help: false,
-  };
-  for (let i = 0; i < argv.length; i++) {
-    const key = argv[i];
-    const next = argv[i + 1];
-    switch (key) {
-      case '--hdc': args.hdc = next; i++; break;
-      case '--hap': args.hap = next; i++; break;
-      case '--bundle': args.bundle = next; i++; break;
-      case '--timeout': args.timeoutMs = Number(next) || DEFAULT_TIMEOUT_MS; i++; break;
-      case '--out': args.out = next; i++; break;
-      case '--open-card':
-        // 空串 (--open-card "") = 跳过 openCard 阶段的标记
-        if (next !== undefined && !next.startsWith('--')) {
-          args.openCard = next;
-          i++;
-        }
-        break;
-      case '--help': case '-h': args.help = true; break;
-      default: break;
-    }
-  }
-  return args;
+  return parseArgsImpl(argv);
 }
 
 /** SKIP 报告结构 (纯函数, 供 T03 单测): 模拟器不在线等场景. */
 export function buildSkipReport(reason, args) {
-  return {
-    skipped: true,
-    ok: true,
-    reason,
+  return buildSkipReportBase(reason, args, {
     steps: [],
     assertions: [],
     generatedAt: null,
     hap: args?.hap ?? null,
     bundle: args?.bundle ?? null,
-  };
-}
-
-/** 断言关键词 (运行日志证据链, 顺序即验证链顺序). level 缺省 = critical (向后兼容).
- *
- * 关键词与 v1.5.0 实机日志对齐 (2026-09-16 模拟器 127.0.0.1:5555 实测):
- * - A4: HarmonyBridge.ets 实际输出 'getAllCards done: count=N' (旧 'getAllCards=' 已漂移);
- * - A5: debugSeed 在 EntryAbility.handleLaunchWant 被原生拦截 (不进 HarmonyBridge FIFO),
- *   seed 阶段不存在 'handleHarmonyLaunch queued' 日志; 改为验证 notifyWebReady 就绪握手
- *   'Web launch handler ready: generation=N' (FIFO 派发通道武装完成的实证).
- *   'queued' 关键词由 openCard 阶段覆盖 (onNewWant -> handleHarmonyLaunch -> queued).
- */
-export const ASSERTION_KEYWORDS = [
-  { id: 'A1', keyword: 'seedDebugCards done', desc: '原生 RDB 预置 5 张到期卡完成', level: 'critical' },
-  { id: 'A2', keyword: 'Page begin', desc: 'ArkWeb 虚拟 HTTPS 入口开始加载', level: 'critical' },
-  { id: 'A3', keyword: 'Web content ready', desc: 'React content-ready ACK 到达', level: 'critical' },
-  { id: 'A4', keyword: 'getAllCards done: count=', desc: 'RDB 恢复链路执行 (getAllCards done: count=N)', level: 'critical' },
-  { id: 'A5', keyword: 'Web launch handler ready: generation=', desc: 'Web 启动处理器就绪握手 (FIFO 派发通道就绪)', level: 'critical' },
-];
-
-/** openCard 阶段断言 (seed 冷启动链全命中后独立执行与评估). */
-export const OPEN_CARD_ASSERTIONS = [
-  {
-    id: 'A6',
-    keyword: 'dispatching query=action=openCard',
-    desc: '原生 onNewWant 派发 openCard (来自 EntryAbility hilog)',
-    level: 'critical',
-  },
-  {
-    id: 'A7',
-    keyword: '[harmonyLaunch] openCard',
-    desc: 'Web 域层 openCard 处理日志 (located/fallback/keep-session 任一命中即过)',
-    level: 'soft',
-  },
-];
-
-/** 断言是否为 critical (level 缺省 = critical, 向后兼容). */
-export function isCritical(assertion) {
-  return assertion.level !== 'soft';
+  });
 }
 
 /** openCard 阶段是否启用 (openCard 为空串 = 跳过标记). */
@@ -118,20 +78,6 @@ export function openCardEnabled(args) {
 /** 单条日志断言评估 (纯函数, 供单测): 关键词在日志窗口中是否出现. */
 export function evaluateAssertion(keyword, logWindow) {
   return logWindow.includes(keyword);
-}
-
-function runHdc(hdc, argsList, timeoutMs) {
-  const child = spawnSync(hdc, argsList, {
-    encoding: 'utf8',
-    timeout: timeoutMs,
-    shell: false,
-  });
-  return {
-    code: child.status,
-    stdout: child.stdout || '',
-    stderr: child.stderr || '',
-    error: child.error ? child.error.message : null,
-  };
 }
 
 export function collectReport(args, steps, seedAssertions, startedAt, options = {}) {
@@ -195,7 +141,7 @@ async function main() {
 
   // 1. 设备在线检测 — 不在线 = SKIP (exit 0, 不阻塞).
   const targets = runHdc(args.hdc, ['list', 'targets'], 10000);
-  const online = targets.code === 0 && targets.stdout.split('\n').some((l) => l.startsWith('127.0.0.1') || l.includes('CONNECTED') || (l.trim().length > 0 && !l.startsWith('[Empty]')));
+  const online = isDeviceOnline(targets.stdout, targets.code);
   if (!online) {
     const report = buildSkipReport('no emulator/device online (hdc list targets empty)', args);
     report.generatedAt = new Date(startedAt).toISOString();
@@ -321,9 +267,10 @@ async function main() {
   return report.ok ? 0 : 1;
 }
 
-// CLI 入口 (被 import 时不执行).
-const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.url.replace('file:///', '').replace(/\//g, process.platform === 'win32' ? '\\' : '/'));
-if (isMain || process.argv[1]?.endsWith('seed-and-verify.mjs')) {
+// CLI 入口 (被 import 时不执行). M6: 用标准 import.meta.url 比较替代
+// 原先的 'file:///' 字符串替换 + endsWith 兜底判定 (见 lib/hdc.mjs isCliInvocation).
+const isMain = isCliInvocation(import.meta.url);
+if (isMain) {
   main().then((code) => process.exit(code)).catch((e) => {
     console.error('[seed-verify] fatal:', e.message);
     process.exit(1);

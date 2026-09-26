@@ -1,16 +1,22 @@
 # Wordaydream 鸿蒙版发布检查清单 (Stage 8)
 
-> **版本**: v0.1.0-harmony Stage 8
-> **用途**: v0.1.0-harmony 发布前的完整检查清单, 全部勾选后方可提交 AppGallery.
+> **本文档的事实基线（版本 / 测试数 / SDK / 权限 / 能力状态 / 验证层级）以 [CURRENT_STATUS.md](./CURRENT_STATUS.md) 为唯一真源；本文件仅保留「发布前逐项打勾」的步骤清单职责，不复制数字。**
+>
+> 下列检查项中的具体阈值（如 vitest 通过数、versionName/versionCode）一律以 CURRENT_STATUS 的 §2 工程基线与 §5 当前验证证据为准；本文件历史上写死的 `917/917`、`0.1.0`、`versionCode 1` 已作废。
+
+> **用途**: 鸿蒙版发布前的完整检查清单, 全部勾选后方可提交 AppGallery.
 > **关联**: harmony/app-market/ (素材) / harmony/PERFORMANCE_BASELINE.md (性能) / e2e/harmony_full.spec.ts (E2E).
+> **当前可发布性**: 见 CURRENT_STATUS §3/§5 —— 签名、真机验收、`reminderAgent` 权益与 `.env.harmony` 代理仍是硬性缺口，**当前不满足发布条件**。
 
 ## 1. Web 端 0 regression 守护
 
 - [ ] `npm run typecheck` — tsc 0 errors
-- [ ] `npm run test:run` — vitest 917/917 PASS (Stage 1-7 全部测试)
+- [ ] `npm run test:run` — vitest 全绿（测试文件数 / 用例数以 CURRENT_STATUS §5 当前记录为准，本文件不写死）
 - [ ] `npm run build` — Web 端构建成功
-- [ ] `npm run build:harmony` — 鸿蒙端构建成功 (输出到 harmony/entry/src/main/resources/rawfile/dist/)
-- [ ] `npm run lint` — oxlint 0 errors (可选, 建议)
+- [ ] `npm run build:harmony` — 鸿蒙端构建 + `verify-harmony-build` 产物完整性校验通过
+- [ ] `npm run lint` — oxlint 0 警告 0 错误
+- [ ] `npm run check:versions` — 四处版本口径一致（CI 强制）
+- [ ] `npm run test:harmony-scripts` — Node 侧构建/运行脚本单测全绿
 
 ## 2. Harmony 构建
 
@@ -41,6 +47,8 @@
 
 ## 5. 性能基线测试
 
+> 目标阈值是本文件的发布门控（保留），但**实测数字尚未采集**：PERFORMANCE_BASELINE.md 目前是空模板，基线待模拟器/真机在线时用 `npm run collect:harmony-perf` 填充；采集口径与已完成的验证层级以 CURRENT_STATUS §5 为准。
+
 - [ ] 冷启动时间 < 3000ms (P95) — 见 PERFORMANCE_BASELINE.md §1
 - [ ] 热启动时间 < 1000ms (P95) — 见 PERFORMANCE_BASELINE.md §2
 - [ ] 内存占用 < 200MB — 见 PERFORMANCE_BASELINE.md §3
@@ -49,6 +57,8 @@
 - [ ] PERFORMANCE_BASELINE.md 真机测试结果已填写
 
 ## 6. AppGallery 元服务上架素材
+
+> 素材现状与制作口径见 [harmony/app-market/README.md](./app-market/README.md)：目录内的 `*_mockup.png` 是设计稿模拟图，**不能直接用于上架**，需真机/模拟器实拍替换。
 
 - [ ] `harmony/app-market/icon_512.png` — 512x512 元服务图标 (透明背景 PNG)
 - [ ] `harmony/app-market/screenshots/` — 至少 5 张截图 (1080x1920 PNG)
@@ -89,12 +99,15 @@
 - [ ] 本地 .env.harmony 未提交到 git (harmony/.gitignore 已排除 .env)
 - [ ] .env.harmony.example 作为模板已提交 (harmony/server/.env.example)
 
-## 10. 元服务版本号
+## 10. 版本号（真源在 CURRENT_STATUS，勿在本文件写死）
 
-- [ ] harmony/app.json5 (或 module.json5) versionName: "0.1.0"
-- [ ] harmony/app.json5 versionCode: 1 (或递增)
-- [ ] harmony/oh-package.json5 version: "0.1.0"
-- [ ] 元服务版本号标识: 0.1.0-harmony (Stage 8 完成版)
+版本口径的唯一记录处是 [CURRENT_STATUS.md §2 工程基线](./CURRENT_STATUS.md#2-工程基线)，由 `npm run check:versions`（`scripts/check-version-alignment.mjs`）在 CI 强制：
+
+- [ ] 仓库根 `package.json` 版本与 AppScope / entry 版本满足对齐规则（harmony = web major−2）
+- [ ] `harmony/AppScope/app.json5` 的 `versionName` / `versionCode` 与上表一致
+- [ ] `harmony/entry/oh-package.json5` version 与 AppScope 一致
+- [ ] `versionCode` 相对 `scripts/harmony/last-release.json` 单调递增（相等仅告警，发布前必须递增）
+- [ ] 发布完成后把 `scripts/harmony/last-release.json` 更新为本次发布的 versionCode/versionName
 
 ## 11. 多语言测试
 

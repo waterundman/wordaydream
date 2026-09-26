@@ -23,8 +23,17 @@ import { BusinessError } from '@kit.BasicServicesKit';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'TextToSpeechService';
+/**
+ * 应用自定义 TTS 错误码 (非系统返回码).
+ *
+ * 取 textToSpeech 模块码段 (1002300xxx) 的 9xx 空闲号位, 避开已文档化的系统
+ * 错误码; 经 HarmonyBridge 透传给 Web 端时按 message 文案区分场景.
+ */
+/** 旧朗读请求被新请求抢占 (speak 入口单活动). */
 const ERROR_SPEECH_SUPERSEDED: number = 1002300991;
+/** 朗读中服务被销毁 (onWindowStageDestroy / shutdown). */
 const ERROR_SERVICE_SHUTDOWN: number = 1002300992;
+/** 引擎缺失或启动朗读失败. */
 const ERROR_SPEECH_FAILED: number = 1002300993;
 const NO_ACTIVE_REQUEST: string = '';
 
@@ -413,12 +422,12 @@ export class TextToSpeechService {
   }
 
   /**
-   * 列出可用 TTS 引擎.
+   * 列出可用 TTS 语音 (对外仍以引擎信息形态暴露).
    *
-   * 防御性 (R-TTS-2): textToSpeech.listEngines 在 API 18 可能不存在,
+   * 防御性 (R-TTS-2): listVoices 需要引擎侧支持且可能因设备/权限抛错,
    * try/catch 兜底返回空数组.
    *
-   * @returns 引擎信息数组, 异常或无引擎时返回 [].
+   * @returns 语音映射出的引擎信息数组, 异常或无可用语音时返回 [].
    */
   async getEngines(): Promise<SpeechEngineInfo[]> {
     try {

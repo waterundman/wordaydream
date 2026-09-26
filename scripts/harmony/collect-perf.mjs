@@ -10,36 +10,44 @@
  *
  * 用法:
  *   node scripts/harmony/collect-perf.mjs --hdc <path> --bundle <name> [--timeout <ms>] [--out perf.json]
+ *
+ * M6: runHdc / parseArgs / buildSkipReport / 设备在线判定统一走
+ * scripts/harmony/lib/hdc.mjs (与 seed-and-verify.mjs 同一实现), 报告字段与
+ * SKIP 契约 (skipped:true / ok:true / 退出码 0) 保持不变.
  */
-import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
+
+import {
+  buildSkipReport as buildSkipReportBase,
+  createArgsParser,
+  isCliInvocation,
+  isDeviceOnline,
+  runHdc,
+  runHdcText,
+} from './lib/hdc.mjs';
 
 const DEFAULT_BUNDLE = 'com.wordaydream.app';
 const DEFAULT_TIMEOUT_MS = 60000;
+const DEFAULT_POLL_INTERVAL_MS = 2000;
+
+const parseArgsImpl = createArgsParser([
+  { flag: '--hdc', key: 'hdc', default: 'hdc' },
+  { flag: '--bundle', key: 'bundle', default: DEFAULT_BUNDLE },
+  { flag: '--timeout', key: 'timeoutMs', type: 'number', default: DEFAULT_TIMEOUT_MS },
+  { flag: '--out', key: 'out', default: null },
+]);
 
 /** CLI 参数解析 (纯函数, 供 T03 单测). */
 export function parseArgs(argv) {
-  const args = {
-    hdc: 'hdc',
-    bundle: DEFAULT_BUNDLE,
-    timeoutMs: DEFAULT_TIMEOUT_MS,
-    out: null,
-  };
-  for (let i = 0; i < argv.length; i++) {
-    switch (argv[i]) {
-      case '--hdc': args.hdc = argv[i + 1]; i++; break;
-      case '--bundle': args.bundle = argv[i + 1]; i++; break;
-      case '--timeout': args.timeoutMs = Number(argv[i + 1]) || DEFAULT_TIMEOUT_MS; i++; break;
-      case '--out': args.out = argv[i + 1]; i++; break;
-      default: break;
-    }
-  }
-  return args;
+  return parseArgsImpl(argv);
 }
 
 /** SKIP 报告 (纯函数). */
 export function buildSkipReport(reason, args) {
-  return { skipped: true, ok: true, reason, metrics: {}, bundle: args?.bundle ?? null };
+  return buildSkipReportBase(reason, args, {
+    metrics: {},
+    bundle: args?.bundle ?? null,
+  });
 }
 
 /** 从 hilog 行提取最早/最晚时间戳 (HH:MM:SS.mmm) 并计算毫秒差 (纯函数). */
@@ -61,16 +69,10 @@ export function extractPssKb(hidumperOutput) {
   return m ? Number(m[1]) : null;
 }
 
-function runHdc(hdc, argsList, timeoutMs) {
-  const child = spawnSync(hdc, argsList, { encoding: 'utf8', timeout: timeoutMs });
-  return (child.stdout || '') + (child.stderr || '');
-}
-
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const targets = runHdc(args.hdc, ['list', 'targets'], 10000);
-  const online = targets.split('\n').some((l) => l.startsWith('127.0.0.1') || (l.trim().length > 0 && !l.startsWith('[Empty]')));
-  if (!online) {
+  if (!isDeviceOnline(targets.stdout, targets.code)) {
     const skip = buildSkipReport('no emulator/device online', args);
     const text = JSON.stringify(skip, null, 2);
     if (args.out) writeFileSync(args.out, text, 'utf8');
@@ -79,23 +81,23 @@ async function main() {
     return 0;
   }
 
-  runHdc(args.hdc, ['shell', 'aa', 'force-stop', args.bundle], 15000);
-  runHdc(args.hdc, ['shell', 'hilog', '-r'], 15000);
-  runHdc(args.hdc, ['shell', 'aa', 'start', '-b', args.bundle, '-a', 'EntryAbility'], 20000);
+  runHdcText(args.hdc, ['shell', 'aa', 'force-stop', args.bundle], 15000);
+  runHdcText(args.hdc, ['shell', 'hilog', '-r'], 15000);
+  runHdcText(args.hdc, ['shell', 'aa', 'start', '-b', args.bundle, '-a', 'EntryAbility'], 20000);
 
   const deadline = Date.now() + args.timeoutMs;
   let logWindow = '';
   while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 2000));
-    logWindow = runHdc(args.hdc, ['shell', 'hilog', '-x'], 15000);
+    await new Promise((r) => setTimeout(r, DEFAULT_POLL_INTERVAL_MS));
+    logWindow = runHdcText(args.hdc, ['shell', 'hilog', '-x'], 15000);
     if (logWindow.includes('Web content ready')) break;
   }
   const coldStartMs = computeColdStartMs(logWindow);
-  const pidLine = runHdc(args.hdc, ['shell', 'pidof', args.bundle], 10000).trim();
+  const pidLine = runHdcText(args.hdc, ['shell', 'pidof', args.bundle], 10000).trim();
   const pid = pidLine.split(/\s+/)[0];
   let pssKb = null;
   if (pid) {
-    pssKb = extractPssKb(runHdc(args.hdc, ['shell', 'hidumper', '--mem', pid], 20000));
+    pssKb = extractPssKb(runHdcText(args.hdc, ['shell', 'hidumper', '--mem', pid], 20000));
   }
 
   const report = {
@@ -111,7 +113,8 @@ async function main() {
   return report.ok ? 0 : 1;
 }
 
-const isMain = process.argv[1]?.endsWith('collect-perf.mjs');
+// CLI 入口 (被 import 时不执行; M6: 标准 import.meta.url 比较).
+const isMain = isCliInvocation(import.meta.url);
 if (isMain) {
   main().then((code) => process.exit(code)).catch((e) => {
     console.error('[perf] fatal:', e.message);

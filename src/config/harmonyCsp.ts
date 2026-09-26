@@ -37,11 +37,6 @@ export function parseHarmonyProxyUrl(rawValue: string): HarmonyProxyConfig {
   return { proxyUrl, origin: parsedUrl.origin };
 }
 
-/** Add one normalized proxy origin to the CSP connect-src directive. */
-export function injectConnectSrcOrigin(html: string, origin: string): string {
-  return updateConnectSrc(html, (sources) => [...sources, origin]);
-}
-
 /** Remove insecure HTTP endpoints from the Harmony shell and add its HTTPS proxy. */
 export function hardenHarmonyCsp(
   html: string,

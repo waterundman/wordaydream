@@ -6,7 +6,7 @@
  * 职责:
  * - getDueCardsCountForWidget: 取到期卡片数 (供卡片角标/数字展示)
  * - getNextDueCardForWidget: 取最近到期的 1 张卡片 (供卡片显示词位 lemma)
- * - formatDueCountText: 多语言格式化到期数文案 (zh / en / de)
+ * - formatDueCountText: 多语言格式化到期数文案 (实现见 CardTextFormatter, 与卡片 UI 共用)
  * - getTodayReviewStatsForWidget (Stage 4): 今日复习统计 (供进度环)
  * - getLanguage (Stage 4): 读取 app_language preferences (供多语言文案)
  * - getRecentlyReviewedCardsForWidget (Stage 4): 最近复习卡片 (供 2*4 富布局)
@@ -23,6 +23,7 @@ import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { MemoryCardStore } from '../data/MemoryCardStore';
 import { MemoryCardRecord, TodayReviewStats } from '../data/MemoryCardSchema';
+import { formatDueCountText as buildDueCountText } from './CardTextFormatter';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 
@@ -37,7 +38,9 @@ const LANGUAGE_KEY: string = 'app_language';
  * FormRefresher 共用此接口, 保证 updateForm 写入的字段与卡片渲染一致.
  *
  * 字段: dueCount / nextWord / lastUpdated / language / reviewedCount / totalCount
- *   + formDimension? (仅首次 add 时带入, 其余刷新可省略).
+ *   + formDimension? (仅首次 add 时带入, 其余刷新可省略). formDimension 取值为
+ *   CardFormDimension 定义的稳定标签 ('2*2' | '2*4'), 系统 FormDimension 数值到
+ *   标签的翻译只发生在卡片提供方进程 (ReviewCardFormAbility), 卡片渲染进程零 Kit.
  */
 export interface ReviewCardFormData {
   dueCount: number;
@@ -47,7 +50,7 @@ export interface ReviewCardFormData {
   language: string;
   reviewedCount: number;
   totalCount: number;
-  formDimension?: number;
+  formDimension?: string;
 }
 
 export class CardDataProvider {
@@ -142,44 +145,14 @@ export class CardDataProvider {
   }
 
   /**
-   * 多语言格式化到期数文案.
+   * 多语言格式化到期数文案 (转发到 CardTextFormatter 单一实现).
    *
    * @param count 到期卡片数
    * @param language 语言代码: 'zh' | 'en' | 'de' (默认 'en')
-   * @returns 格式化后的文案
-   *
-   * 文案规则:
-   *   zh: 0 -> '暂无到期', 1 -> '1 个到期', n -> '${n} 个到期'
-   *   en: 0 -> 'No cards', 1 -> '1 card due', n -> '${n} cards due'
-   *   de: 0 -> 'Keine Karten', 1 -> '1 Karte fällig', n -> '${n} Karten fällig'
+   * @returns 格式化后的文案 (文案规则见 CardTextFormatter)
    */
   formatDueCountText(count: number, language: string = 'en'): string {
-    if (language === 'zh') {
-      if (count === 0) {
-        return '暂无到期';
-      }
-      if (count === 1) {
-        return '1 个到期';
-      }
-      return `${count} 个到期`;
-    }
-    if (language === 'de') {
-      if (count === 0) {
-        return 'Keine Karten';
-      }
-      if (count === 1) {
-        return '1 Karte fällig';
-      }
-      return `${count} Karten fällig`;
-    }
-    // 默认 en
-    if (count === 0) {
-      return 'No cards';
-    }
-    if (count === 1) {
-      return '1 card due';
-    }
-    return `${count} cards due`;
+    return buildDueCountText(count, language);
   }
 
   /**
@@ -286,10 +259,11 @@ export class CardDataProvider {
    * 所有查询异常均被各方法自身兜底 (返回 0 / null / 'en' / 默认统计), 因此
    * 这里组装的数据始终安全可用.
    *
-   * @param dimension 可选卡片尺寸, 仅在首次 add 时一并下发.
+   * @param dimension 可选卡片尺寸标签 ('2*2' | '2*4', 见 CardFormDimension),
+   *   仅在首次 add / 尺寸变化时一并下发.
    * @returns ReviewCardFormData (与 ReviewCardWidget 消费字段一致).
    */
-  async getWidgetFormData(dimension?: number): Promise<ReviewCardFormData> {
+  async getWidgetFormData(dimension?: string): Promise<ReviewCardFormData> {
     const dueCount: number = await this.getDueCardsCountForWidget();
     const language: string = await this.getLanguage();
     const todayStats: TodayReviewStats =

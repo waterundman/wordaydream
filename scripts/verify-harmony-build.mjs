@@ -4,9 +4,16 @@ import { access, readFile, readdir } from 'node:fs/promises';
 import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  CHUNK_GRAPH_FILE_NAME,
+  chunkGraphAdjacency,
+  parseChunkGraph,
+} from './harmony/lib/chunk-graph.mjs';
+
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, '..');
-const buildDirectory = join(
+/** 默认校验目录 = ArkWeb rawfile 产物; `--dist <dir>` 仅用于自测/离线复算. */
+const DEFAULT_BUILD_DIRECTORY = join(
   projectRoot,
   'harmony',
   'entry',
@@ -148,7 +155,15 @@ export function validateOutputFileSet(relativePaths) {
   }
 
   for (const file of normalized) {
-    if (file === 'index.html' || file === 'favicon.svg' || file === 'icons.svg') continue;
+    // index.html / 图标是 rawfile 根级例外; harmony-chunk-graph.json 是 M5 的构建期
+    // 元数据 sidecar (由 vite.config.ts 的 harmony-chunk-graph 插件写出, 供本校验器
+    // 消费, 不参与运行时加载), 同样允许落在根级.
+    if (
+      file === 'index.html' ||
+      file === 'favicon.svg' ||
+      file === 'icons.svg' ||
+      file === CHUNK_GRAPH_FILE_NAME
+    ) continue;
     const segments = file.split('/');
     if (
       !(file.startsWith('assets/') || file.startsWith('icons/')) ||
@@ -161,7 +176,17 @@ export function validateOutputFileSet(relativePaths) {
   return failures;
 }
 
-export function extractLocalReferences(contents, extension) {
+/**
+ * 从产物文本里抽取本地引用边.
+ *
+ * @param {string} contents 文件内容
+ * @param {string} extension 扩展名 (含点)
+ * @param {boolean} [includeViteMapDeps=true] 是否逆向 `__vite__mapDeps` 数组.
+ *   M5 之后这是 **fallback 专用开关**: dist 里有 harmony-chunk-graph.json 时校验器
+ *   传 false, 改用打包器正向导出的邻接表; 只有图缺失 (旧产物 / 非 vite 产物) 才
+ *   退回这条依赖 Vite 内部代码形态的正则路径.
+ */
+export function extractLocalReferences(contents, extension, includeViteMapDeps = true) {
   const references = new Set();
   const patterns = [];
   if (extension === '.html') {
@@ -188,9 +213,14 @@ export function extractLocalReferences(contents, extension) {
     }
   }
 
-  if (extension === '.js' || extension === '.mjs') {
-    // Vite records lazy JS/CSS dependency edges in __vite__mapDeps arrays.
-    // They are ordinary string literals rather than import expressions.
+  if (
+    includeViteMapDeps &&
+    (extension === '.js' || extension === '.mjs')
+  ) {
+    // FALLBACK (M5): Vite records lazy JS/CSS dependency edges in __vite__mapDeps
+    // arrays. They are ordinary string literals rather than import expressions.
+    // 优先路径是打包器导出的 harmony-chunk-graph.json; 本分支只在图缺失时启用,
+    // 因为它是「逆向 Vite 内部 helper 形态」, Vite/rolldown 升级即可能失效.
     for (const mapMatch of contents.matchAll(
       /\b__vite__mapDeps\s*=\s*\([^[]*?\bm\.f\s*\|\|\s*\(\s*m\.f\s*=\s*\[([^\]]*)\]/g,
     )) {
@@ -241,7 +271,7 @@ async function collectFiles(directory) {
   return nested.flat();
 }
 
-async function verifyHarmonyBuild() {
+async function verifyHarmonyBuild(buildDirectory = DEFAULT_BUILD_DIRECTORY) {
   const failures = [];
   try {
     await access(join(buildDirectory, 'index.html'));
@@ -259,6 +289,28 @@ async function verifyHarmonyBuild() {
   const fileSet = new Set(relativePaths);
   failures.push(...validateOutputFileSet(relativePaths));
 
+  // M5: 优先消费打包器正向导出的 chunk 邻接表; 缺失/损坏时回退 __vite__mapDeps 正则.
+  let chunkGraph = null;
+  try {
+    chunkGraph = parseChunkGraph(
+      await readFile(join(buildDirectory, CHUNK_GRAPH_FILE_NAME), 'utf8'),
+    );
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      console.warn(
+        `[verify:harmony-build] warn: ${CHUNK_GRAPH_FILE_NAME} not found; ` +
+        'falling back to the deprecated __vite__mapDeps regex path ' +
+        '(re-run "npm run build:harmony" to emit the chunk graph)',
+      );
+    } else {
+      failures.push(
+        `${CHUNK_GRAPH_FILE_NAME}: unreadable chunk graph (${error.message}); ` +
+        'falling back to the deprecated __vite__mapDeps regex path',
+      );
+    }
+  }
+  const useChunkGraph = chunkGraph !== null;
+
   const referencedFiles = new Set();
   const referenceGraph = new Map();
   for (const file of files) {
@@ -275,7 +327,7 @@ async function verifyHarmonyBuild() {
     rootAbsoluteAssetPattern.lastIndex = 0;
 
     const outgoingReferences = new Set();
-    for (const reference of extractLocalReferences(contents, extension)) {
+    for (const reference of extractLocalReferences(contents, extension, !useChunkGraph)) {
       const target = resolveLocalReference(relativePath, reference);
       if (target === null) {
         failures.push(`unsafe local reference in ${relativePath}: ${reference}`);
@@ -288,6 +340,21 @@ async function verifyHarmonyBuild() {
       }
     }
     referenceGraph.set(relativePath, outgoingReferences);
+  }
+
+  if (useChunkGraph) {
+    const { adjacency, failures: graphFailures } = chunkGraphAdjacency(chunkGraph, fileSet);
+    failures.push(
+      ...graphFailures.map((failure) => `${CHUNK_GRAPH_FILE_NAME}: ${failure}`),
+    );
+    for (const [chunkKey, targets] of adjacency) {
+      const existing = referenceGraph.get(chunkKey) ?? new Set();
+      for (const target of targets) {
+        existing.add(target);
+        referencedFiles.add(target);
+      }
+      referenceGraph.set(chunkKey, existing);
+    }
   }
 
   failures.push(...validateExecutableReachability(relativePaths, referenceGraph));
@@ -309,5 +376,18 @@ async function verifyHarmonyBuild() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await verifyHarmonyBuild();
+  // `--dist <dir>` 只用于脚本自测/离线复算 (指向一份拷贝出来的产物目录),
+  // 默认仍是 harmony rawfile/dist, 门禁行为不变.
+  const distFlagIndex = process.argv.indexOf('--dist');
+  let targetDirectory = DEFAULT_BUILD_DIRECTORY;
+  if (distFlagIndex >= 0) {
+    const raw = process.argv[distFlagIndex + 1];
+    if (!raw || raw.startsWith('--')) {
+      console.error('[verify:harmony-build] --dist 需要一个目录参数');
+      process.exitCode = 1;
+    } else {
+      targetDirectory = resolve(raw);
+    }
+  }
+  if (process.exitCode !== 1) await verifyHarmonyBuild(targetDirectory);
 }

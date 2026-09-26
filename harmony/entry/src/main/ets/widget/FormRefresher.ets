@@ -68,7 +68,8 @@ export class FormRefresher {
             formBindingData.createFormBindingData(data)
           );
           refreshed += 1;
-          hilog.info(DOMAIN, TAG, 'form refreshed: %{public}s', formId);
+          // formId 明文降为 private: info 级日志不暴露安装级标识符.
+          hilog.info(DOMAIN, TAG, 'form refreshed: %{private}s', formId);
         } catch (e) {
           failed += 1;
           const err: BusinessError = e as BusinessError;

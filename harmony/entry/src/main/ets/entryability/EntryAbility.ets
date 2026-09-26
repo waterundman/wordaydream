@@ -1,7 +1,7 @@
 import { UIAbility, AbilityConstant, Want, common } from '@kit.AbilityKit';
 import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { BusinessError, emitter } from '@kit.BasicServicesKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { HarmonyBridge } from '../bridge/HarmonyBridge';
 import { ReminderAgentService } from '../notification/ReminderAgentService';
 import { MemoryCardStore } from '../data/MemoryCardStore';
@@ -15,21 +15,13 @@ const DOMAIN: number = 0x0001;
 const TAG: string = 'EntryAbility';
 
 /**
- * Stage 4: emitter event id 用于实时刷新服务卡片.
- * ReviewCardWidget.aboutToAppear 注册 emitter.on 同 id 监听.
+ * 服务卡片刷新通道说明:
+ * 卡片渲染进程与主 Ability 进程隔离, emitter 事件无法跨进程投递, 故本文件
+ * 不再发布 widget refresh 事件. 真实刷新链路由 Web 侧复习完成触发:
+ * harmonyBridge.notifyReviewCompleted -> FormRefresher.refreshAllForms ->
+ * formProvider.updateForm (卡片提供方进程读取 RDB 后回写 FormBindingData).
  */
-const WIDGET_REFRESH_EVENT_ID: number = 10001;
-
-/** Stage 4: 5 分钟节流 (鸿蒙系统 updateForm 限制). */
-const WIDGET_REFRESH_THROTTLE_MS: number = 5 * 60 * 1000;
-
 export default class EntryAbility extends UIAbility {
-  /**
-   * Stage 4: 上次 widget refresh 时间戳 (5min 节流).
-   * 0 表示从未触发过.
-   */
-  private lastWidgetRefresh: number = 0;
-
   onCreate(want: Want, _launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, TAG, 'onCreate');
     this.handleLaunchWant(want);
@@ -169,11 +161,15 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       const query: string = `${queryObj}`;
+      // 日志脱敏: 仅输出 action 段 (不含 cardId 等用户数据明文).
+      // 运行验证脚本断言子串 'dispatching query=action=openCard' 由 action 段
+      // 完整保留 (scripts/harmony/seed-and-verify.mjs A6), 不得改动前缀格式.
+      const queryAction: string = query.split('&')[0];
       hilog.info(
         DOMAIN,
         TAG,
         'handleLaunchWant: dispatching query=%{public}s',
-        query
+        queryAction
       );
 
       // Stage 4: 运行验证 seed 入口 (仅 debuggable 构建).
@@ -191,68 +187,12 @@ export default class EntryAbility extends UIAbility {
       const ctx: common.Context = this.context as common.Context;
       const bridge: HarmonyBridge = HarmonyBridge.getInstance(ctx);
       bridge.handleHarmonyLaunch(query);
-
-      // Stage 4: 实时刷新服务卡片 (绕过 60min 系统刷新限制).
-      // 仅在 review 相关 query 触发 (用户从卡片进入复习 / 打开卡片,
-      // 复习完成回到桌面时卡片应展示最新数据).
-      // 5 分钟节流由 publishWidgetRefresh 内部保证 (鸿蒙系统 updateForm 限制).
-      if (
-        query.startsWith('action=startReview') ||
-        query.startsWith('action=openCard')
-      ) {
-        this.publishWidgetRefresh();
-      }
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
         DOMAIN,
         TAG,
         'handleLaunchWant failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-    }
-  }
-
-  /**
-   * Stage 4: 发布 widget refresh 事件 (emitter).
-   *
-   * 由 onNewWant 在 action=startReview / action=openCard 等场景调用,
-   * ReviewCardWidget.aboutToAppear 注册的 emitter.on 监听本事件后调用 refreshCardData.
-   *
-   * 5 分钟节流 (鸿蒙系统 updateForm 限制): 5 分钟内最多 1 次, 超频时 hilog.warn 跳过.
-   * emitter.emit 同步投递 (不阻塞主流程, 内部仅派发到本进程 listener).
-   *
-   * 真机验证项:
-   * - emitter 跨进程 (EntryAbility 主进程 ↔ widget 宿主进程) 是否生效;
-   *   若不生效需改用 commonEventManager.publish + FormExtensionAbility 订阅.
-   * - 5min 节流是否与系统 updateForm 限制一致 (系统可能更严格).
-   */
-  private publishWidgetRefresh(): void {
-    try {
-      const now: number = Date.now();
-      if (now - this.lastWidgetRefresh < WIDGET_REFRESH_THROTTLE_MS) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'Widget refresh throttled (5min limit), skip'
-        );
-        return;
-      }
-      this.lastWidgetRefresh = now;
-      emitter.emit({ eventId: WIDGET_REFRESH_EVENT_ID });
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'Widget refresh event emitted (eventId=%{public}d)',
-        WIDGET_REFRESH_EVENT_ID
-      );
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.warn(
-        DOMAIN,
-        TAG,
-        'emitter.emit widget_refresh failed: code=%{public}d msg=%{public}s',
         err.code,
         err.message
       );

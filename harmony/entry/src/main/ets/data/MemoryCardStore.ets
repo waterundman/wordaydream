@@ -124,6 +124,42 @@ export class MemoryCardStore {
   }
 
   /**
+   * 统一 ResultSet 生命周期: 执行查询 -> 交由 consume 消费 -> finally close.
+   *
+   * 替代各查询方法内重复的 "try { ... } catch { throw } finally { close }" 样板:
+   * - consume 抛出的异常原样上抛, 由各方法自身的 catch 兜底为安全默认值;
+   * - close 失败不得覆盖业务异常, 仅降级为 warn 日志.
+   *
+   * @param args 绑定参数; 无参查询传 null (走 querySql(sql) 重载).
+   */
+  private async withResultSet<T>(
+    store: relationalStore.RdbStore,
+    sql: string,
+    args: relationalStore.ValueType[] | null,
+    consume: (resultSet: relationalStore.ResultSet) => T
+  ): Promise<T> {
+    const resultSet: relationalStore.ResultSet = args === null
+      ? await store.querySql(sql)
+      : await store.querySql(sql, args);
+    try {
+      return consume(resultSet);
+    } finally {
+      try {
+        resultSet.close();
+      } catch (e) {
+        const err: BusinessError = e as BusinessError;
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'resultSet.close failed: code=%{public}d msg=%{public}s',
+          err.code,
+          err.message
+        );
+      }
+    }
+  }
+
+  /**
    * 插入或替换卡片 (INSERT OR REPLACE, 按 id 主键冲突替换).
    * 参数化 SQL 防注入; 字段顺序与 MemoryCardRecord 一致.
    */
@@ -186,23 +222,17 @@ export class MemoryCardStore {
       }
       const sql: string =
         `SELECT COUNT(*) AS cnt FROM ${TABLE_NAME} WHERE ${COLUMN_DUE} <= ?`;
-      const resultSet: relationalStore.ResultSet =
-        await store.querySql(sql, [now]);
-      try {
-        let count: number = 0;
-        if (resultSet.goToFirstRow()) {
-          const idx: number = resultSet.getColumnIndex('cnt');
-          if (idx >= 0) {
-            count = resultSet.getLong(idx);
+      return await this.withResultSet<number>(store, sql, [now],
+        (resultSet: relationalStore.ResultSet): number => {
+          let count: number = 0;
+          if (resultSet.goToFirstRow()) {
+            const idx: number = resultSet.getColumnIndex('cnt');
+            if (idx >= 0) {
+              count = resultSet.getLong(idx);
+            }
           }
-        }
-        return count;
-      } catch (e) {
-        const error: Error = e as Error;
-        throw error;
-      } finally {
-        resultSet.close();
-      }
+          return count;
+        });
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -230,20 +260,14 @@ export class MemoryCardStore {
       const sql: string =
         `SELECT * FROM ${TABLE_NAME} WHERE ${COLUMN_DUE} <= ? ` +
         `ORDER BY ${COLUMN_DUE} ASC LIMIT ?`;
-      const resultSet: relationalStore.ResultSet =
-        await store.querySql(sql, [now, limit]);
-      try {
-        const cards: MemoryCardRecord[] = [];
-        while (resultSet.goToNextRow()) {
-          cards.push(this.mapRow(resultSet));
-        }
-        return cards;
-      } catch (e) {
-        const error: Error = e as Error;
-        throw error;
-      } finally {
-        resultSet.close();
-      }
+      return await this.withResultSet<MemoryCardRecord[]>(store, sql, [now, limit],
+        (resultSet: relationalStore.ResultSet): MemoryCardRecord[] => {
+          const cards: MemoryCardRecord[] = [];
+          while (resultSet.goToNextRow()) {
+            cards.push(this.mapRow(resultSet));
+          }
+          return cards;
+        });
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -321,20 +345,14 @@ export class MemoryCardStore {
       }
       const sql: string =
         `SELECT * FROM ${TABLE_NAME} ORDER BY ${COLUMN_DUE} ASC`;
-      const resultSet: relationalStore.ResultSet =
-        await store.querySql(sql);
-      try {
-        const cards: MemoryCardRecord[] = [];
-        while (resultSet.goToNextRow()) {
-          cards.push(this.mapRow(resultSet));
-        }
-        return cards;
-      } catch (e) {
-        const error: Error = e as Error;
-        throw error;
-      } finally {
-        resultSet.close();
-      }
+      return await this.withResultSet<MemoryCardRecord[]>(store, sql, null,
+        (resultSet: relationalStore.ResultSet): MemoryCardRecord[] => {
+          const cards: MemoryCardRecord[] = [];
+          while (resultSet.goToNextRow()) {
+            cards.push(this.mapRow(resultSet));
+          }
+          return cards;
+        });
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -363,20 +381,14 @@ export class MemoryCardStore {
       const sql: string =
         `SELECT * FROM ${TABLE_NAME} WHERE ${COLUMN_LAST_REVIEW_AT} > 0 ` +
         `ORDER BY ${COLUMN_LAST_REVIEW_AT} DESC LIMIT ?`;
-      const resultSet: relationalStore.ResultSet =
-        await store.querySql(sql, [limit]);
-      try {
-        const cards: MemoryCardRecord[] = [];
-        while (resultSet.goToNextRow()) {
-          cards.push(this.mapRow(resultSet));
-        }
-        return cards;
-      } catch (e) {
-        const error: Error = e as Error;
-        throw error;
-      } finally {
-        resultSet.close();
-      }
+      return await this.withResultSet<MemoryCardRecord[]>(store, sql, [limit],
+        (resultSet: relationalStore.ResultSet): MemoryCardRecord[] => {
+          const cards: MemoryCardRecord[] = [];
+          while (resultSet.goToNextRow()) {
+            cards.push(this.mapRow(resultSet));
+          }
+          return cards;
+        });
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -422,38 +434,32 @@ export class MemoryCardStore {
         `(SELECT COUNT(*) FROM ${TABLE_NAME} WHERE ${COLUMN_DUE} <= ?) AS dueCount, ` +
         `(SELECT COUNT(*) FROM ${TABLE_NAME} WHERE ${COLUMN_LAST_REVIEW_AT} >= ?) AS reviewedCount, ` +
         `(SELECT COUNT(*) FROM ${TABLE_NAME}) AS totalCount`;
-      const resultSet: relationalStore.ResultSet =
-        await store.querySql(sql, [now, todayStart]);
-      try {
-        let dueCount: number = 0;
-        let reviewedCount: number = 0;
-        let totalCount: number = 0;
-        if (resultSet.goToFirstRow()) {
-          const dueIdx: number = resultSet.getColumnIndex('dueCount');
-          const reviewedIdx: number = resultSet.getColumnIndex('reviewedCount');
-          const totalIdx: number = resultSet.getColumnIndex('totalCount');
-          if (dueIdx >= 0) {
-            dueCount = resultSet.getLong(dueIdx);
+      return await this.withResultSet<TodayReviewStats>(store, sql, [now, todayStart],
+        (resultSet: relationalStore.ResultSet): TodayReviewStats => {
+          let dueCount: number = 0;
+          let reviewedCount: number = 0;
+          let totalCount: number = 0;
+          if (resultSet.goToFirstRow()) {
+            const dueIdx: number = resultSet.getColumnIndex('dueCount');
+            const reviewedIdx: number = resultSet.getColumnIndex('reviewedCount');
+            const totalIdx: number = resultSet.getColumnIndex('totalCount');
+            if (dueIdx >= 0) {
+              dueCount = resultSet.getLong(dueIdx);
+            }
+            if (reviewedIdx >= 0) {
+              reviewedCount = resultSet.getLong(reviewedIdx);
+            }
+            if (totalIdx >= 0) {
+              totalCount = resultSet.getLong(totalIdx);
+            }
           }
-          if (reviewedIdx >= 0) {
-            reviewedCount = resultSet.getLong(reviewedIdx);
-          }
-          if (totalIdx >= 0) {
-            totalCount = resultSet.getLong(totalIdx);
-          }
-        }
-        const stats: TodayReviewStats = {
-          dueCount,
-          reviewedCount,
-          totalCount,
-        };
-        return stats;
-      } catch (e) {
-        const error: Error = e as Error;
-        throw error;
-      } finally {
-        resultSet.close();
-      }
+          const stats: TodayReviewStats = {
+            dueCount,
+            reviewedCount,
+            totalCount,
+          };
+          return stats;
+        });
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -480,20 +486,14 @@ export class MemoryCardStore {
         return null;
       }
       const sql: string = `SELECT * FROM ${TABLE_NAME} WHERE ${COLUMN_ID} = ?`;
-      const resultSet: relationalStore.ResultSet =
-        await store.querySql(sql, [id]);
-      try {
-        let card: MemoryCardRecord | null = null;
-        if (resultSet.goToFirstRow()) {
-          card = this.mapRow(resultSet);
-        }
-        return card;
-      } catch (e) {
-        const error: Error = e as Error;
-        throw error;
-      } finally {
-        resultSet.close();
-      }
+      return await this.withResultSet<MemoryCardRecord | null>(store, sql, [id],
+        (resultSet: relationalStore.ResultSet): MemoryCardRecord | null => {
+          let card: MemoryCardRecord | null = null;
+          if (resultSet.goToFirstRow()) {
+            card = this.mapRow(resultSet);
+          }
+          return card;
+        });
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(

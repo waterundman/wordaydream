@@ -2,29 +2,34 @@ import { formBindingData, FormExtensionAbility, formInfo, formProvider } from '@
 import { Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { DIMENSION_2_2, DIMENSION_2_4 } from './CardFormDimension';
 import { CardDataProvider, ReviewCardFormData } from './CardDataProvider';
 import { FormIdStore } from './FormIdStore';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'ReviewCardFormAbility';
-const DIMENSION_2_2: number = formInfo.FormDimension.Dimension_2_2;
-const DIMENSION_2_4: number = formInfo.FormDimension.Dimension_2_4;
+/** 系统 FormDimension 的 2*4 数值 (仅本进程感知). */
+const FORM_DIMENSION_2_4: number = formInfo.FormDimension.Dimension_2_4;
 
 /**
  * 服务卡片提供方。
  *
  * FormExtensionAbility 运行在卡片提供方进程，负责读取本地数据并通过
  * FormBindingData 传给卡片渲染进程。卡片 UI 不直接访问 Context 或 RDB。
+ *
+ * 尺寸契约：want / onSizeChanged 给出的是系统 formInfo.FormDimension 数值，
+ * 本文件是「系统数值 -> CardFormDimension 标签」的唯一翻译点；卡片渲染进程
+ * 只消费 '2*2' / '2*4' 字符串，因而无需（也不得）引用 @kit.FormKit。
  */
 export default class ReviewCardFormAbility extends FormExtensionAbility {
   private provider: CardDataProvider = CardDataProvider.getInstance();
-  private formDimensions: Map<string, number> = new Map<string, number>();
+  private formDimensionLabels: Map<string, string> = new Map<string, string>();
 
   onAddForm(want: Want): formBindingData.FormBindingData {
-    const dimension: number = this.readDimension(want);
+    const dimension: string = this.readDimensionLabel(want);
     const formId: string = this.readFormId(want);
     if (formId.length > 0) {
-      this.formDimensions.set(formId, dimension);
+      this.formDimensionLabels.set(formId, dimension);
       // Stage 2: 持久化 formId, 供复习完成后主动刷新闭环使用.
       FormIdStore.getInstance().initialize(this.context);
       void FormIdStore.getInstance().saveFormId(formId, this.context);
@@ -39,7 +44,7 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
       // Stage 2: 刷新时确保 formId 已持久化 (兜底 onCreate 遗漏).
       void FormIdStore.getInstance().saveFormId(formId, this.context);
     }
-    this.refreshForm(formId, this.formDimensions.get(formId));
+    this.refreshForm(formId, this.formDimensionLabels.get(formId));
   }
 
   onSizeChanged(
@@ -47,12 +52,12 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
     newDimension: formInfo.FormDimension,
     newRect: formInfo.Rect
   ): void {
-    const dimension: number = this.normalizeDimension(newDimension as number);
-    this.formDimensions.set(formId, dimension);
+    const dimension: string = this.dimensionLabel(newDimension as number);
+    this.formDimensionLabels.set(formId, dimension);
     hilog.info(
       DOMAIN,
       TAG,
-      'size changed: formId=%{public}s dimension=%{public}d width=%{public}f height=%{public}f',
+      'size changed: formId=%{private}s dimension=%{public}s width=%{public}f height=%{public}f',
       formId,
       dimension,
       newRect.width,
@@ -62,7 +67,7 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
   }
 
   onRemoveForm(formId: string): void {
-    this.formDimensions.delete(formId);
+    this.formDimensionLabels.delete(formId);
     // Stage 2: 移除 formId, 避免主动刷新时命中已删除的卡片.
     void FormIdStore.getInstance().removeFormId(formId);
   }
@@ -76,18 +81,21 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
     return typeof raw === 'string' ? raw : '';
   }
 
-  private readDimension(want: Want): number {
+  /** 从 want 读取系统尺寸并翻译为标签；缺失或未知尺寸回落 2*2。 */
+  private readDimensionLabel(want: Want): string {
     const raw: Object | undefined = want.parameters?.[formInfo.FormParam.DIMENSION_KEY];
-    return typeof raw === 'number'
-      ? this.normalizeDimension(raw)
-      : DIMENSION_2_2;
+    return typeof raw === 'number' ? this.dimensionLabel(raw) : DIMENSION_2_2;
   }
 
-  private normalizeDimension(dimension: number): number {
-    return dimension === DIMENSION_2_4 ? DIMENSION_2_4 : DIMENSION_2_2;
+  /**
+   * 系统 FormDimension 数值 -> 卡片渲染进程消费的稳定标签。
+   * 全工程唯一跨 Kit 边界的尺寸翻译点；未知尺寸回落 2*2 紧凑布局。
+   */
+  private dimensionLabel(dimension: number): string {
+    return dimension === FORM_DIMENSION_2_4 ? DIMENSION_2_4 : DIMENSION_2_2;
   }
 
-  private createDefaultData(dimension: number): ReviewCardFormData {
+  private createDefaultData(dimension: string): ReviewCardFormData {
     return {
       dueCount: 0,
       nextWord: '',
@@ -100,7 +108,7 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
     };
   }
 
-  private async refreshForm(formId: string, dimension?: number): Promise<void> {
+  private async refreshForm(formId: string, dimension?: string): Promise<void> {
     try {
       this.provider.setContext(this.context);
       const data: ReviewCardFormData =
@@ -109,7 +117,8 @@ export default class ReviewCardFormAbility extends FormExtensionAbility {
         formId,
         formBindingData.createFormBindingData(data)
       );
-      hilog.info(DOMAIN, TAG, 'form updated: %{public}s', formId);
+      // formId 明文降为 private: info 级日志不暴露安装级标识符.
+      hilog.info(DOMAIN, TAG, 'form updated: %{private}s', formId);
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       hilog.error(

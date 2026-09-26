@@ -4,31 +4,28 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { inspectHvigorOutput } from './hvigor-output.mjs';
+import { requireDevEcoToolchain } from './lib/deveco-paths.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, '..');
 // realpathSync 规范化盘符大小写: hvigor 对 cwd 大小写敏感 (w:\ 报 "Path not found",
 // W:\ 正常), 而 npm 从 Git Bash (cd /w/wordaydream) 启动时 process.cwd() 可能是小写.
 const harmonyRoot = realpathSync(join(projectRoot, 'harmony'));
-const studioHome =
-  process.env.DEVECO_STUDIO_HOME || 'D:\\DevEco Studio';
-const executableName = process.platform === 'win32' ? 'node.exe' : 'node';
-const bundledNode =
-  process.env.DEVECO_NODE_PATH ||
-  join(studioHome, 'tools', 'node', executableName);
-const hvigorEntry =
-  process.env.HVIGOR_ENTRY_PATH ||
-  join(studioHome, 'tools', 'hvigor', 'bin', 'hvigorw.js');
-
-for (const requiredPath of [bundledNode, hvigorEntry]) {
-  if (!existsSync(requiredPath)) {
-    console.error(
-      '[assemble:harmony] DevEco tool not found: ' + requiredPath +
-      '. Set DEVECO_STUDIO_HOME or the explicit tool path variables.',
-    );
-    process.exit(1);
+// M6: 工具链路径统一由 scripts/lib/deveco-paths.mjs 解析
+// (DEVECO_STUDIO_HOME 优先, 缺省 D:\DevEco Studio, 缺失即 fail-fast).
+// 输出保持历史契约: 每行 [assemble:harmony] 前缀 + exit 1, 不打印异常堆栈.
+let toolchain;
+try {
+  toolchain = requireDevEcoToolchain({
+    required: ['bundledNode', 'hvigorEntry'],
+  });
+} catch (error) {
+  for (const line of String(error.message ?? error).split('\n')) {
+    console.error(`[assemble:harmony] ${line}`);
   }
+  process.exit(1);
 }
+const { bundledNode, hvigorEntry, sdkHome, javaHome } = toolchain;
 
 const child = spawnSync(
   bundledNode,
@@ -50,9 +47,8 @@ const child = spawnSync(
     encoding: 'utf8',
     env: {
       ...process.env,
-      DEVECO_SDK_HOME:
-        process.env.DEVECO_SDK_HOME || join(studioHome, 'sdk'),
-      JAVA_HOME: process.env.JAVA_HOME || join(studioHome, 'jbr'),
+      DEVECO_SDK_HOME: sdkHome,
+      JAVA_HOME: javaHome,
     },
   },
 );

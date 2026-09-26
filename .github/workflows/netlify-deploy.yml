@@ -74,3 +74,30 @@ jobs:
         run: |
           test -f dist/manifest.webmanifest && echo "manifest OK"
           test -f dist/sw.js && echo "sw.js OK"
+
+      # ------------------------------------------------------------------
+      # A3/H8/M5/M6: 鸿蒙构建链门禁 (纯 Node, 不需要 DevEco / 模拟器)
+      #   - build:harmony 把 Web 产物打进 ArkWeb rawfile 并跑 verify-harmony-build
+      #   - M5: 校验打包器导出的 harmony-chunk-graph.json 确实落盘 (不再靠逆向)
+      #   - 运行验证脚本在无 hdc / 无模拟器时必须 SKIP 且 exit 0 (不得红 CI)
+      # ------------------------------------------------------------------
+      - name: Build Harmony rawfile bundle + verify
+        run: npm run build:harmony
+        env:
+          VITE_LLM_PROVIDER: mock
+          VITE_LLM_GRAYSCALE: '0'
+
+      - name: Assert Harmony chunk graph sidecar emitted (M5)
+        run: |
+          test -f harmony/entry/src/main/resources/rawfile/dist/harmony-chunk-graph.json
+          echo "harmony-chunk-graph.json OK"
+
+      - name: Harmony script unit tests (node --test)
+        run: |
+          npm run test:harmony-build-verifier
+          npm run test:harmony-build-wrapper
+
+      - name: Harmony runtime verifiers degrade to SKIP offline (exit 0)
+        run: |
+          npm run verify:harmony-runtime -- --hdc hdc-absent-in-ci --hap package.json
+          npm run collect:harmony-perf -- --hdc hdc-absent-in-ci

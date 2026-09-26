@@ -7,7 +7,7 @@
  * 背景: reminderAgent 属于系统开放能力, 需要在 AGC 申请 PUBLISH_AGENT_REMINDER
  * 权益并在签名 Profile 中声明后才可真实发布. 未开通权益时所有调用必须
  * 安全跳过 ({skipped:true, reason}), 绝不 fallback 为立即通知 — 与
- * NotificationService.scheduleReviewReminder 的 SAFETY 守卫一致.
+ * NotificationService.scheduleReviewReminder 的"未来触发一律跳过"边界一致.
  *
  * 权益探测: reminderAgentManager 无显式 isSupported API, 采用 getValidReminders()
  * 探测 — 抛错 (权限/能力缺失) 即视为不支持, 结果缓存避免反复探测.
@@ -82,13 +82,24 @@ export class ReminderAgentService {
       return this.initPromise;
     }
     this.context = context;
-    this.initPromise = preferences
-      .getPreferences(context, PREFS_NAME)
-      .then((prefs: preferences.Preferences): preferences.Preferences => {
-        this.prefs = prefs;
-        return prefs;
-      });
+    this.initPromise = this.initializePrefs(context);
     return this.initPromise;
+  }
+
+  /**
+   * 实际打开 preferences. 成功时缓存实例; 无论成败都在 finally 复位
+   * initPromise, 避免首次失败后 Promise 被永久毒化 (后续调用永远拿到同一
+   * 个 rejected Promise, 与 MemoryCardStore.initializeStore 的 finally 模式一致).
+   */
+  private async initializePrefs(context: common.Context): Promise<preferences.Preferences> {
+    try {
+      const prefs: preferences.Preferences =
+        await preferences.getPreferences(context, PREFS_NAME);
+      this.prefs = prefs;
+      return prefs;
+    } finally {
+      this.initPromise = null;
+    }
   }
 
   /**

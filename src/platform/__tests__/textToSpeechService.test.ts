@@ -15,9 +15,9 @@
  * - T02/T06/T07/T08: 创建 TS mock HarmonyBridge (mirror ArkTS fire-and-forget
  *   + try/catch 兜底契约), 注入 mock TextToSpeechService, 验证:
  *   - speak 调用 validator 前置校验 (T02)
- *   - speak 异常时 try/catch 兜底不抛到 Web (T06)
+ *   - speak 异常时 try/catch 兜底不抛到 Web, 返回原因字符串 (T06)
  *   - isSpeechSupported 异常时返回 false (T07)
- *   - getSpeechEngines 异常时返回 [] (T08)
+ *   - getSpeechEngines 返回 JSON 字符串, 异常时返回 '[]' (T08)
  *
  * 覆盖 test_spec (8 cases, T01-T08, all critical/non-critical, framework=vitest).
  */
@@ -51,6 +51,16 @@ const ENTRY_ABILITY_PATH: string = join(
   'ets',
   'entryability',
   'EntryAbility.ets',
+);
+const HARMONY_BRIDGE_PATH: string = join(
+  PROJECT_ROOT,
+  'harmony',
+  'entry',
+  'src',
+  'main',
+  'ets',
+  'bridge',
+  'HarmonyBridge.ets',
 );
 
 // =============================================================================
@@ -106,29 +116,32 @@ class MockTextToSpeechService {
  * speak/stopSpeech/isSpeechSupported/getSpeechEngines 4 个新方法).
  *
  * 行为契约 (与 ArkTS 一致):
- * - speak: 三段校验 (validateSpeechText/Language/Rate) + service.speak + try/catch 兜底
+ * - speak: 三段校验 (validateSpeechText/Language/Rate) + service.speak + try/catch 兜底,
+ *   返回 string ('' = 已派发, 非空 = 原因; M8 不再抛到 Web)
  * - stopSpeech: service.stop + try/catch 兜底
  * - isSpeechSupported: service.isSupported + try/catch 兜底 return false
- * - getSpeechEngines: service.getEngines + try/catch 兜底 return []
+ * - getSpeechEngines: service.getEngines + try/catch 兜底, 返回 JSON 字符串 (API 22 基本类型契约)
  */
 class MockHarmonyBridge {
-  async speak(payload: SpeakPayload): Promise<void> {
+  async speak(payload: SpeakPayload): Promise<string> {
     try {
       if (payload === null || payload === undefined) {
-        return;
+        return 'null payload';
       }
       if (!validateSpeechText(payload.text)) {
-        return;
+        return 'invalid text';
       }
       if (!validateSpeechLanguage(payload.language)) {
-        return;
+        return 'invalid language';
       }
       if (!validateSpeechRate(payload.rate)) {
-        return;
+        return 'invalid rate';
       }
       await MockTextToSpeechService.getInstance().speak(payload);
-    } catch {
-      // fire-and-forget 兜底: 不抛到 Web
+      return '';
+    } catch (e) {
+      // fire-and-forget 兜底: 不抛到 Web, 只回原因
+      return (e as Error).message;
     }
   }
 
@@ -148,11 +161,13 @@ class MockHarmonyBridge {
     }
   }
 
-  async getSpeechEngines(): Promise<SpeechEngineInfo[]> {
+  async getSpeechEngines(): Promise<string> {
     try {
-      return await MockTextToSpeechService.getInstance().getEngines();
+      const engines: SpeechEngineInfo[] =
+        await MockTextToSpeechService.getInstance().getEngines();
+      return JSON.stringify(engines);
     } catch {
-      return [];
+      return '[]';
     }
   }
 }
@@ -273,13 +288,14 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
   // T02: speak(payload) 调用 BridgeInputValidator 前置校验
   // -------------------------------------------------------------------------
   describe('T02 [critical]: speak 调用 BridgeInputValidator 前置校验', () => {
-    it('合法 payload → 调用 service.speak', async () => {
+    it('合法 payload → 调用 service.speak 并返回空串 (已派发)', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       const speakSpy = vi.spyOn(service, 'speak').mockResolvedValue(undefined);
 
-      await bridge.speak(makeValidPayload());
+      const result: string = await bridge.speak(makeValidPayload());
 
+      expect(result).toBe('');
       expect(speakSpy).toHaveBeenCalledTimes(1);
       expect(speakSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -290,18 +306,19 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
       );
     });
 
-    it('非法 text (空字符串) → 不调用 service.speak', async () => {
+    it('非法 text (空字符串) → 不调用 service.speak, 返回 invalid text', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       const speakSpy = vi.spyOn(service, 'speak').mockResolvedValue(undefined);
 
       const payload: SpeakPayload = { text: '', language: 'de-DE', rate: 1.0 };
-      await bridge.speak(payload);
+      const result: string = await bridge.speak(payload);
 
+      expect(result).toBe('invalid text');
       expect(speakSpy).not.toHaveBeenCalled();
     });
 
-    it('非法 language → 不调用 service.speak', async () => {
+    it('非法 language → 不调用 service.speak, 返回 invalid language', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       const speakSpy = vi.spyOn(service, 'speak').mockResolvedValue(undefined);
@@ -311,12 +328,13 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
         language: 'zh-CN' as SpeakPayload['language'],
         rate: 1.0,
       };
-      await bridge.speak(payload);
+      const result: string = await bridge.speak(payload);
 
+      expect(result).toBe('invalid language');
       expect(speakSpy).not.toHaveBeenCalled();
     });
 
-    it('非法 rate → 不调用 service.speak', async () => {
+    it('非法 rate → 不调用 service.speak, 返回 invalid rate', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       const speakSpy = vi.spyOn(service, 'speak').mockResolvedValue(undefined);
@@ -326,8 +344,9 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
         language: 'en-US',
         rate: 3.0 as SpeakPayload['rate'],
       };
-      await bridge.speak(payload);
+      const result: string = await bridge.speak(payload);
 
+      expect(result).toBe('invalid rate');
       expect(speakSpy).not.toHaveBeenCalled();
     });
   });
@@ -422,25 +441,27 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
   // -------------------------------------------------------------------------
   // T06: HarmonyBridge.speak 异常时 try/catch 兜底, 不抛到 Web
   // -------------------------------------------------------------------------
-  describe('T06 [critical]: HarmonyBridge.speak 异常 try/catch 兜底', () => {
-    it('service.speak 抛错 → bridge.speak 不抛出 (fire-and-forget)', async () => {
+  describe('T06 [critical]: HarmonyBridge.speak 异常 try/catch 兜底 (M8: 返回原因串不抛出)', () => {
+    it('service.speak 抛错 → bridge.speak 不抛出, 返回 err.message', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       vi.spyOn(service, 'speak').mockRejectedValue(
         new Error('engine crashed') as never,
       );
 
-      // 不应抛出
-      await expect(bridge.speak(makeValidPayload())).resolves.toBeUndefined();
+      // 不应抛出, 只回原因字符串
+      await expect(bridge.speak(makeValidPayload())).resolves.toBe('engine crashed');
     });
 
-    it('service.speak 抛 BusinessError → bridge.speak 静默返回', async () => {
+    it('service.speak 抛 BusinessError → bridge.speak 返回 message 字段', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       const businessErr = { code: 1001, message: 'TTS engine not ready' };
       vi.spyOn(service, 'speak').mockRejectedValue(businessErr as never);
 
-      await expect(bridge.speak(makeValidPayload())).resolves.toBeUndefined();
+      await expect(bridge.speak(makeValidPayload())).resolves.toBe(
+        'TTS engine not ready',
+      );
     });
   });
 
@@ -476,20 +497,20 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
   });
 
   // -------------------------------------------------------------------------
-  // T08: HarmonyBridge.getSpeechEngines 异常时返回空数组
+  // T08: HarmonyBridge.getSpeechEngines 返回 JSON 字符串 (API 22 基本类型契约)
   // -------------------------------------------------------------------------
-  describe('T08 [non-critical]: HarmonyBridge.getSpeechEngines 异常返回 []', () => {
-    it('service.getEngines 抛错 → bridge.getSpeechEngines 返回 []', async () => {
+  describe('T08 [non-critical]: HarmonyBridge.getSpeechEngines 返回 JSON 字符串', () => {
+    it('service.getEngines 抛错 → bridge.getSpeechEngines 返回 [] 字符串', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       vi.spyOn(service, 'getEngines').mockRejectedValue(
         new Error('listEngines not available') as never,
       );
 
-      await expect(bridge.getSpeechEngines()).resolves.toEqual([]);
+      await expect(bridge.getSpeechEngines()).resolves.toBe('[]');
     });
 
-    it('service.getEngines 返回引擎列表 → bridge 透传', async () => {
+    it('service.getEngines 返回引擎列表 → bridge 返回可解析 JSON 字符串', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       const engines: SpeechEngineInfo[] = [
@@ -502,16 +523,17 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
       ];
       vi.spyOn(service, 'getEngines').mockResolvedValue(engines);
 
-      await expect(bridge.getSpeechEngines()).resolves.toEqual(engines);
-      await expect(bridge.getSpeechEngines()).resolves.toHaveLength(1);
+      const raw: string = await bridge.getSpeechEngines();
+      expect(typeof raw).toBe('string');
+      expect(JSON.parse(raw)).toEqual(engines);
     });
 
-    it('service.getEngines 返回空数组 → bridge 返回空数组', async () => {
+    it('service.getEngines 返回空数组 → bridge 返回空数组 JSON', async () => {
       const bridge: MockHarmonyBridge = new MockHarmonyBridge();
       const service: MockTextToSpeechService = MockTextToSpeechService.getInstance();
       vi.spyOn(service, 'getEngines').mockResolvedValue([]);
 
-      await expect(bridge.getSpeechEngines()).resolves.toEqual([]);
+      expect(await bridge.getSpeechEngines()).toBe('[]');
     });
   });
 
@@ -720,6 +742,21 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
       expect(source).toContain("import { TextToSpeechService } from '../tts/TextToSpeechService'");
       expect(source).toContain('onWindowStageDestroy(): void');
       expect(source).toContain('TextToSpeechService.getInstance().shutdown()');
+    });
+
+    it('M8/H2: 原生 speak 返回原因串 (不抛出), getSpeechEngines 返回 JSON 字符串', () => {
+      const source: string = readFileSync(HARMONY_BRIDGE_PATH, 'utf-8');
+      expect(source).toContain('async speak(payload: SpeakPayload): Promise<string>');
+      expect(source).toContain('async getSpeechEngines(): Promise<string>');
+      expect(source).toContain('return JSON.stringify(engines)');
+
+      const speakStart: number = source.indexOf('async speak(payload: SpeakPayload)');
+      const speakBlock: string = source.slice(
+        speakStart,
+        source.indexOf('stopSpeech(): void', speakStart),
+      );
+      expect(speakBlock).not.toContain('throw ');
+      expect(speakBlock).toContain("return '';");
     });
   });
 });

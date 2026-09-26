@@ -1,26 +1,27 @@
 /**
  * Wordaydream 复习服务卡片 UI。
  *
- * 支持尺寸:
+ * 支持尺寸 (标签由 CardFormDimension 单一来源定义, 卡片只消费字符串):
  * - 2*2: 数字徽章、到期文案和复习入口。
  * - 2*4: 在紧凑布局上增加词位、今日进度和更新时间。
  *
  * 数据由 ReviewCardFormAbility 在卡片提供方进程中读取，再通过 FormBindingData
- * 注入卡片渲染进程的 LocalStorage。卡片 UI 不直接访问 Context、RDB 或 preferences。
+ * 注入卡片渲染进程的 LocalStorage。卡片 UI 不直接访问 Context、RDB、preferences，
+ * 也不引用任何系统 Kit（尺寸以 CardFormDimension 的字符串标签消费）。
  *
  * 多语言:
  * - CTA 文案: zh='开始复习' / en='Start Review' / de='Starten'
  * - UpdatedTime 文案: zh='更新于' / en='Updated' / de='Aktualisiert'
- * - 到期数文案支持 zh/en/de
+ * - 到期数文案支持 zh/en/de (实现在 CardTextFormatter, 与 CardDataProvider 共用)
  * - 非 zh/en/de 默认 en
  *
  * 进度环仅在 2*4 且 totalCount > 0 时显示。
  * - Progress({ type: Ring, value: reviewedCount, total: totalCount })
  * 点击通过 postCardAction router 拉起 EntryAbility，并携带 action=startReview。
  */
-/** API 22 formInfo.FormDimension 中的 2*2 / 2*4 数值。 */
-const DIMENSION_2_2: number = 2;
-const DIMENSION_2_4: number = 3;
+import { DIMENSION_2_2, DIMENSION_2_4 } from './CardFormDimension';
+import { formatDueCountText } from './CardTextFormatter';
+
 const storage: LocalStorage = new LocalStorage();
 
 @Entry(storage)
@@ -31,7 +32,7 @@ struct ReviewCardWidget {
   @LocalStorageProp('nextCardId') nextCardId: string = '';
   @LocalStorageProp('lastUpdated') lastUpdated: number = 0;
   @LocalStorageProp('language') language: string = 'en';
-  @LocalStorageProp('formDimension') dimension: number = DIMENSION_2_2;
+  @LocalStorageProp('formDimension') dimension: string = DIMENSION_2_2;
   @LocalStorageProp('reviewedCount') reviewedCount: number = 0;
   @LocalStorageProp('totalCount') totalCount: number = 0;
 
@@ -113,33 +114,6 @@ struct ReviewCardWidget {
     return 'Updated';
   }
 
-  private formatDueCountText(): string {
-    if (this.language === 'zh') {
-      if (this.dueCount === 0) {
-        return '暂无到期';
-      }
-      if (this.dueCount === 1) {
-        return '1 个到期';
-      }
-      return `${this.dueCount} 个到期`;
-    }
-    if (this.language === 'de') {
-      if (this.dueCount === 0) {
-        return 'Keine Karten';
-      }
-      if (this.dueCount === 1) {
-        return '1 Karte fällig';
-      }
-      return `${this.dueCount} Karten fällig`;
-    }
-    if (this.dueCount === 0) {
-      return 'No cards';
-    }
-    return this.dueCount === 1
-      ? '1 card due'
-      : `${this.dueCount} cards due`;
-  }
-
   @Builder
   DueCountBadge() {
     Stack() {
@@ -157,7 +131,7 @@ struct ReviewCardWidget {
 
   @Builder
   DueCountText() {
-    Text(this.formatDueCountText())
+    Text(formatDueCountText(this.dueCount, this.language))
       .fontSize(14)
       .fontColor($r('app.color.card_text_secondary'))
       .maxLines(1)

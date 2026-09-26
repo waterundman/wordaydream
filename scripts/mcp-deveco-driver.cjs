@@ -12,16 +12,52 @@
  */
 const { spawn, exec } = require('node:child_process');
 const { promisify } = require('node:util');
+const { realpathSync } = require('node:fs');
 const { join } = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const execAsync = promisify(exec);
 
 // ─── 配置 ────────────────────────────────────────────────────────────
-const MCP_SERVER_PATH = 'W:\\项目仓库\\dev studio mcp\\dist\\index.js';
-const DEVECO_SDK_HOME = 'D:\\DevEco Studio\\sdk';
-const NODE_HOME = 'D:\\DevEco Studio\\tools\\node';
-const PROJECT_ROOT = 'w:\\wordaydream\\harmony';
-const HVIGORW_PATH = 'D:\\DevEco Studio\\tools\\hvigor\\bin\\hvigorw.bat';
+// MCP 服务器是独立外部仓库的构建产物, 位置由环境变量覆盖 (缺省沿用历史值).
+const MCP_SERVER_PATH =
+  process.env.DEVECO_MCP_SERVER_PATH || 'W:\\项目仓库\\dev studio mcp\\dist\\index.js';
+// 工程根由本文件位置推导 (历史写死 'w:\\wordaydream\\harmony', 换盘/换机即失效).
+// realpathSync 规范盘符大小写: hvigor 对 cwd 大小写敏感 (与 assemble-harmony-hap.mjs 同一坑).
+const PROJECT_ROOT = realpathSync(join(__dirname, '..', 'harmony'));
+
+// DevEco 工具链位置统一由 scripts/lib/deveco-paths.mjs 解析 (M6):
+// DEVECO_STUDIO_HOME 优先, 缺省 D:\DevEco Studio, 路径缺失在 main 启动时 fail-fast.
+let DEVECO_SDK_HOME = null;
+let NODE_HOME = null;
+let HVIGORW_PATH = null;
+
+/** 加载并校验 DevEco 工具链; 缺失即清晰报错退出 (不再静默用假路径跑 hvigor). */
+async function loadDevecoToolchain() {
+  const helperUrl = pathToFileURL(join(__dirname, 'lib', 'deveco-paths.mjs')).href;
+  const { requireDevEcoToolchain } = await import(helperUrl);
+  let toolchain;
+  try {
+    toolchain = requireDevEcoToolchain({
+      required: ['nodeHome', 'hvigorwBat', 'sdkHome'],
+    });
+  } catch (error) {
+    // 多行报错逐行加前缀, 与 assemble-harmony-hap.mjs 输出风格一致.
+    for (const line of String(error.message ?? error).split('\n')) {
+      console.error('[mcp-deveco] ' + line);
+    }
+    console.error(
+      '[mcp-deveco] DEVECO_STUDIO_HOME=' +
+      (process.env.DEVECO_STUDIO_HOME || '(未设置, 缺省 D:\\DevEco Studio)'),
+    );
+    process.exit(1);
+    return null;
+  }
+  DEVECO_SDK_HOME = toolchain.sdkHome;
+  NODE_HOME = toolchain.nodeHome;
+  HVIGORW_PATH = toolchain.hvigorwBat;
+  return toolchain;
+}
 
 // ─── hvigorw 直接执行器(绕过 MCP 的 cwd bug)─────────────────────────
 async function runHvigorw(args, timeoutMs = 300000) {
@@ -155,6 +191,7 @@ class McpClient {
 
 // ─── 测试流程 ────────────────────────────────────────────────────────
 async function main() {
+  await loadDevecoToolchain();
   const env = {
     ...process.env,
     DEVECO_SDK_HOME,

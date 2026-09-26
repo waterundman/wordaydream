@@ -118,6 +118,41 @@ test('extracts ESM, Worker, stylesheet and HTML reference edges', () => {
   );
 });
 
+// M5: __vite__mapDeps 逆向只剩 fallback 一条路 —— 有 harmony-chunk-graph.json 时
+// 校验器传 includeViteMapDeps=false, 必须完全不再读 Vite 内部 helper 形态.
+test('M5: the __vite__mapDeps regex is opt-out (fallback-only) while other edges stay on', () => {
+  const code =
+    'const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=[`./lazy.js`,"./lazy.css"])))=>i.map(i=>d[i]);' +
+    'import(`./route.js`);';
+  assert.deepEqual(
+    [...extractLocalReferences(code, '.js', false)].sort(),
+    ['./route.js'],
+  );
+  // 默认 (含旧调用面) 仍是 fallback 全集
+  assert.deepEqual(
+    [...extractLocalReferences(code, '.js')].sort(),
+    ['./lazy.css', './lazy.js', './route.js'],
+  );
+  // 显式 true 与默认一致
+  assert.deepEqual(
+    [...extractLocalReferences(code, '.js', true)].sort(),
+    [...extractLocalReferences(code, '.js')].sort(),
+  );
+});
+
+test('M5: harmony-chunk-graph.json is an allowed root sidecar but not a free-for-all', () => {
+  const accepted = [
+    'index.html', 'assets/index.js', 'assets/home.js',
+    'assets/csvParser.worker-a1.js', 'assets/llmJsonWorker-b2.js',
+    'assets/index.css', 'assets/home.css', 'favicon.svg',
+    'harmony-chunk-graph.json',
+  ];
+  assert.deepEqual(validateOutputFileSet(accepted), []);
+  // 反证: 换个名字的根级 JSON 依然违反 rawfile 策略
+  const failures = validateOutputFileSet(accepted.map((f) => f.replace('harmony-chunk-graph.json', 'other.json')));
+  assert.ok(failures.some((failure) => failure.includes('other.json')));
+});
+
 test('requires every emitted script and stylesheet to be reachable from index.html', () => {
   assert.deepEqual(
     validateExecutableReachability(

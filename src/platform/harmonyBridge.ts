@@ -1,17 +1,14 @@
 /**
  * HarmonyBridge TS interface (v0.1.0-harmony Stage 2)
  *
- * 声明 ArkTS (EntryAbility.ets) 通过 registerJavaScriptProxy 注入到
+ * 声明 ArkTS (Index.ets 的 registerJavaScriptProxy) 注入到
  * window.harmonyBridge 的 API 签名. Web 端 window.harmonyBridge === undefined
  * 时所有调用静默跳过 (由 detectPlatform.getNativeBridge() 返回 null 守卫).
  *
- * 方法签名与 harmony/entry/.../EntryAbility.ets 的 HarmonyBridgePlaceholder
- * 一一对应 (Stage 1 占位为同步 stub, Stage 3 将改为真实异步实现):
- *   - getDueCardsCount
- *   - registerReminder
- *   - readPreferences
- *   - writePreferences
- *   - triggerHapticFeedback
+ * 方法集合与 harmony/entry/src/main/ets/bridge/BridgeMethodRegistry.ets 的
+ * BRIDGE_SYNC_METHODS / BRIDGE_ASYNC_METHODS 对齐 (bridgeRegistry.test.ts 双向守护);
+ * 原生侧仍保留但 Web 侧无调用方的方法 (getDueCardsCount /
+ * getRecentlyReviewedCards / getTodayReviewStats 服务卡片与推送自用) 不在此声明.
  */
 
 /** 提醒任务载荷, 由 registerReminder 透传给 notificationAgent. */
@@ -55,18 +52,6 @@ export interface MemoryCardRecordBridge {
 }
 
 /**
- * Stage 3: 今日复习统计 (服务卡片进度环 + Web dashboard).
- *
- * 字段与 ArkTS TodayReviewStats (harmony/entry/.../MemoryCardSchema.ets) 一一对应,
- * 3 个 number 字段, JSON 序列化无丢失.
- */
-export interface TodayReviewStatsBridge {
-  dueCount: number;
-  reviewedCount: number;
-  totalCount: number;
-}
-
-/**
  * Stage 1 v0.3.0-harmony: TTS 朗读载荷.
  *
  * 字段与 ArkTS SpeakPayload (harmony/entry/.../tts/TextToSpeechService.ets) 一一对应.
@@ -92,7 +77,8 @@ export interface SpeakPayload {
  * Stage 1 v0.3.0-harmony: TTS 引擎信息.
  *
  * 字段与 ArkTS SpeechEngineInfo (harmony/entry/.../tts/TextToSpeechService.ets) 一一对应.
- * 由 HarmonyBridge.getSpeechEngines 返回, 供 Web 端展示引擎选择 UI.
+ * HarmonyBridge.getSpeechEngines 返回其 JSON 字符串形态 (API 22 跨桥契约),
+ * 供 Web 端解析后展示引擎选择 UI.
  */
 export interface SpeechEngineInfo {
   /** 引擎唯一标识. */
@@ -159,15 +145,12 @@ export interface CancelReminderResult {
 
 /**
  * ArkTS 注入的原生 bridge.
- * 方法签名遵循 Stage 1 registerJavaScriptProxy 的 BRIDGE_METHODS 列表,
- * 返回值类型为 Stage 3 目标异步签名 (Stage 1 占位返回同步值, TS 侧按异步消费).
+ * 方法签名遵循 BridgeMethodRegistry.ets 的 BRIDGE_SYNC/ASYNC_METHODS 列表.
  *
- * Stage 3 新增 5 个双向同步方法 (upsertCard/deleteCard/getAllCards/
- * getRecentlyReviewedCards/getTodayReviewStats), 见各方法 JSDoc.
+ * v1.6.0 D1 实机契约 (API 22): async JSProxy 复杂返回值 (数组/对象) 无法跨桥
+ * (Web 端 resolve 得到 number), 列表型/结构型返回统一为 JSON 字符串.
  */
 export interface HarmonyBridge {
-  /** 获取当前到期卡片数 (供首页角标 / 通知展示). */
-  getDueCardsCount(): Promise<number>;
   /** 注册本地提醒 (notificationAgent / reminderAgent). */
   registerReminder(payload: ReminderPayload): Promise<void>;
   /** 读取 preferences 键值 (返回 null 表示键不存在). */
@@ -203,26 +186,20 @@ export interface HarmonyBridge {
    * v1.6.0 D1 实机契约 (API 22): async JSProxy 复杂返回值 (数组/对象) 无法
    * 跨桥 (Web 端 resolve 得到 number), 原生侧序列化为 JSON 字符串传输;
    * Web 侧经 parseBridgeRecords 解析 (useMemoryStore.ts), 兼容旧数组形态.
+   * getRecentlyReviewedCards / getTodayReviewStats / getSpeechEngines 同契约,
+   * 前三者 Web 侧当前无调用方, 故未在 interface 暴露.
    */
   getAllCards(): Promise<string>;
-  /**
-   * Stage 3: 查询最近复习过的卡片 (Web dashboard).
-   *
-   * limit 限制 1-100, 否则返回空数组.
-   */
-  getRecentlyReviewedCards(limit: number): Promise<MemoryCardRecordBridge[]>;
-  /**
-   * Stage 3: 查询今日复习统计 (服务卡片进度环 + dashboard).
-   */
-  getTodayReviewStats(): Promise<TodayReviewStatsBridge>;
   /**
    * Stage 1 v0.3.0-harmony: 朗读文本 (命令型异步).
    *
    * 由 ReadingSessionPage.handleTogglePlay 调用, 走鸿蒙 @ohos.textToSpeech 原生路径.
-   * ArkTS 侧先经 BridgeInputValidator 三段校验 (text/language/rate), 失败 hilog.warn + return;
-   * 成功调用 TextToSpeechService.getInstance().speak. 异常 try/catch 兜底不抛到 Web.
+   * ArkTS 侧先经 BridgeInputValidator 三段校验 (text/language/rate), 失败 hilog.warn;
+   * 异常 try/catch 兜底不抛到 Web (M8 契约纠偏).
+   *
+   * @returns '' = 已派发; 非空 = 拒绝/失败原因字符串.
    */
-  speak(payload: SpeakPayload): Promise<void>;
+  speak(payload: SpeakPayload): Promise<string>;
   /**
    * Stage 1 v0.3.0-harmony: 立即停止朗读.
    *
@@ -238,9 +215,11 @@ export interface HarmonyBridge {
   /**
    * Stage 1 v0.3.0-harmony: 列出可用 TTS 引擎.
    *
-   * 调用 TextToSpeechService.getInstance().getEngines(). 异常返回空数组 (不抛异常).
+   * 调用 TextToSpeechService.getInstance().getEngines().
+   * 返回 SpeechEngineInfo[] 的 JSON 字符串 (v1.6.0 D1 API 22 契约),
+   * 异常返回 '[]' (不抛异常).
    */
-  getSpeechEngines(): Promise<SpeechEngineInfo[]>;
+  getSpeechEngines(): Promise<string>;
   /**
    * Stage 2 (v0.5.0-harmony): 复习完成后主动刷新所有已持久化的服务卡片.
    *
@@ -293,6 +272,13 @@ declare global {
      * 未挂载时 ArkTS 侧通过 `typeof === 'function'` 守卫保留启动请求.
      */
     handleHarmonyLaunch?: (query: string) => void;
+    /**
+     * v1.6.0 D1: 原生卡片恢复推送接收器 (R-1 恢复的实机通道).
+     *
+     * 由 useMemoryStore 在模块加载时挂载, ArkTS 侧 pushCardsToWeb 经
+     * controller.runJavaScript 反向调用, 载荷为 getAllCards 同契约的 JSON 字符串.
+     */
+    __applyNativeCardRestore?: (json: string) => void;
   }
 }
 

@@ -219,3 +219,74 @@ describe('v0.7.0-harmony Stage 1 — openCard 验证准备 (T01-T04)', () => {
     expect(r.ok).toBe(true);
   });
 });
+
+describe('M6 — 断言关键词真源外置 (assertion-keywords.mjs)', () => {
+  it('seed-and-verify 再导出的数组与模块导出是同一引用 (无第二份副本)', async () => {
+    const keywords = await import('./assertion-keywords.mjs');
+    expect(ASSERTION_KEYWORDS).toBe(keywords.ASSERTION_KEYWORDS);
+    expect(OPEN_CARD_ASSERTIONS).toBe(keywords.OPEN_CARD_ASSERTIONS);
+    expect(isCritical).toBe(keywords.isCritical);
+  });
+
+  it('ALL_ASSERTIONS = seed 段 + openCard 段, 且 id/keyword 逐项一致', async () => {
+    const keywords = await import('./assertion-keywords.mjs');
+    expect(keywords.ALL_ASSERTIONS).toEqual([...ASSERTION_KEYWORDS, ...OPEN_CARD_ASSERTIONS]);
+    // 契约面: 每条断言都必须有 id / keyword / desc / level 四要素
+    for (const assertion of keywords.ALL_ASSERTIONS) {
+      expect(Object.keys(assertion).sort()).toEqual(['desc', 'id', 'keyword', 'level']);
+    }
+  });
+
+  it('日志源串未被改写 (逐字锚点)', async () => {
+    const keywords = await import('./assertion-keywords.mjs');
+    expect(keywords.ASSERTION_KEYWORDS.map((k) => k.keyword)).toEqual([
+      'seedDebugCards done',
+      'Page begin',
+      'Web content ready',
+      'getAllCards done: count=',
+      'Web launch handler ready: generation=',
+    ]);
+    expect(keywords.OPEN_CARD_ASSERTIONS.map((k) => k.keyword)).toEqual([
+      'dispatching query=action=openCard',
+      '[harmonyLaunch] openCard',
+    ]);
+  });
+});
+
+describe('M6 — 两脚本共用 lib/hdc.mjs 后行为等价', () => {
+  it('seed 与 perf 的 parseArgs 在同一实现下各自保留默认值', async () => {
+    const perf = await import('./collect-perf.mjs');
+    expect(parseArgs([])).toMatchObject({
+      hdc: 'hdc',
+      hap: 'harmony/entry/build/default/outputs/default/entry-default-unsigned.hap',
+      bundle: 'com.wordaydream.app',
+      timeoutMs: 60000,
+      out: null,
+      openCard: 'debug-seed-1',
+      help: false,
+    });
+    expect(perf.parseArgs([])).toEqual({ hdc: 'hdc', bundle: 'com.wordaydream.app', timeoutMs: 60000, out: null });
+  });
+
+  it('SKIP 报告字段序保持历史契约 (seed 8 键 / perf 5 键)', async () => {
+    const perf = await import('./collect-perf.mjs');
+    expect(Object.keys(buildSkipReport('r', { hap: 'h.hap', bundle: 'b' }))).toEqual([
+      'skipped', 'ok', 'reason', 'steps', 'assertions', 'generatedAt', 'hap', 'bundle',
+    ]);
+    expect(Object.keys(perf.buildSkipReport('r', { bundle: 'b' }))).toEqual([
+      'skipped', 'ok', 'reason', 'metrics', 'bundle',
+    ]);
+  });
+
+  it('设备在线判定统一: perf 也认 CONNECTED 行 (此前只有 seed 认)', async () => {
+    const { isDeviceOnline } = await import('./lib/hdc.mjs');
+    expect(isDeviceOnline('emulator-1\tCONNECTED\n', 0)).toBe(true);
+    expect(isDeviceOnline('[Empty]\n', 0)).toBe(false);
+  });
+
+  it('被 import 时不触发 CLI 入口 (isCliInvocation=false)', async () => {
+    const { isCliInvocation } = await import('./lib/hdc.mjs');
+    // vitest/node --test 跑测试时 argv[1] 是测试二进制, 不是本脚本
+    expect(isCliInvocation(new URL('./seed-and-verify.mjs', import.meta.url).href)).toBe(false);
+  });
+});

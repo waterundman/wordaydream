@@ -56,13 +56,24 @@ export class FormIdStore {
       return this.initPromise;
     }
     this.context = context;
-    this.initPromise = preferences
-      .getPreferences(context, PREFS_NAME)
-      .then((prefs: preferences.Preferences): preferences.Preferences => {
-        this.prefs = prefs;
-        return prefs;
-      });
+    this.initPromise = this.initializePrefs(context);
     return this.initPromise;
+  }
+
+  /**
+   * 实际打开 preferences. 成功时缓存实例; 无论成败都在 finally 复位
+   * initPromise, 避免首次失败后 Promise 被永久毒化 (后续调用永远拿到同一个
+   * rejected Promise), 与 MemoryCardStore.initializeStore 的 finally 模式一致.
+   */
+  private async initializePrefs(context: common.Context): Promise<preferences.Preferences> {
+    try {
+      const prefs: preferences.Preferences =
+        await preferences.getPreferences(context, PREFS_NAME);
+      this.prefs = prefs;
+      return prefs;
+    } finally {
+      this.initPromise = null;
+    }
   }
 
   /**
@@ -88,7 +99,8 @@ export class FormIdStore {
       ids.add(formId);
       await prefs.put(FORM_IDS_KEY, JSON.stringify(Array.from(ids)));
       await prefs.flush();
-      hilog.info(DOMAIN, TAG, 'saveFormId: %{public}s (total=%{public}d)', formId, ids.size);
+      // formId 属安装级标识, info 日志不输出明文 (release 构建由 hilog 掩码).
+      hilog.info(DOMAIN, TAG, 'saveFormId: %{private}s (total=%{public}d)', formId, ids.size);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -121,7 +133,7 @@ export class FormIdStore {
       ids.delete(formId);
       await prefs.put(FORM_IDS_KEY, JSON.stringify(Array.from(ids)));
       await prefs.flush();
-      hilog.info(DOMAIN, TAG, 'removeFormId: %{public}s (total=%{public}d)', formId, ids.size);
+      hilog.info(DOMAIN, TAG, 'removeFormId: %{private}s (total=%{public}d)', formId, ids.size);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(

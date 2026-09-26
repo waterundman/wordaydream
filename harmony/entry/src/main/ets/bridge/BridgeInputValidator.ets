@@ -54,20 +54,6 @@ const SPEECH_LANGUAGE_WHITELIST: string[] = ['de-DE', 'en-US'];
 /** reminderAgent 定时提醒: 最大调度提前量 (1 年), 防止异常远期时间堆积. */
 const REMINDER_MAX_LEAD_MS: number = 366 * 24 * 60 * 60 * 1000;
 
-/**
- * ArkWeb origin 白名单正则列表 (安全加固).
- *
- * 镜像 harmony/server/llm-proxy.js:53-59 的 origin 白名单模式.
- * 仅允许 localhost / 127.0.0.1 / arkweb:// / *.hapogo.com / file:// origin.
- */
-const ALLOWED_ARKWEB_ORIGIN_REGEXES: RegExp[] = [
-  /^https?:\/\/localhost(:\d+)?$/,
-  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
-  /^arkweb:\/\/.*$/,
-  /^https?:\/\/[a-z0-9-]+\.hapogo\.com(:\d+)?$/,
-  /^file:\/\/.*$/,
-];
-
 export class BridgeInputValidator {
   /**
    * 校验触觉反馈强度.
@@ -217,26 +203,6 @@ export class BridgeInputValidator {
       return false;
     }
     return cardId.length <= CARD_ID_MAX_LENGTH;
-  }
-
-  /**
-   * 校验 ArkWeb origin 是否在白名单内 (安全加固).
-   *
-   * 镜像 harmony/server/llm-proxy.js:53-59. 供 Index.ets 在
-   * registerJavaScriptProxy 之前调用, 防止非预期 origin 注入恶意 JS.
-   *
-   * @param url webview.WebviewController.accessedUrl() 返回的当前页面 URL.
-   */
-  static isAllowedArkWebOrigin(url: string): boolean {
-    if (typeof url !== 'string' || url.length === 0) {
-      return false;
-    }
-    for (let i: number = 0; i < ALLOWED_ARKWEB_ORIGIN_REGEXES.length; i++) {
-      if (ALLOWED_ARKWEB_ORIGIN_REGEXES[i].test(url)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**

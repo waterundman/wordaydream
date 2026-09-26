@@ -65,7 +65,6 @@ describe('detectPlatform (v0.3.0-harmony Stage 2)', () => {
     });
     // 模拟 ArkTS 注入的 harmonyBridge (含 Stage 1 v0.3.0 新增 speak/stopSpeech 等)
     const bridgeStub: HarmonyBridge = {
-      getDueCardsCount: () => Promise.resolve(0),
       registerReminder: () => Promise.resolve(undefined),
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
@@ -74,13 +73,11 @@ describe('detectPlatform (v0.3.0-harmony Stage 2)', () => {
       notifyWebContentReady: () => {},
       upsertCard: () => Promise.resolve(undefined),
       deleteCard: () => Promise.resolve(undefined),
-      getAllCards: () => Promise.resolve([]),
-      getRecentlyReviewedCards: () => Promise.resolve([]),
-      getTodayReviewStats: () => Promise.resolve({ dueCount: 0, reviewedCount: 0, totalCount: 0 }),
-      speak: () => Promise.resolve(undefined),
+      getAllCards: () => Promise.resolve('[]'),
+      speak: () => Promise.resolve(''),
       stopSpeech: () => {},
       isSpeechSupported: () => Promise.resolve(true),
-      getSpeechEngines: () => Promise.resolve([]),
+      getSpeechEngines: () => Promise.resolve('[]'),
     };
     (window as Window & { harmonyBridge?: HarmonyBridge }).harmonyBridge = bridgeStub;
 
@@ -98,7 +95,6 @@ describe('detectPlatform (v0.3.0-harmony Stage 2)', () => {
   it('T02b: 仅 window.harmonyBridge 存在 (无 ArkWeb UA) → isHarmonyOS=true', () => {
     // bridge 注入即可判定为鸿蒙 (覆盖 bridge 晚于 UA 注入的场景)
     const bridgeStub: HarmonyBridge = {
-      getDueCardsCount: () => Promise.resolve(0),
       registerReminder: () => Promise.resolve(undefined),
       readPreferences: () => Promise.resolve(null),
       writePreferences: () => Promise.resolve(undefined),
@@ -107,13 +103,11 @@ describe('detectPlatform (v0.3.0-harmony Stage 2)', () => {
       notifyWebContentReady: () => {},
       upsertCard: () => Promise.resolve(undefined),
       deleteCard: () => Promise.resolve(undefined),
-      getAllCards: () => Promise.resolve([]),
-      getRecentlyReviewedCards: () => Promise.resolve([]),
-      getTodayReviewStats: () => Promise.resolve({ dueCount: 0, reviewedCount: 0, totalCount: 0 }),
-      speak: () => Promise.resolve(undefined),
+      getAllCards: () => Promise.resolve('[]'),
+      speak: () => Promise.resolve(''),
       stopSpeech: () => {},
       isSpeechSupported: () => Promise.resolve(true),
-      getSpeechEngines: () => Promise.resolve([]),
+      getSpeechEngines: () => Promise.resolve('[]'),
     };
     (window as Window & { harmonyBridge?: HarmonyBridge }).harmonyBridge = bridgeStub;
 

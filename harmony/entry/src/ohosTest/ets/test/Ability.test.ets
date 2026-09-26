@@ -2,24 +2,34 @@
  * Ability.test (v0.1.0-harmony)
  *
  * ohosTest 仪器测试套件 - 需要 DevEco Studio 模拟器或真机执行.
- * 覆盖 HarmonyBridge 6 方法 + MemoryCardStore + NotificationService 关键路径.
+ * 覆盖 HarmonyBridge 桥方法 + MemoryCardStore + NotificationService 关键路径,
+ * 并守护 BridgeMethodRegistry 的 JSProxy 契约 (sync/async 数量与内容).
  *
  * 测试矩阵 (对应 e2e/harmony_full.spec.ts 10 case 的 ArkTS 侧守护):
  * 1. HarmonyBridge 实例化 (constructor 不抛错)
- * 2. getDueCardsCount 返回 number (空库返回 0)
+ * 2. getDueCardsCount 与今日统计的不变量 (dueCount <= totalCount)
  * 3. readPreferences 未写入键返回 null
  * 4. writePreferences + readPreferences 往返一致
  * 5. triggerHapticFeedback 不抛错 (缺权限时 catch 兜底)
  * 6. handleHarmonyLaunch webController 未就绪时静默跳过
- * 7. registerReminder 异常兜底 (缺通知权限时不抛错)
- * 8. MemoryCardStore 单例 + initialize 幂等
- * 9. NotificationService 单例
+ * 7. registerReminder 不抛错 + reminderAgent 调度结果契约 (非法入参必须 skipped)
+ * 8. MemoryCardStore 单例 + initialize 幂等 + 初始化后表可读写往返
+ * 9. NotificationService 单例 + isEnabled 返回布尔
  * 10. 通知模板多语言 fallback
+ * 11. BridgeMethodRegistry 契约 (sync=4 / async=16, 无重复无遗漏)
+ *
+ * 断言取向: 优先断言结果/状态而非"不抛错"; 无权益 / 无 Web 控制器等环境相关
+ * 分支只断言安全降级后的可观测状态, 不写死系统错误码.
  */
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium';
 import { common } from '@kit.AbilityKit';
 import { HarmonyBridge } from '../../../main/ets/bridge/HarmonyBridge';
+import {
+  BRIDGE_NAME,
+  BRIDGE_SYNC_METHODS,
+  BRIDGE_ASYNC_METHODS,
+} from '../../../main/ets/bridge/BridgeMethodRegistry';
 import { MemoryCardStore } from '../../../main/ets/data/MemoryCardStore';
 import { NotificationService } from '../../../main/ets/notification/NotificationService';
 import { getReviewReminderText, getPermissionRequestText } from '../../../main/ets/notification/templates';
@@ -31,6 +41,7 @@ import {
   CREATE_INDEX_SQL_DUE,
   CREATE_INDEX_SQL_LAST_REVIEW,
   CREATE_INDEX_SQL_LANGUAGE,
+  MemoryCardRecord,
 } from '../../../main/ets/data/MemoryCardSchema';
 
 export default function abilityTest() {
@@ -62,6 +73,10 @@ export default function abilityTest() {
       const count: number = await bridge.getDueCardsCount();
       expect(typeof count).assertEqual('number');
       expect(count >= 0).assertTrue();
+      // 结果不变量: 到期数不会超过总卡数 (同一 store 的两条查询链路).
+      const stats = await bridge.getTodayReviewStats();
+      expect(stats.totalCount >= 0).assertTrue();
+      expect(count <= stats.totalCount).assertTrue();
     })
 
     it('readPreferencesRejectsUnknownKey', 0, async () => {
@@ -76,6 +91,11 @@ export default function abilityTest() {
       const readBack: string | null = await bridge.readPreferences(key);
       expect(readBack).assertNotNull();
       expect(readBack).assertEqual(value);
+      // 覆盖写必须生效 (断言最后一次写入的值, 而非仅"能读回非空").
+      const next: string = value + '_updated';
+      await bridge.writePreferences(key, next);
+      const readAgain: string | null = await bridge.readPreferences(key);
+      expect(readAgain).assertEqual(next);
     })
 
     it('triggerHapticFeedbackNoThrow', 0, () => {
@@ -104,17 +124,39 @@ export default function abilityTest() {
     })
 
     it('registerReminderNoThrow', 0, async () => {
-      // 缺通知权限 / MemoryCardStore 未就绪时应 try/catch 兜底返回 void.
-      let noThrow: boolean = true;
-      try {
-        await bridge.registerReminder({
-          dueAt: Date.now() + 3600000,
-          cardId: 'test_card_id',
-        });
-      } catch (e) {
-        noThrow = false;
-      }
-      expect(noThrow).assertTrue();
+      // registerReminder 返回 void: 缺通知权限 / store 未就绪时必须内部兜底,
+      // 这里直接 await (抛错即失败), 不再用 try/catch 把异常吞成"通过".
+      await bridge.registerReminder({
+        dueAt: Date.now() + 3600000,
+        cardId: 'test_card_id',
+      });
+    })
+
+    it('scheduleReminderRejectsInvalidArguments', 0, async () => {
+      // 可断言的结果契约: 非法 reminderId / 非未来时间必须被拒绝并安全跳过,
+      // 绝不降级为立即通知 (无权益环境下同样成立).
+      const invalidId = await bridge.scheduleReviewReminder(
+        'invalid id with spaces',
+        Date.now() + 3600000
+      );
+      expect(typeof invalidId.skipped).assertEqual('boolean');
+      expect(invalidId.skipped).assertTrue();
+
+      const pastTrigger = await bridge.scheduleReviewReminder(
+        'ohos-test-reminder',
+        Date.now() - 1000
+      );
+      expect(pastTrigger.skipped).assertTrue();
+
+      // 取消未登记的提醒: 幂等语义要求 ok=true.
+      const cancelUnknown = await bridge.cancelReviewReminder(
+        `ohos-test-reminder-${Date.now()}`
+      );
+      expect(cancelUnknown.ok).assertTrue();
+
+      // 非法 id 的取消必须显式失败 (不静默成功).
+      const cancelInvalid = await bridge.cancelReviewReminder('invalid id!');
+      expect(cancelInvalid.ok).assertFalse();
     })
   })
 
@@ -138,6 +180,62 @@ export default function abilityTest() {
         noThrow = false;
       }
       expect(noThrow).assertTrue();
+      // 幂等初始化后 store 必须处于可查询状态, 且 dueCount <= totalCount
+      // (仅断言"不抛错"无法发现 store 停留在未初始化分支).
+      const now: number = Date.now();
+      const dueCount: number = await store.getDueCardsCount(now);
+      const total: number = (await store.getTodayReviewStats(now)).totalCount;
+      expect(dueCount >= 0).assertTrue();
+      expect(dueCount <= total).assertTrue();
+    })
+
+    it('storeRoundTripAfterInitialize', 0, async () => {
+      const abilityDelegatorRegistry = require('@kit.TestKit');
+      const ctx: common.Context = abilityDelegatorRegistry.getAbilityDelegator().getAppContext();
+      const store: MemoryCardStore = MemoryCardStore.getInstance();
+      await store.initialize(ctx);
+
+      const suffix: string = Date.now().toString();
+      const now: number = Date.now();
+      const card: MemoryCardRecord = {
+        id: `ohos-test-card-${suffix}`,
+        lexemeGroupId: `ohos-test-group-${suffix}`,
+        lemma: 'ohos-test-lemma',
+        objectiveDifficulty: 3,
+        language: 'en',
+        firstLearnedAt: now - 86400000,
+        lastReviewAt: now - 3600000,
+        due: now - 60000,
+        stability: 1.0,
+        difficulty: 5.0,
+        elapsedDays: 1,
+        scheduledDays: 1,
+        reps: 1,
+        lapses: 0,
+        status: 'review',
+        learningSteps: 0,
+      };
+      await store.upsertCard(card);
+
+      // 写入后必须可按主键读回, 且字段值一致 (表真的可用, 而非静默降级返回 null).
+      const readBack: MemoryCardRecord | null = await store.getCardById(card.id);
+      expect(readBack !== null).assertTrue();
+      if (readBack !== null) {
+        expect(readBack.lemma).assertEqual(card.lemma);
+        expect(readBack.lexemeGroupId).assertEqual(card.lexemeGroupId);
+        expect(readBack.due).assertEqual(card.due);
+        expect(readBack.status).assertEqual(card.status);
+      }
+      // 到期卡片 (due = now - 60s) 必须出现在到期查询里.
+      const dueCards: MemoryCardRecord[] = await store.getDueCards(now, 100);
+      expect(dueCards.length >= 1).assertTrue();
+      const stats: number = (await store.getTodayReviewStats(now)).totalCount;
+      expect(stats >= 1).assertTrue();
+
+      // 清理: 按词位组删除后主键查询应为 null (deleteCardByLexemeGroupId 生效).
+      await store.deleteCardByLexemeGroupId(card.lexemeGroupId);
+      const deleted: MemoryCardRecord | null = await store.getCardById(card.id);
+      expect(deleted).assertNull();
     })
   })
 
@@ -147,6 +245,12 @@ export default function abilityTest() {
       const b: NotificationService = NotificationService.getInstance();
       expect(a).assertNotNull();
       expect(a === b).assertTrue();
+    })
+
+    it('isEnabledReturnsBoolean', 0, async () => {
+      // isEnabled 异常兜底为 false, 正常返回系统授权状态: 必须是确定布尔值.
+      const enabled: boolean = await NotificationService.getInstance().isEnabled();
+      expect(typeof enabled).assertEqual('boolean');
     })
   })
 
@@ -245,6 +349,42 @@ export default function abilityTest() {
       expect(CREATE_INDEX_SQL_LANGUAGE.includes('idx_language')).assertTrue();
       expect(CREATE_INDEX_SQL_LANGUAGE.includes(TABLE_NAME)).assertTrue();
       expect(CREATE_INDEX_SQL_LANGUAGE.includes('(language)')).assertTrue();
+    })
+  })
+
+  describe('BridgeMethodRegistryTest', () => {
+    it('registryMatchesBridgeContract', 0, () => {
+      // 注册表是 ArkWeb JSProxy 的单一事实来源: 数量必须与实际实现一致
+      // (sync=4 / async=16), 且无重复 / 无跨数组重名 — 漏注册是静默能力缺失.
+      expect(BRIDGE_NAME).assertEqual('harmonyBridge');
+      expect(BRIDGE_SYNC_METHODS.length).assertEqual(4);
+      expect(BRIDGE_ASYNC_METHODS.length).assertEqual(16);
+
+      const seen: Set<string> = new Set<string>();
+      let duplicated: boolean = false;
+      for (let i = 0; i < BRIDGE_SYNC_METHODS.length; i++) {
+        if (seen.has(BRIDGE_SYNC_METHODS[i])) {
+          duplicated = true;
+        }
+        seen.add(BRIDGE_SYNC_METHODS[i]);
+      }
+      for (let i = 0; i < BRIDGE_ASYNC_METHODS.length; i++) {
+        if (seen.has(BRIDGE_ASYNC_METHODS[i])) {
+          duplicated = true;
+        }
+        seen.add(BRIDGE_ASYNC_METHODS[i]);
+      }
+      expect(duplicated).assertFalse();
+      expect(seen.size).assertEqual(
+        BRIDGE_SYNC_METHODS.length + BRIDGE_ASYNC_METHODS.length
+      );
+
+      // 关键方法在册 (Web 端 harmonyBridge.ts / 运行验证链依赖).
+      expect(BRIDGE_SYNC_METHODS.includes('notifyWebReady')).assertTrue();
+      expect(BRIDGE_SYNC_METHODS.includes('triggerHapticFeedback')).assertTrue();
+      expect(BRIDGE_ASYNC_METHODS.includes('getAllCards')).assertTrue();
+      expect(BRIDGE_ASYNC_METHODS.includes('notifyReviewCompleted')).assertTrue();
+      expect(BRIDGE_ASYNC_METHODS.includes('scheduleReviewReminder')).assertTrue();
     })
   })
 }

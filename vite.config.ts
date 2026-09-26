@@ -1,11 +1,11 @@
-import { defineConfig, type Plugin, type ViteDevServer, loadEnv } from 'vite'
+import { defineConfig, type Plugin, type ViteDevServer, loadEnv, version as viteVersion } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { compression } from 'vite-plugin-compression2'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { fileURLToPath, URL } from 'node:url'
-import { rm } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   HARMONY_PROXY_DISABLED,
@@ -13,6 +13,7 @@ import {
   hardenHarmonyCsp,
   parseHarmonyProxyUrl,
 } from './src/config/harmonyCsp.js'
+import { CHUNK_GRAPH_FILE_NAME, buildChunkGraph } from './scripts/harmony/lib/chunk-graph.mjs'
 
 // https://vite.dev/config/
 //
@@ -101,6 +102,47 @@ function harmonyStripRobotsPlugin(): Plugin {
         await rm(target, { force: true })
       } catch {
         // 文件不存在时忽略
+      }
+    },
+  }
+}
+
+/**
+ * M5: harmony 构建导出 chunk 依赖邻接表 (dist/harmony-chunk-graph.json).
+ *
+ * 动机: verify-harmony-build.mjs 的可达性 BFS 需要 chunk -> (JS/CSS) 预加载边,
+ * 原先只能正则逆向 Vite 运行时 helper `__vite__mapDeps` —— 依赖打包器内部代码形态,
+ * Vite/rolldown 升级即失效. 本插件在 generateBundle 阶段读公开的 chunk 元数据
+ * (imports / dynamicImports / viteMetadata.importedCss), 在 closeBundle 阶段把邻接表
+ * 写成 outDir 根的 JSON, 校验器优先消费它.
+ *
+ * 与 harmonyStripRobotsPlugin 同属「构建收尾触碰 outDir 文件」的插件, 沿用其
+ * configResolved + closeBundle 模式; 仅 harmony 模式挂载, Web 模式 0 影响.
+ * 写盘失败不阻断构建 (校验器会因缺文件回退正则路径并给出提示).
+ */
+function harmonyChunkGraphPlugin(): Plugin {
+  let outDirAbs: string = ''
+  let graphJson: string | null = null
+  return {
+    name: 'harmony-chunk-graph',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      outDirAbs = join(config.root ?? process.cwd(), config.build.outDir)
+    },
+    generateBundle(_options, bundle) {
+      graphJson = JSON.stringify(buildChunkGraph(bundle, { vite: viteVersion }), null, 2) + '\n'
+    },
+    async closeBundle() {
+      if (!graphJson || !outDirAbs) return
+      try {
+        await writeFile(join(outDirAbs, CHUNK_GRAPH_FILE_NAME), graphJson, 'utf8')
+      } catch (error) {
+        console.warn(
+          `[harmony] 无法写出 ${CHUNK_GRAPH_FILE_NAME}: ` +
+          `${error instanceof Error ? error.message : String(error)} ` +
+          '(verify:harmony-build 将回退 __vite__mapDeps 正则路径)',
+        )
       }
     },
   }
@@ -241,6 +283,7 @@ export default defineConfig(({ mode }) => {
         harmonyPwaStubPlugin(),
         harmonyCspPlugin(harmonyProxyConfig?.origin),
         harmonyStripRobotsPlugin(),
+        harmonyChunkGraphPlugin(),
       ] : [
         VitePWA({
           registerType: 'autoUpdate',

@@ -59,10 +59,18 @@ import {
 } from './BridgeMethodRegistry';
 import { TextToSpeechService } from '../tts/TextToSpeechService';
 import type { SpeakPayload, SpeechEngineInfo } from '../tts/TextToSpeechService';
+import { getReviewReminderText } from '../notification/templates';
+import type { NotificationText } from '../notification/templates';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'HarmonyBridge';
 const PREFS_NAME: string = 'wordaydream_prefs';
+
+/** H4: 单次 launch 派发等待 runJavaScript 结算的上限, 超时强制复位 FIFO. */
+const LAUNCH_DISPATCH_TIMEOUT_MS: number = 8000;
+
+/** H4: launch 队列上限, 超限时丢弃最旧 query (Web 长期不可用防无界增长). */
+const MAX_PENDING_LAUNCH_QUERIES: number = 16;
 
 export class HarmonyBridge {
   private static instance: HarmonyBridge | null = null;
@@ -71,17 +79,41 @@ export class HarmonyBridge {
   private cachedPrefs: preferences.Preferences | null = null;
   private pendingLaunchQueries: Array<string> = [];
   private launchDispatchInProgress: boolean = false;
+  private launchDispatchTimerId: number = -1;
 
   private constructor(context: common.Context) {
     this.context = context;
   }
 
-  /** 单例入口 (幂等, context 仅首次调用时使用). */
+  /**
+   * 单例入口. H5: 单例生命周期长于单次 context, 已有实例时刷新 context 引用,
+   * 避免用已销毁的 UIAbility context 去读 preferences / 打开 RDB.
+   */
   static getInstance(context: common.Context): HarmonyBridge {
     if (HarmonyBridge.instance === null) {
       HarmonyBridge.instance = new HarmonyBridge(context);
+    } else {
+      HarmonyBridge.instance.refreshContext(context);
     }
     return HarmonyBridge.instance;
+  }
+
+  /**
+   * H5: 刷新单例 context (同引用直接返回; 换引用时丢弃绑定旧 context 的 prefs 缓存).
+   * 调用点: HarmonyBridge.getInstance — Index.ets 桥注册处每次传入
+   * getUIContext().getHostContext() 的最新 context, EntryAbility 侧同样可调用.
+   */
+  refreshContext(newContext: common.Context): void {
+    if (newContext === null || newContext === undefined) {
+      hilog.warn(DOMAIN, TAG, 'refreshContext skipped: empty context');
+      return;
+    }
+    if (this.context === newContext) {
+      return;
+    }
+    this.context = newContext;
+    this.cachedPrefs = null;
+    hilog.info(DOMAIN, TAG, 'HarmonyBridge context refreshed');
   }
 
   /** 缓存 preferences 实例 (避免每次 read/write 重新 getPreferences). */
@@ -182,12 +214,10 @@ export class HarmonyBridge {
         win
       );
 
-      hilog.info(
+      hilog.debug(
         DOMAIN,
         TAG,
-        'registerReminder (Stage 7): dueAt=%{public}d cardId=%{public}s dueCount=%{public}d lang=%{public}s',
-        payload.dueAt,
-        payload.cardId,
+        'registerReminder (Stage 7): dueCount=%{public}d lang=%{public}s',
         dueCount,
         language
       );
@@ -422,12 +452,22 @@ export class HarmonyBridge {
         );
         return;
       }
+      // H4: 队列封顶, 超限丢最旧并记 warn (query 明文不入日志, M2).
+      if (this.pendingLaunchQueries.length >= MAX_PENDING_LAUNCH_QUERIES) {
+        this.pendingLaunchQueries.shift();
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          'launch queue overflow: dropped oldest, queueSize=%{public}d',
+          this.pendingLaunchQueries.length
+        );
+      }
+      this.pendingLaunchQueries.push(query);
       hilog.info(
         DOMAIN,
         TAG,
-        'handleHarmonyLaunch queued: query=%{public}s queueSize=%{public}d',
-        query,
-        this.pendingLaunchQueries.push(query)
+        'handleHarmonyLaunch queued: queueSize=%{public}d',
+        this.pendingLaunchQueries.length
       );
       this.resumePendingLaunches();
     } catch (e) {
@@ -610,9 +650,26 @@ export class HarmonyBridge {
       "); return 'dispatched'; })();";
 
     this.launchDispatchInProgress = true;
+    // H4: runJavaScript 永不结算 (Web 崩溃 / 文档切换) 时定时器兜底复位,
+    // 否则 launchDispatchInProgress 永久为 true -> FIFO 队列卡死.
+    this.launchDispatchTimerId = setTimeout(() => {
+      this.launchDispatchTimerId = -1;
+      if (!this.launchDispatchInProgress) {
+        return;
+      }
+      hilog.warn(
+        DOMAIN,
+        TAG,
+        'Harmony launch dispatch settle timeout: forcing reset, queueSize=%{public}d',
+        this.pendingLaunchQueries.length
+      );
+      this.launchDispatchInProgress = false;
+      this.resumePendingLaunches();
+    }, LAUNCH_DISPATCH_TIMEOUT_MS);
     try {
       controller.runJavaScript(jsCode)
         .then((_result: string) => {
+          this.clearLaunchDispatchTimer();
           if (
             this.pendingLaunchQueries.length > 0 &&
             this.pendingLaunchQueries[0] === query
@@ -623,13 +680,13 @@ export class HarmonyBridge {
           hilog.info(
             DOMAIN,
             TAG,
-            'Harmony launch dispatched: query=%{public}s remaining=%{public}d',
-            query,
+            'Harmony launch dispatched: remaining=%{public}d',
             this.pendingLaunchQueries.length
           );
           this.resumePendingLaunches();
         })
         .catch((e: BusinessError) => {
+          this.clearLaunchDispatchTimer();
           this.launchDispatchInProgress = false;
           hilog.warn(
             DOMAIN,
@@ -645,6 +702,7 @@ export class HarmonyBridge {
           }
         });
     } catch (e) {
+      this.clearLaunchDispatchTimer();
       this.launchDispatchInProgress = false;
       const err: BusinessError = e as BusinessError;
       hilog.warn(
@@ -659,6 +717,14 @@ export class HarmonyBridge {
       if (currentGeneration !== readyGeneration) {
         this.resumePendingLaunches();
       }
+    }
+  }
+
+  /** H4: 清除派发超时定时器 (结算路径统一调用). */
+  private clearLaunchDispatchTimer(): void {
+    if (this.launchDispatchTimerId >= 0) {
+      clearTimeout(this.launchDispatchTimerId);
+      this.launchDispatchTimerId = -1;
     }
   }
 
@@ -682,7 +748,7 @@ export class HarmonyBridge {
       }
       const store: MemoryCardStore = await this.getMemoryCardStore();
       await store.upsertCard(card);
-      hilog.info(
+      hilog.debug(
         DOMAIN,
         TAG,
         'upsertCard done: id=%{public}s due=%{public}d',
@@ -721,7 +787,7 @@ export class HarmonyBridge {
       }
       const store: MemoryCardStore = await this.getMemoryCardStore();
       await store.deleteCardByLexemeGroupId(lexemeGroupId);
-      hilog.info(
+      hilog.debug(
         DOMAIN,
         TAG,
         'deleteCard done: lexemeGroupId=%{public}s',
@@ -749,6 +815,7 @@ export class HarmonyBridge {
    * (对象/数组) 无法跨桥 — Web 端 Promise resolve 得到 number (原生 count=5,
    * Web rawType=number cards=0). 基本类型 string 可靠传输, 故统一序列化为
    * JSON 字符串; Web 侧 parseBridgeRecords 兼容解析 (useMemoryStore.ts).
+   * getRecentlyReviewedCards / getTodayReviewStats / getSpeechEngines 同契约.
    */
   async getAllCards(): Promise<string> {
     try {
@@ -778,11 +845,11 @@ export class HarmonyBridge {
   /**
    * 查询最近复习过的卡片 (Web 端 dashboard 展示).
    *
-   * 1. 校验 limit: Number.isInteger(limit) && limit > 0 && limit <= 100, 失败返回 [].
+   * 1. 校验 limit: Number.isInteger(limit) && limit > 0 && limit <= 100, 失败返回 '[]'.
    * 2. 调用 MemoryCardStore.getRecentlyReviewedCards(limit) (新增).
-   * 3. 异常返回空数组.
+   * 3. 返回 JSON 字符串 (v1.6.0 D1: 与 getAllCards 同契约, 异常返回 '[]').
    */
-  async getRecentlyReviewedCards(limit: number): Promise<MemoryCardRecord[]> {
+  async getRecentlyReviewedCards(limit: number): Promise<string> {
     try {
       if (
         !Number.isInteger(limit) ||
@@ -795,7 +862,7 @@ export class HarmonyBridge {
           'getRecentlyReviewedCards rejected: invalid limit=%{public}d',
           limit
         );
-        return [];
+        return '[]';
       }
       const store: MemoryCardStore = await this.getMemoryCardStore();
       const cards: MemoryCardRecord[] =
@@ -807,7 +874,7 @@ export class HarmonyBridge {
         limit,
         cards.length
       );
-      return cards;
+      return JSON.stringify(cards);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -817,7 +884,7 @@ export class HarmonyBridge {
         err.code,
         err.message
       );
-      return [];
+      return '[]';
     }
   }
 
@@ -825,9 +892,9 @@ export class HarmonyBridge {
    * 查询今日复习统计 (服务卡片进度环 + Web dashboard).
    *
    * 调用 MemoryCardStore.getTodayReviewStats(Date.now()) (新增).
-   * 异常返回默认 stats {dueCount:0, reviewedCount:0, totalCount:0}.
+   * 返回 TodayReviewStats 的 JSON 字符串 (v1.6.0 D1 契约), 异常返回默认值 JSON.
    */
-  async getTodayReviewStats(): Promise<TodayReviewStats> {
+  async getTodayReviewStats(): Promise<string> {
     const defaultStats: TodayReviewStats = {
       dueCount: 0,
       reviewedCount: 0,
@@ -845,7 +912,7 @@ export class HarmonyBridge {
         stats.reviewedCount,
         stats.totalCount
       );
-      return stats;
+      return JSON.stringify(stats);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(
@@ -855,7 +922,7 @@ export class HarmonyBridge {
         err.code,
         err.message
       );
-      return defaultStats;
+      return JSON.stringify(defaultStats);
     }
   }
 
@@ -864,17 +931,20 @@ export class HarmonyBridge {
    *
    * 流程:
    * 1. 三段校验 (validateSpeechText / validateSpeechLanguage / validateSpeechRate),
-   *    失败 hilog.warn + return (不抛到 Web).
+   *    失败 hilog.warn + 返回原因字符串 (不抛到 Web).
    * 2. 调用 TextToSpeechService.getInstance().speak(payload).
-   * 3. try/catch 兜底, 异常 hilog.warn + return (fire-and-forget 模式).
+   * 3. try/catch 兜底, 异常 hilog.warn + 返回原因字符串.
+   *
+   * 返回约定 (M8): '' = 已派发; 非空 = 拒绝/失败原因. 返回 string 而非对象,
+   * 与 v1.6.0 D1 的 API 22 基本类型跨桥契约一致, 且遵循文件头"异常不抛到 Web".
    *
    * @param payload 朗读载荷 (text / language / rate / voiceId?).
    */
-  async speak(payload: SpeakPayload): Promise<void> {
+  async speak(payload: SpeakPayload): Promise<string> {
     try {
       if (payload === null || payload === undefined) {
         hilog.warn(DOMAIN, TAG, 'speak rejected: null payload');
-        return;
+        return 'null payload';
       }
       if (!BridgeInputValidator.validateSpeechText(payload.text)) {
         hilog.warn(
@@ -883,7 +953,7 @@ export class HarmonyBridge {
           'speak rejected: invalid text (len=%{public}d)',
           typeof payload.text === 'string' ? payload.text.length : -1
         );
-        return;
+        return 'invalid text';
       }
       if (!BridgeInputValidator.validateSpeechLanguage(payload.language)) {
         hilog.warn(
@@ -892,7 +962,7 @@ export class HarmonyBridge {
           'speak rejected: invalid language=%{public}s',
           payload.language
         );
-        return;
+        return 'invalid language';
       }
       if (!BridgeInputValidator.validateSpeechRate(payload.rate)) {
         hilog.warn(
@@ -901,7 +971,7 @@ export class HarmonyBridge {
           'speak rejected: invalid rate=%{public}f',
           payload.rate
         );
-        return;
+        return 'invalid rate';
       }
       await TextToSpeechService.getInstance().speak(payload);
       hilog.info(
@@ -912,6 +982,7 @@ export class HarmonyBridge {
         payload.language,
         payload.rate
       );
+      return '';
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.warn(
@@ -921,7 +992,7 @@ export class HarmonyBridge {
         err.code,
         err.message
       );
-      throw new Error(err.message);
+      return err.message;
     }
   }
 
@@ -981,9 +1052,9 @@ export class HarmonyBridge {
    * 列出可用 TTS 引擎.
    *
    * 调用 TextToSpeechService.getInstance().getEngines().
-   * try/catch 兜底, 异常 return [] (不抛到 Web).
+   * 返回 SpeechEngineInfo[] 的 JSON 字符串 (v1.6.0 D1 契约), 异常返回 '[]'.
    */
-  async getSpeechEngines(): Promise<SpeechEngineInfo[]> {
+  async getSpeechEngines(): Promise<string> {
     try {
       const engines: SpeechEngineInfo[] =
         await TextToSpeechService.getInstance().getEngines();
@@ -993,7 +1064,7 @@ export class HarmonyBridge {
         'getSpeechEngines done: count=%{public}d',
         engines.length
       );
-      return engines;
+      return JSON.stringify(engines);
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.warn(
@@ -1003,7 +1074,7 @@ export class HarmonyBridge {
         err.code,
         err.message
       );
-      return [];
+      return '[]';
     }
   }
 
@@ -1066,6 +1137,7 @@ export class HarmonyBridge {
    * 校验先行: reminderId 白名单 + triggerAt 必须为未来时间 (过去时间拒绝,
    * 防止"未来提醒"被误发布). 委托 ReminderAgentService.publishReminder —
    * 权益不可用时 {skipped:true}, 绝不真实发布 (安全契约).
+   * 文案取自 notification/templates.getReviewReminderText (按 app_language 本地化).
    */
   async scheduleReviewReminder(
     reminderId: string,
@@ -1086,11 +1158,21 @@ export class HarmonyBridge {
         return { skipped: true, reason: 'triggerAt must be a future time' };
       }
       await ReminderAgentService.getInstance().initialize(this.context);
+      // 提醒文案 i18n: 标题/正文取自 notification/templates 多语言模板
+      // (按 app_language 偏好 + 到期卡片数生成), 不再硬编码中文.
+      const langValue: string | null = await this.readPreferences('app_language');
+      const language: string = langValue !== null ? langValue : 'en';
+      const store: MemoryCardStore = await this.getMemoryCardStore();
+      const dueCount: number = await store.getDueCardsCount(triggerAt);
+      const reminderText: NotificationText = getReviewReminderText(
+        language,
+        dueCount
+      );
       return await ReminderAgentService.getInstance().publishReminder(
         reminderId,
         triggerAt,
-        'Wordaydream',
-        '复习提醒'
+        reminderText.title,
+        reminderText.text
       );
     } catch (e) {
       const err: BusinessError = e as BusinessError;

@@ -6,6 +6,8 @@
  * - T02: useMemoryStore.addCardFromToken 调用 harmonyBridge.upsertCard
  * - T03: useMemoryStore.deleteCard 调用 harmonyBridge.deleteCard
  * - T04: onRehydrateStorage 空状态 + harmonyBridge 存在时调用 getAllCards (state 恢复)
+ * - T04b: getAllCards 旧数组形态兼容 (parseBridgeRecords 归一)
+ * - T04c: 原生推送通道 (__applyNativeCardRestore) 与拉取路径共用恢复实现 (M1)
  * - T05: onRehydrateStorage 已有数据时不调用 getAllCards (避免覆盖)
  * - T06: upsertCard 16 字段序列化无丢失 (deep equal MemoryCardRecordBridge)
  * - T07: MemoryCardStore.getAllCards SQL 含 "ORDER BY due ASC" (源码断言)
@@ -24,7 +26,6 @@ import type { MemoryCard, TokenOccurrence } from '../../../../types';
 import type {
   HarmonyBridge,
   MemoryCardRecordBridge,
-  TodayReviewStatsBridge,
 } from '../../../../platform/harmonyBridge';
 
 type BridgeWindow = Window & { harmonyBridge?: HarmonyBridge };
@@ -101,10 +102,14 @@ function makeToken(
   };
 }
 
-/** 构造完整 HarmonyBridge 桩, 默认所有方法为 vi.fn() + 安全返回值. */
+/**
+ * 构造完整 HarmonyBridge 桩, 默认所有方法为 vi.fn() + 安全返回值.
+ *
+ * getDueCardsCount / getRecentlyReviewedCards / getTodayReviewStats 仅原生侧
+ * 内部使用 (Web 无调用方), 已从 interface 移除, 故桩不再实现.
+ */
 function makeBridgeStub(overrides?: Partial<HarmonyBridge>): HarmonyBridge {
   return {
-    getDueCardsCount: vi.fn().mockResolvedValue(0),
     registerReminder: vi.fn().mockResolvedValue(undefined),
     readPreferences: vi.fn().mockResolvedValue(null),
     writePreferences: vi.fn().mockResolvedValue(undefined),
@@ -113,13 +118,12 @@ function makeBridgeStub(overrides?: Partial<HarmonyBridge>): HarmonyBridge {
     notifyWebContentReady: vi.fn(),
     upsertCard: vi.fn().mockResolvedValue(undefined),
     deleteCard: vi.fn().mockResolvedValue(undefined),
-    getAllCards: vi.fn().mockResolvedValue([]),
-    getRecentlyReviewedCards: vi.fn().mockResolvedValue([]),
-    getTodayReviewStats: vi.fn().mockResolvedValue({
-      dueCount: 0,
-      reviewedCount: 0,
-      totalCount: 0,
-    } satisfies TodayReviewStatsBridge),
+    // v1.6.0 D1: 复杂返回值以 JSON 字符串跨桥 (API 22 基本类型契约)
+    getAllCards: vi.fn().mockResolvedValue('[]'),
+    speak: vi.fn().mockResolvedValue(''),
+    stopSpeech: vi.fn(),
+    isSpeechSupported: vi.fn().mockResolvedValue(true),
+    getSpeechEngines: vi.fn().mockResolvedValue('[]'),
     ...overrides,
   };
 }
@@ -286,7 +290,8 @@ describe('v0.2.0-harmony Stage 3: Web ↔ 鸿蒙 relationalStore sync', () => {
       }),
     ];
     const stub = makeBridgeStub({
-      getAllCards: vi.fn().mockResolvedValue(bridgeCards),
+      // v1.6.0 D1: 原生侧返回 JSON 字符串
+      getAllCards: vi.fn().mockResolvedValue(JSON.stringify(bridgeCards)),
     });
     (window as BridgeWindow).harmonyBridge = stub;
     // localStorage 已在 beforeEach 清空
@@ -310,6 +315,52 @@ describe('v0.2.0-harmony Stage 3: Web ↔ 鸿蒙 relationalStore sync', () => {
     expect(c2!.lemma).toBe('Haus');
     expect(c2!.language).toBe('de');
     expect(c2!.status).toBe('learning');
+  });
+
+  it('T04b [critical]: getAllCards 旧数组形态仍兼容 (parseBridgeRecords 归一)', async () => {
+    const bridgeCards: MemoryCardRecordBridge[] = [
+      makeBridgeCard({ lexemeGroupId: 'g1', lemma: 'apple', objectiveDifficulty: 2 }),
+    ];
+    const stub = makeBridgeStub({
+      getAllCards: vi.fn().mockResolvedValue(bridgeCards as unknown as string),
+    });
+    (window as BridgeWindow).harmonyBridge = stub;
+
+    const { useMemoryStore } = await import('../useMemoryStore');
+    await new Promise((r) => setTimeout(r, 50));
+
+    const cards = useMemoryStore.getState().cards;
+    expect(cards.size).toBe(1);
+    expect(cards.get('g1')?.lemma).toBe('apple');
+  });
+
+  it('T04c [critical]: 原生推送通道与拉取路径共用恢复实现 (M1)', async () => {
+    const bridgeCards: MemoryCardRecordBridge[] = [
+      makeBridgeCard({ lexemeGroupId: 'g1', lemma: 'apple', objectiveDifficulty: 2 }),
+      makeBridgeCard({ lexemeGroupId: 'g2', lemma: 'Haus', objectiveDifficulty: 4, language: 'de' }),
+    ];
+    const stub = makeBridgeStub();
+    (window as BridgeWindow).harmonyBridge = stub;
+
+    const { useMemoryStore } = await import('../useMemoryStore');
+    await new Promise((r) => setTimeout(r, 50));
+
+    // 推送接收器由 useMemoryStore 模块加载时挂载
+    expect(typeof window.__applyNativeCardRestore).toBe('function');
+    window.__applyNativeCardRestore!(JSON.stringify(bridgeCards));
+
+    const cards = useMemoryStore.getState().cards;
+    expect(cards.size).toBe(2);
+    expect(cards.get('g2')?.language).toBe('de');
+
+    // store 非空时推送不覆盖用户数据
+    window.__applyNativeCardRestore!(
+      JSON.stringify([
+        makeBridgeCard({ lexemeGroupId: 'g9', lemma: 'nothing', objectiveDifficulty: 1 }),
+      ])
+    );
+    expect(useMemoryStore.getState().cards.size).toBe(2);
+    expect(useMemoryStore.getState().cards.has('g9')).toBe(false);
   });
 
   it('T05 [critical]: onRehydrateStorage 已有数据时不调用 getAllCards (避免覆盖)', async () => {
@@ -519,9 +570,9 @@ describe('v0.2.0-harmony Stage 3: Web ↔ 鸿蒙 relationalStore sync', () => {
     expect(reviewedCount).toBe(3); // c1, c4, c5
     expect(totalCount).toBe(6);
 
-    // 验证 TodayReviewStatsBridge 形状
-    const stats: TodayReviewStatsBridge = { dueCount, reviewedCount, totalCount };
-    expect(stats).toEqual({ dueCount: 3, reviewedCount: 3, totalCount: 6 });
+    // 验证跨桥载荷形状 (原生侧 JSON.stringify(stats), Web 侧 JSON.parse)
+    const raw: string = JSON.stringify({ dueCount, reviewedCount, totalCount });
+    expect(JSON.parse(raw)).toEqual({ dueCount: 3, reviewedCount: 3, totalCount: 6 });
 
     // 边界: todayStart 与 now 的关系 — todayStart <= now < todayStart + 86400000
     expect(todayStart).toBeLessThanOrEqual(now);

@@ -2,128 +2,118 @@
  * LocalUnit.test (v0.1.0-harmony)
  *
  * 本地单元测试 - 不需设备/模拟器, 由 hvigor 在构建期执行.
- * 测试纯逻辑模块: MemoryCardSchema 常量 + 通知模板多语言 fallback.
+ * 测试纯逻辑模块: 通知模板多语言 fallback + MemoryCardSchema 常量 + 桥接注册表契约.
  *
  * 注意: 本地单元测试无法 import @kit.* 系统 Kit (需要设备运行时),
- * 仅测试不依赖系统 API 的纯 ArkTS 模块.
+ * 仅测试不依赖系统 API 的纯 ArkTS 模块 (templates / MemoryCardSchema /
+ * BridgeMethodRegistry / bridge types). 这里 import 真实 production 模块,
+ * 不再用字面量自比 (H1: 避免同义反复断言).
  */
-import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium';
+import { describe, it, expect } from '@ohos/hypium';
 import {
   BRIDGE_ASYNC_METHODS,
   BRIDGE_SYNC_METHODS,
 } from '../main/ets/bridge/BridgeMethodRegistry';
-
-/** 测试用 ReminderPayload 字段类型映射 (ArkTS 严格模式要求显式 interface). */
-interface ReminderPayloadFields {
-  dueAt: string;
-  cardId: string;
-}
+import type { ReminderPayload } from '../main/ets/bridge/types';
+import {
+  getPermissionRequestText,
+  getReviewReminderText,
+} from '../main/ets/notification/templates';
+import type { NotificationText } from '../main/ets/notification/templates';
+import {
+  COLUMN_LIST,
+  CREATE_INDEX_SQL_DUE,
+  CREATE_INDEX_SQL_LANGUAGE,
+  CREATE_INDEX_SQL_LAST_REVIEW,
+  CREATE_TABLE_SQL,
+  STORE_NAME,
+  TABLE_NAME,
+} from '../main/ets/data/MemoryCardSchema';
 
 export default function localUnitTest() {
-  describe('localUnitTest', () => {
-    beforeAll(() => {
-    });
-    beforeEach(() => {
-    });
-    afterEach(() => {
-    });
-    afterAll(() => {
-    });
-
-    it('assertContain', 0, () => {
-      let a = 'abc';
-      let b = 'b';
-      expect(a).assertContain(b);
-      expect(a).assertEqual(a);
-    });
-  })
-
   describe('NotificationTemplatesLocalTest', () => {
-    // 通知模板是纯函数, 不依赖系统 Kit, 可在本地单元测试中直接 import.
-    // 注意: 由于本地单元测试的模块解析可能与 ohosTest 不同,
-    // 这里仅验证常量字符串逻辑, 实际模板测试在 ohosTest/Ability.test.ets 中执行.
+    // templates.ets 是纯函数模块 (无系统 Kit 依赖), 直接 import production 实现.
 
-    it('zhReviewTitleLiteral', 0, () => {
-      const expected: string = '复习时间到';
-      expect(expected).assertEqual('复习时间到');
+    it('reviewReminderTextZh', 0, () => {
+      const text: NotificationText = getReviewReminderText('zh', 5);
+      expect(text.title).assertEqual('复习时间到');
+      expect(text.text).assertEqual('有 5 个词汇到期复习');
+      expect(text.expandedText).assertEqual('点击开始复习');
     })
 
-    it('enReviewTitleLiteral', 0, () => {
-      const expected: string = 'Review Time';
-      expect(expected).assertEqual('Review Time');
+    it('reviewReminderTextEnPlural', 0, () => {
+      const text: NotificationText = getReviewReminderText('en', 2);
+      expect(text.title).assertEqual('Review Time');
+      expect(text.text).assertEqual('2 words due for review');
     })
 
-    it('deReviewTitleLiteral', 0, () => {
-      const expected: string = 'Wiederholungszeit';
-      expect(expected).assertEqual('Wiederholungszeit');
+    it('reviewReminderTextEnSingular', 0, () => {
+      const text: NotificationText = getReviewReminderText('en', 1);
+      expect(text.text).assertEqual('1 word due for review');
     })
 
-    it('zhPermissionTitleLiteral', 0, () => {
-      const expected: string = '开启复习提醒';
-      expect(expected).assertEqual('开启复习提醒');
+    it('reviewReminderTextDe', 0, () => {
+      const text: NotificationText = getReviewReminderText('de', 3);
+      expect(text.title).assertEqual('Wiederholungszeit');
+      expect(text.text).assertEqual('3 Karten fällig');
     })
 
-    it('enPermissionTitleLiteral', 0, () => {
-      const expected: string = 'Enable Review Reminders';
-      expect(expected).assertEqual('Enable Review Reminders');
+    it('reviewReminderTextUnknownLanguageFallsBackToEn', 0, () => {
+      const zh: NotificationText = getReviewReminderText('fr', 2);
+      const en: NotificationText = getReviewReminderText('en', 2);
+      expect(zh.title).assertEqual(en.title);
+      expect(zh.text).assertEqual(en.text);
     })
 
-    it('dePermissionTitleLiteral', 0, () => {
-      const expected: string = 'Wiederholungserinnerungen aktivieren';
-      expect(expected).assertEqual('Wiederholungserinnerungen aktivieren');
+    it('reviewReminderTextNegativeCountIsClamped', 0, () => {
+      const text: NotificationText = getReviewReminderText('zh', -1);
+      expect(text.text).assertEqual('有 0 个词汇到期复习');
+    })
+
+    it('permissionRequestTextThreeLanguages', 0, () => {
+      expect(getPermissionRequestText('zh').title).assertEqual('开启复习提醒');
+      expect(getPermissionRequestText('en').title)
+        .assertEqual('Enable Review Reminders');
+      expect(getPermissionRequestText('de').title)
+        .assertEqual('Wiederholungserinnerungen aktivieren');
+      // 未匹配语言 fallback 到 en
+      expect(getPermissionRequestText('ja').title)
+        .assertEqual('Enable Review Reminders');
     })
   })
 
   describe('MemoryCardSchemaLocalTest', () => {
-    // Schema 常量是纯字符串, 可在本地验证字面量.
-    // 实际常量 import 测试在 ohosTest/Ability.test.ets 中执行.
+    // Schema 常量是纯字符串/数组, import production 模块验证真实值.
 
-    it('tableNameLiteral', 0, () => {
-      const expected: string = 'wordaydream_memory_cards';
-      expect(expected).assertEqual('wordaydream_memory_cards');
-    })
-
-    it('storeNameLiteral', 0, () => {
-      const expected: string = 'wordaydream_memory.db';
-      expect(expected).assertEqual('wordaydream_memory.db');
+    it('tableNameAndStoreName', 0, () => {
+      expect(TABLE_NAME).assertEqual('wordaydream_memory_cards');
+      expect(STORE_NAME).assertEqual('wordaydream_memory.db');
     })
 
     it('columnCountIs16', 0, () => {
       // 16 字段对应 Web MemoryCard 接口
-      const expectedCount: number = 16;
-      expect(expectedCount).assertEqual(16);
+      expect(COLUMN_LIST.length).assertEqual(16);
     })
 
     it('createTableSqlContainsPrimaryKey', 0, () => {
-      const sql: string = 'CREATE TABLE IF NOT EXISTS wordaydream_memory_cards (id TEXT PRIMARY KEY, due INTEGER, stability REAL)';
-      expect(sql.includes('id TEXT PRIMARY KEY')).assertTrue();
-      expect(sql.includes('due INTEGER')).assertTrue();
-      expect(sql.includes('stability REAL')).assertTrue();
+      expect(CREATE_TABLE_SQL.includes('id TEXT PRIMARY KEY')).assertTrue();
+      expect(CREATE_TABLE_SQL.includes('due INTEGER')).assertTrue();
+      expect(CREATE_TABLE_SQL.includes('stability REAL')).assertTrue();
+      expect(CREATE_TABLE_SQL.includes(TABLE_NAME)).assertTrue();
     })
 
-    // T21 (Stage 4): CREATE_INDEX_SQL_DUE/LAST_REVIEW/LANGUAGE 字符串正确
-    it('createIndexSqlDueLiteral', 0, () => {
-      const expected: string = 'CREATE INDEX IF NOT EXISTS idx_due ON wordaydream_memory_cards (due);';
-      expect(expected.includes('CREATE INDEX IF NOT EXISTS')).assertTrue();
-      expect(expected.includes('idx_due')).assertTrue();
-      expect(expected.includes('wordaydream_memory_cards')).assertTrue();
-      expect(expected.includes('(due)')).assertTrue();
-    })
-
-    it('createIndexSqlLastReviewLiteral', 0, () => {
-      const expected: string = 'CREATE INDEX IF NOT EXISTS idx_lastReviewAt ON wordaydream_memory_cards (lastReviewAt);';
-      expect(expected.includes('CREATE INDEX IF NOT EXISTS')).assertTrue();
-      expect(expected.includes('idx_lastReviewAt')).assertTrue();
-      expect(expected.includes('wordaydream_memory_cards')).assertTrue();
-      expect(expected.includes('(lastReviewAt)')).assertTrue();
-    })
-
-    it('createIndexSqlLanguageLiteral', 0, () => {
-      const expected: string = 'CREATE INDEX IF NOT EXISTS idx_language ON wordaydream_memory_cards (language);';
-      expect(expected.includes('CREATE INDEX IF NOT EXISTS')).assertTrue();
-      expect(expected.includes('idx_language')).assertTrue();
-      expect(expected.includes('wordaydream_memory_cards')).assertTrue();
-      expect(expected.includes('(language)')).assertTrue();
+    it('createIndexSqlCoversHotPaths', 0, () => {
+      expect(CREATE_INDEX_SQL_DUE.includes('CREATE INDEX IF NOT EXISTS'))
+        .assertTrue();
+      expect(CREATE_INDEX_SQL_DUE.includes('idx_due')).assertTrue();
+      expect(CREATE_INDEX_SQL_DUE.includes(TABLE_NAME)).assertTrue();
+      expect(CREATE_INDEX_SQL_DUE.includes('(due)')).assertTrue();
+      expect(CREATE_INDEX_SQL_LAST_REVIEW.includes('idx_lastReviewAt'))
+        .assertTrue();
+      expect(CREATE_INDEX_SQL_LAST_REVIEW.includes('(lastReviewAt)'))
+        .assertTrue();
+      expect(CREATE_INDEX_SQL_LANGUAGE.includes('idx_language')).assertTrue();
+      expect(CREATE_INDEX_SQL_LANGUAGE.includes('(language)')).assertTrue();
     })
   })
 
@@ -134,8 +124,8 @@ export default function localUnitTest() {
       const methodNames: string[] =
         BRIDGE_SYNC_METHODS.concat(BRIDGE_ASYNC_METHODS);
       expect(BRIDGE_SYNC_METHODS.length).assertEqual(4);
-      expect(BRIDGE_ASYNC_METHODS.length).assertEqual(13);
-      expect(methodNames.length).assertEqual(17);
+      expect(BRIDGE_ASYNC_METHODS.length).assertEqual(16);
+      expect(methodNames.length).assertEqual(20);
       expect(BRIDGE_ASYNC_METHODS.includes('notifyReviewCompleted')).assertTrue();
       expect(BRIDGE_SYNC_METHODS.includes('triggerHapticFeedback')).assertTrue();
       expect(BRIDGE_SYNC_METHODS.includes('stopSpeech')).assertTrue();
@@ -144,16 +134,22 @@ export default function localUnitTest() {
       expect(BRIDGE_ASYNC_METHODS.includes('speak')).assertTrue();
       expect(BRIDGE_ASYNC_METHODS.includes('getAllCards')).assertTrue();
       expect(!methodNames.includes('handleHarmonyLaunch')).assertTrue();
+      // 同步组与异步组不得重复注册同一方法
+      for (let i: number = 0; i < BRIDGE_SYNC_METHODS.length; i++) {
+        expect(BRIDGE_ASYNC_METHODS.includes(BRIDGE_SYNC_METHODS[i]))
+          .assertFalse();
+      }
     })
 
     it('reminderPayloadFields', 0, () => {
-      // ReminderPayload: { dueAt: number, cardId: string }
-      const payload: ReminderPayloadFields = {
-        dueAt: 'number',
-        cardId: 'string',
+      // ReminderPayload (bridge/types.ets): { dueAt: number, cardId: string }
+      const payload: ReminderPayload = {
+        dueAt: 1700000000000,
+        cardId: 'card-001',
       };
-      expect(payload.dueAt).assertEqual('number');
-      expect(payload.cardId).assertEqual('string');
+      expect(typeof payload.dueAt).assertEqual('number');
+      expect(typeof payload.cardId).assertEqual('string');
+      expect(payload.dueAt > 0).assertTrue();
     })
   })
 }
