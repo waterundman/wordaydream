@@ -5,14 +5,16 @@ import { RemedyPanel } from '../../evaluation/components/RemedyPanel';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
 import { RatingBar } from '../../review/components/RatingBar';
-import { usePageEntranceAnimation } from '../hooks/usePageEntranceAnimation';
-import { useVocabPulseAnimation } from '../hooks/useVocabPulseAnimation';
-import { usePanelPosition } from '../../../hooks/usePanelPosition';
 // v1.2.0 Stage 2 (词汇点读): 词级发音按钮 — 双路径 TTS utility
 // v1.3.0 Stage 1: stopSpeechText 用于面板卸载 / token 切换时收口词级朗读
 import { speakText, stopSpeechText, supportsSpeechText } from '../../../platform/speakText';
+import { usePanelPosition } from '../../../hooks/usePanelPosition';
 import styles from './InlineAnswerPanel.module.css';
 import type { TokenOccurrence, AnswerEvaluation, Rating, Language } from '../../../types';
+
+// v1.6.3 UX-fix: anchorRef 缺省时的稳定空引用 —— 此前每渲染新建 {current:null},
+// 会让 usePanelPosition 的 layout effect 每次 keystroke 重跑 (强制 reflow + 监听器churn).
+const EMPTY_ANCHOR: React.RefObject<HTMLElement | null> = { current: null };
 
 interface Props {
   token: TokenOccurrence;
@@ -54,20 +56,13 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
     };
   }, []);
 
-  const { getStyle: getPanelStyle } = usePageEntranceAnimation({
-    staggerDelay: 50,
-    animationDuration: 400,
-    offset: 8,
-  });
-
-  const { className: pulseClassName, triggerPulse } = useVocabPulseAnimation({
-    duration: 600,
-  });
-
+  // v1.6.3 UX-fix: 面板不再叠加 pageEntrance 入场动画 (fill-forwards 终态会压死
+  // .panel.open 的 translateX(-50%) 居中位移与 --panel-shift-x 边缘修正 —— CSS 级联中
+  // animation fill > inline style > class 规则), 开合动画由 .panel 自身的
+  // max-height/opacity transition 承担. 同时移除 vocabPulse 死类 (全仓无 CSS 规则).
   useEffect(() => {
     inputRef.current?.focus();
-    triggerPulse();
-  }, [triggerPulse]);
+  }, []);
 
   // v1.2.0 Stage 2 (词汇点读): 词级发音能力探测 — 与页级 ttsSupported 同一口径
   // (supportsSpeechSynthesis() || !!nativeBridge?.speak). 双能力缺失时不渲染按钮.
@@ -227,18 +222,24 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
   const isReview = token.kind === 'review';
 
   const panelPosition = usePanelPosition(
-    anchorRef ?? { current: null } as React.RefObject<HTMLElement | null>,
+    anchorRef ?? EMPTY_ANCHOR,
     true,
     { width: 340, height: 260 },
   );
 
+  // v1.6.3 UX-fix: --panel-shift-x 承载完整水平位移 (CSS class 统一消费):
+  // center = -50% 居中 + 偏移修正; left/right = 纯偏移修正 (此时 translateX(-50%) 会错位).
+  const panelShiftX =
+    panelPosition.horizontal === 'center'
+      ? `calc(-50% + ${panelPosition.offsetX}px)`
+      : `${panelPosition.offsetX}px`;
+
   const panelStyle: React.CSSProperties = {
-    ...getPanelStyle(0),
     top: panelPosition.vertical === 'top' ? undefined : 'calc(100% + var(--space-2))',
     bottom: panelPosition.vertical === 'top' ? 'calc(100% + var(--space-2))' : undefined,
     left: panelPosition.horizontal === 'right' ? 'auto' : panelPosition.horizontal === 'left' ? '0' : '50%',
     right: panelPosition.horizontal === 'right' ? '0' : 'auto',
-    ['--panel-offset-x' as string]: `${panelPosition.offsetX}px`,
+    ['--panel-shift-x' as string]: panelShiftX,
   };
 
   const srOnlyStyle: React.CSSProperties = {
@@ -256,7 +257,7 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
   return (
     <div
       ref={panelRef}
-      className={`${styles.panel} ${styles.open} ${gradeClass} ${isReview ? styles.review : ''} ${pulseClassName}`}
+      className={`${styles.panel} ${styles.open} ${gradeClass} ${isReview ? styles.review : ''}`}
       role="dialog"
       aria-labelledby={titleId}
       aria-describedby={descId}

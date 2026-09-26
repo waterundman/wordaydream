@@ -49,12 +49,19 @@ export function GrammarPanel({ grammarPoint, onClose, anchorRef }: Props) {
     { width: 360, height: 320 },
   );
 
+  // v1.6.3 UX-fix: --panel-shift-x 承载完整水平位移 (与 InlineAnswerPanel 同一口径):
+  // 此前 keyframes fill-forwards 终态硬编码 translateX(-50%), 动画结束后边缘偏移修正丢失.
+  const panelShiftX =
+    panelPosition.horizontal === 'center'
+      ? `calc(-50% + ${panelPosition.offsetX}px)`
+      : `${panelPosition.offsetX}px`;
+
   const panelStyle: React.CSSProperties = {
     top: panelPosition.vertical === 'top' ? undefined : 'calc(100% + var(--space-2))',
     bottom: panelPosition.vertical === 'top' ? 'calc(100% + var(--space-2))' : undefined,
     left: panelPosition.horizontal === 'right' ? 'auto' : panelPosition.horizontal === 'left' ? '0' : '50%',
     right: panelPosition.horizontal === 'right' ? '0' : 'auto',
-    ['--panel-offset-x' as string]: `${panelPosition.offsetX}px`,
+    ['--panel-shift-x' as string]: panelShiftX,
   };
 
   // v2.2.4 Round 2 (D3-5): Tab 循环交给 useFocusTrap, 仅保留 ESC 关闭逻辑.

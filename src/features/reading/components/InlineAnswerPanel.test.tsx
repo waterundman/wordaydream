@@ -31,12 +31,7 @@ vi.mock('../../review/components/RatingBar', () => ({
 }));
 
 // 拦截 hooks, 避免 jsdom 布局问题
-vi.mock('../hooks/usePageEntranceAnimation', () => ({
-  usePageEntranceAnimation: () => ({ getStyle: () => ({}) }),
-}));
-vi.mock('../hooks/useVocabPulseAnimation', () => ({
-  useVocabPulseAnimation: () => ({ className: '', triggerPulse: vi.fn() }),
-}));
+// v1.6.3 UX-fix: usePageEntranceAnimation / useVocabPulseAnimation 已从面板移除 (死代码), mock 一并删除.
 vi.mock('../../../hooks/usePanelPosition', () => ({
   usePanelPosition: () => ({ vertical: 'bottom', horizontal: 'center', offsetX: 0 }),
 }));
@@ -206,5 +201,33 @@ describe('v2.2.1 Stage 2 Bug 3 — InlineAnswerPanel handleSubmit 门控点 (T09
     // 但 markOccurrenceResolved 被调用 (Bug 3 修复: 进度条推进)
     // v2.2.4 Stage 3 (Bug 13): markOccurrenceResolved 现在接受 grade 参数
     expect(markOccurrenceResolvedSpy).toHaveBeenCalledWith(token.id, 'partial');
+  });
+});
+
+describe('v1.6.3 UX-fix — 面板定位契约 (inline style 不再与 CSS 定位竞争)', () => {
+  it('面板根元素 style 携带 --panel-shift-x 且不含 animation / opacity / transform (防 fill-forwards 压死定位回归)', () => {
+    const token = makeToken();
+    const { container } = render(<InlineAnswerPanel token={token} language="en" />);
+
+    const panel = container.firstElementChild as HTMLElement;
+    // 定位变量按 usePanelPosition mock (center, offsetX=0) 输出
+    expect(panel.style.getPropertyValue('--panel-shift-x')).toBe('calc(-50% + 0px)');
+    // 关键不变量: inline 不得声明 animation / opacity / transform ——
+    // 任何一项都会在级联上与 .panel.open 的 transform: translateX(...) 竞争
+    // (此前 pageEntrance fill-forwards 终态无 translateX(-50%), 面板右漂半宽 → 乱跑 + 卡顿).
+    expect(panel.style.animation).toBe('');
+    expect(panel.style.opacity).toBe('');
+    expect(panel.style.transform).toBe('');
+  });
+
+  it('面板挂载即 focus 输入框, 且仅挂载时执行一次 (无 triggerPulse 链路)', () => {
+    const token = makeToken();
+    const { container, rerender } = render(<InlineAnswerPanel token={token} language="en" />);
+    const input = container.querySelector('input');
+    expect(document.activeElement).toBe(input);
+
+    // 重渲染 (模拟 keystroke) 不应改变焦点归属
+    rerender(<InlineAnswerPanel token={token} language="en" />);
+    expect(document.activeElement).toBe(input);
   });
 });

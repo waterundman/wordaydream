@@ -138,7 +138,8 @@ npm run build:harmony:hap
 - 2026-09-25 v1.6.1 Stage 5 执行 `npm run build:harmony`：通过，`[verify:harmony-build] passed (60 ESM/Worker JS, 8 CSS, 86 files, 72 local references)`。同轮 `npm run verify:static-assets` PASS（5 项静态资源均已优化）；`npm run verify:wordlists` PASS；四道门 tsc 0 / oxlint 0 警告 0 错误（366 文件 / 104 规则）/ vitest 158 files 1465 tests 全绿 / E2E 19-19。**本轮未重新执行 `build:harmony:hap`**（HAP 打包与体积数字留待需要时补测），故本节上方 HAP 字节数仍为 v1.6.0 产物。
 - 2026-09-25 v1.6.2 Stage 4 完整执行 `npm run build:harmony:hap`：Hvigor `BUILD SUCCESSFUL`，产物 `entry-default-unsigned.hap` **4,515,968 bytes**（4.31 MiB；上一次实测基线为 v1.6.0 的 4,765,139 bytes ⇒ **−249,171 bytes / −5.2%**）。拆包实测：101 条目、**全部 STORED（不压缩）**；原生侧 985.5 KB（`icon.png` 350.9 / `foreground.png` 365.9 / `modules.abc` 209.7 / `widgets.abc` 31.3）、rawfile 侧 3407.5 KB（86 条目，rawfile 内 0 个 `.br`/`.gz` sidecar —— harmony 模式不启用压缩 sidecar）。**口径提示**：v1.6.1 未重测 HAP，故该差值**跨越两个版本**；已知主导项为 v1.6.1 位图 −589.4 KB 与本轮英语例句 +467.2 KB（净 −122.2 KB），**余下约 122 KB 缺少可比对的旧 HAP 产物、不予归因**。同轮 `npm run build:harmony` 通过；`check:versions` PASS（3.6.2 / 1.6.2 / 1000075）；`measure:bundle` 首屏 JS **306.2 KB 零回退**、全量 JS 2748.9 KB（+467.2 KB）、CSS 178.7 KB；四道门 tsc 0 / oxlint 0w0e（374 文件）/ vitest 163 files 1493 tests 全绿 / E2E **20-20**。
 - 构建包装器的 ANSI 控制符归一化已修复，相关测试 3/3 通过，不再因带颜色的成功日志产生假阴性。
-- **2026-09-26 Wave 1（当前工作树的构建层级）**：`npm run build:harmony` 通过，`[verify:harmony-build] passed (60 ESM/Worker JS, 8 CSS, 87 files, 72 local references)`，并优先从新 Vite 插件导出的 `harmony-chunk-graph.json` 读取依赖图（mapDeps 正则降为 fallback）。`npm run build:harmony:hap` Hvigor 报告 `BUILD SUCCESSFUL`，产物 `harmony/entry/build/default/outputs/default/entry-default-unsigned.hap` **4,649,568 bytes**（v1.6.2 的 4,515,968 bytes ⇒ +133,600 bytes / +3.0%；候选解释为本轮 ArkTS/桥接层改动与新增的 `harmony-chunk-graph.json` sidecar，未做拆包归因核对，不作为结论）。`npm run check:versions` 通过（web 3.6.2 / harmony 1.6.2 / versionCode 1000075，且 ≥ `last-release.json` 基线）。**API 22 模拟器本轮离线，`verify:harmony-runtime`（seed-and-verify）未执行**，故上述数字只构成「自动测试 + HAP 编译」层级证据，产物仍未签名。
+- **2026-09-26 Wave 1（当前工作树的构建层级）**：`npm run build:harmony` 通过，`[verify:harmony-build] passed (60 ESM/Worker JS, 8 CSS, 87 files, 72 local references)`，并优先从新 Vite 插件导出的 `harmony-chunk-graph.json` 读取依赖图（mapDeps 正则降为 fallback）。`npm run build:harmony:hap` Hvigor 报告 `BUILD SUCCESSFUL`，产物 `harmony/entry/build/default/outputs/default/entry-default-unsigned.hap` **4,649,568 bytes**（v1.6.2 的 4,515,968 bytes ⇒ +133,600 bytes / +3.0%；候选解释为本轮 ArkTS/桥接层改动与新增的 `harmony-chunk-graph.json` sidecar，未做拆包归因核对，不作为结论）。`npm run check:versions` 通过（web 3.6.2 / harmony 1.6.2 / versionCode 1000075，且 ≥ `last-release.json` 基线）。
+- **2026-09-26 Wave 1 运行时复证（模拟器层级，当日补齐）**：模拟器经 CLI 拉起（见 §6），`npm run verify:harmony-runtime` 对 Wave 1 HAP（4,649,568 bytes）执行 **A1–A7 全 PASS**（报告 `seed-report-wave1-runtime.json`）：seed inserted=5 → Page begin → content ready → `getAllCards done: count=5` → launch handler generation=1 → openCard 原生派发 + Web 域层 `located cardId=debug-seed-1`。改走 JSON 字符串的通道在恢复链路被实机命中（getAllCards），FIFO 派发与日志脱敏后受保护断言子串全部逐字命中。**边界**：另两条改通道返回（getRecentlyReviewedCards / getTodayReviewStats / getSpeechEngines）属特定 UI 触发路径，本轮未逐一实机命中，属静态 + 间接证据。`npm run collect:harmony-perf` 采集基线：**冷启动 579ms**（Page begin → Web content ready）、**PSS 144232 KB**（报告 `perf-report-wave1.json`；同轮修复 collect-perf 两个口径缺陷并补单测，见 §7.4）。
 
 ### API 22 模拟器运行证据
 
@@ -151,7 +152,7 @@ npm run build:harmony:hap
 
 ### 尚缺少的验证层级
 
-- Wave 1（2026-09-26）改动落在 API 22 运行链路上（复杂返回通道、FIFO 超时复位、日志脱敏、卡片文案/尺寸抽取），但模拟器本轮离线，`npm run verify:harmony-runtime` 未跑：以下层级全部待补，**不得以「HAP 编译通过」替代**。
+- ~~Wave 1（2026-09-26）改动落在 API 22 运行链路上，模拟器离线、`npm run verify:harmony-runtime` 未跑~~ — **2026-09-26 当日已补齐**：模拟器 CLI 拉起后 A1–A7 全 PASS（见 §5 构建层级最后一条），但下述其余层级仍缺，不得互相替代。
 - 已签名 HAP 的安装与启动；当前仅验证 unsigned HAP 的模拟器安装。
 - API 22 模拟器中带到期卡片的冷/热启动、RDB 原生恢复、服务卡宿主和关键页面交互验证。
 - 真机上的 TTS、振动、普通通知和多窗口/后台恢复验证。
@@ -180,6 +181,15 @@ npm run collect:harmony-perf -- --hdc $hdc --out perf-report.json
 npm run test:harmony-scripts
 ```
 
+模拟器离线时可经 CLI 直接拉起已部署实例（2026-09-26 实测有效，无需打开 DevEco Studio UI）：
+
+```powershell
+& "D:\DevEco Studio\tools\emulator\Emulator.exe" -start "nova 16 Pro" -instancePath "D:/test"
+# 约 40-60s 后 hdc list targets 出现 127.0.0.1:5555
+```
+
+实例注册表在 `%LOCALAPPDATA%\Huawei\Emulator\deployed\lists.json` 为空数组时，必须带 `-instancePath D:/test`（实例真身在 D 盘，由 DevEco 6.1 创建）。
+
 `seed-and-verify` 会安装最新 HAP、以 `action=debugSeed` 冷启动预置 5 张到期卡，
 轮询 hilog 断言验证链（RDB seed → Page begin → content ready → getAllCards →
 FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true` 且退出码 0。
@@ -196,9 +206,9 @@ FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true`
 ## 7. 下一轮优先级
 
 1. ✅（2026-09-20 已结清）`seed-and-verify.mjs` 模拟器清账 **7/7 断言全 PASS, 退出码 0**: seed (inserted=5) → Page begin → content ready → `getAllCards done: count=5` → Web launch handler ready → onNewWant openCard 派发 + FIFO queued/dispatched → **A7 `[harmonyLaunch] openCard located cardId=debug-seed-1`** (复习页真实到达)。修复 = R-1 恢复改走原生推送通道: async JSProxy 复杂返回值在 API 22 webview 不可用 (Web 端 Promise resolve 成 number, refresh() 亦无效), content-ready 后原生 `pushCardsToWeb()` 经 runJavaScript 推 JSON, Web 端 `window.__applyNativeCardRestore` 空 store 守卫应用; web 侧 `parseBridgeRecords` 兼容数组/string, `getAllCards` 原生改返回 JSON string, 注册后补官方 `refresh()`。过程与契约详见 `docs/vault/v1.6.0-EMULATOR-VERIFY-REPORT.md`。脚本断言关键词已对齐 v1.5.0 实机日志 (A4/A5 改), openCard query 加引号防 shell 拆断 `&`, 新增 `bm clean -d` 保证干净状态出发。
-2. Wave 1 后的运行时复证：模拟器在线时重跑 `npm run verify:harmony-runtime`，确认改走 JSON 字符串的三条通道、`runJavaScript` 超时复位与 `pendingLaunchQueries` 上限、日志脱敏均未破坏受保护的断言子串（本轮未跑，见 §5）。
-3. **B1 上帝文件拆分推迟**：`HarmonyBridge.ets`（1213 行）与 `pages/Index.ets`（535 行）的拆分推迟到**有签名 HAP + 模拟器/真机在线、可做运行时回归**时执行；无运行时回归手段时拆分纯结构风险，不做。
-4. 运行 `collect-perf.mjs`（`npm run collect:harmony-perf`）采集冷启动耗时与 PSS 基线；后续补 CSV/LLM Worker 的 uitest 交互级性能对比。
+2. ✅（2026-09-26 已结清）**Wave 1 运行时复证**：模拟器 CLI 拉起后 `npm run verify:harmony-runtime` **A1–A7 全 PASS**——JSON 字符串通道（getAllCards 恢复链路 count=5）、`runJavaScript` FIFO 派发、日志脱敏后受保护断言子串逐字命中。边界：getRecentlyReviewedCards / getTodayReviewStats / getSpeechEngines 三条 UI 触发路径未逐一实机命中（静态 + 间接证据），见 §5。
+3. **B1 上帝文件拆分**：`HarmonyBridge.ets`（1213 行）与 `pages/Index.ets`（535 行）的拆分推迟到**有签名 HAP + 模拟器/真机在线、可做运行时回归**时执行；无运行时回归手段时拆分纯结构风险，不做。**运行时回归手段现已具备**（seed-and-verify A1–A7 + collect-perf + CLI 拉起流程，2026-09-26 实测），拆分是否本轮执行待 v1.6.3 Approval Gate 决策；签名 HAP 仍缺（unsigned 模拟器通道已够断言链路验证）。
+4. ✅（2026-09-26 已结清）`collect-perf.mjs` 基线采集落地，**但实测暴露两个口径缺陷并同轮修复**（commit `7300780`）：① `computeColdStartMs` 原实现取全 hilog 窗口时间戳跨度，被系统日志污染得出 188s 假值 → 改为关键词过滤口径（最后一条 `Page begin` → 最后一条 `Web content ready`），API 22 实测 **579ms**；② `extractPssKb` 正则不匹配 API 22 hidumper 三行表头格式 → 补 `Total` 行解析，实测 **PSS 144232 KB**。单测 3 改 7（净 +4，125→129），含假值回归用例；oxlint 0w0e。基线报告 `perf-report-wave1.json`。
 5. 服务卡跨进程主动刷新实际验证（代码闭环已就绪：notifyReviewCompleted → FormRefresher → updateForm）；配置调试签名并在真机验证 TTS、振动、普通通知、RDB 冷启动恢复和服务卡生命周期。
 6. 申请 `reminderAgent` 开放能力和签名 Profile 后验证 `ReminderAgentService` 的发布/去重/取消/恢复策略（代码已就绪，无权益期间保持安全跳过）。
 7. 提供真实 Harmony LLM 代理环境（`.env.harmony`），验证代理 URL、CSP、TLS、超时与弱网行为。

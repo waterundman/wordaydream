@@ -11,14 +11,8 @@
   }
 }
 
-@keyframes vocabPulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
+/* v1.6.3 UX-fix: 原 vocabPulse 缩放动画已随死类一并删除 —— 唯一消费者
+   useVocabPulseAnimation 返回的同名类全仓无 CSS 规则命中, hook 一并删除. */
 
 @keyframes grainShift {
   0%, 100% { transform: translate(0, 0); }

@@ -1,7 +1,8 @@
 .panel {
   position: absolute;
   left: 50%;
-  transform: translateX(calc(-50% + var(--panel-offset-x, 0px)));
+  /* v1.6.3 UX-fix: 完整水平位移统一由 --panel-shift-x 承载 (inline 按 horizontal 模式给出) */
+  transform: translateX(var(--panel-shift-x, -50%));
   min-width: 22rem;
   max-width: 28rem;
   background: var(--color-bg-elevated);
@@ -146,12 +147,12 @@
 @keyframes panelExpand {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateX(var(--panel-shift-x, -50%)) translateY(-8px);
     max-height: 0;
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(var(--panel-shift-x, -50%)) translateY(0);
     max-height: 500px;
   }
 }
@@ -163,12 +164,12 @@
 @keyframes panelCollapse {
   from {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(var(--panel-shift-x, -50%)) translateY(0);
     max-height: 500px;
   }
   to {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateX(var(--panel-shift-x, -50%)) translateY(-8px);
     max-height: 0;
   }
 }

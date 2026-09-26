@@ -34,12 +34,7 @@ vi.mock('../../evaluation/components/RemedyPanel', () => ({
 vi.mock('../../review/components/RatingBar', () => ({
   RatingBar: () => null,
 }));
-vi.mock('../hooks/usePageEntranceAnimation', () => ({
-  usePageEntranceAnimation: () => ({ getStyle: () => ({}) }),
-}));
-vi.mock('../hooks/useVocabPulseAnimation', () => ({
-  useVocabPulseAnimation: () => ({ className: '', triggerPulse: vi.fn() }),
-}));
+// v1.6.3 UX-fix: usePageEntranceAnimation / useVocabPulseAnimation 已从面板移除 (死代码), mock 一并删除.
 vi.mock('../../../hooks/usePanelPosition', () => ({
   usePanelPosition: () => ({ vertical: 'bottom', horizontal: 'center', offsetX: 0 }),
 }));
