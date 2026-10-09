@@ -41,13 +41,19 @@ async function runLintWithRetry(): Promise<string> {
 }
 
 describe('T04 [critical]: lint warning count = 0', () => {
-  it('T04: npm run lint 全量输出 warnings = 0 (v1.1.0 清零基线)', async () => {
-    const out = await runLintWithRetry();
+  // 显式超时: 本用例 spawn 子进程跑全量 oxlint, 与其余 176 个文件并发时实测可超过
+  // vitest 默认 5s (失败表现为 "Test timed out"，而非 warning 回流)。
+  it(
+    'T04: npm run lint 全量输出 warnings = 0 (v1.1.0 清零基线)',
+    async () => {
+      const out = await runLintWithRetry();
 
-    const m = out.match(/Found\s+(\d+)\s+warnings?/i);
-    expect(m, 'lint 输出应含 "Found N warnings" 行').not.toBeNull();
-    const count = Number(m![1]);
-    // v1.1.0 Stage 3 清零基线: 不允许任何 warning 回流
-    expect(count).toBe(0);
-  });
+      const m = out.match(/Found\s+(\d+)\s+warnings?/i);
+      expect(m, 'lint 输出应含 "Found N warnings" 行').not.toBeNull();
+      const count = Number(m![1]);
+      // v1.1.0 Stage 3 清零基线: 不允许任何 warning 回流
+      expect(count).toBe(0);
+    },
+    60_000
+  );
 });

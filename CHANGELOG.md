@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **服务卡运行时探针定性**（v1.6.3 S2 结转项）：FormMgr `static-form-infos` 已登记 `review_card` / `ReviewCardFormAbility` / `isDynamic=1`，`aa start` 可拉起独立进程 `com.wordaydream.app:form` 并加载 `ets/widget/ReviewCardFormAbility.abc` —— 卡片元数据与跨进程宿主在 API 22 模拟器上均可工作；但卡片实例只能由 launcher 请求，模拟器 launcher 的 `uitest dumpLayout` 返回空树（同工具在应用页可 dump 出 52 KB 节点，属 launcher 不暴露可访问性树，非工具失效），亦无 hidumper/CLI 添加通道 → **实例级刷新链路不可在模拟器自动化**，如实转真机/人工验收，复现命令已写入 §6。
 - **CI 与门禁口径**：`verify:wordlists` 接入 `netlify-deploy` 的 ci job（N1–N9 从「仅手动可阻断」升级为真门禁，当前 PASS 39 / EXEMPT 8 / BLOCK 0）；`E2E_FULL_MATRIX` 内联环境变量机制整体移除（Windows 的 cmd 下 `npm run test:e2e:full` 必失败，已实测），改为 4 个 project 始终定义 + `npm run test:e2e` 走 chromium 基线 + `--project=chromium` 显式化，CI 与文档口径同步。
 - **封面尺寸口径更正**：`optimize-static-assets.mjs` 曾以 `--reading-max-width` (672px) 论证 1440px 降采样，实际封面在 `--page-max-width` (960px) 容器内全出血；保留 1440px（2x DPR 理想值 1920px，但位图预算余量仅 6.8%，且封面属装饰图），注释改为记录真实显示宽度与取舍依据。
+- **Lighthouse CI 计划任务连败根因修复**：`2026-09-28` 与 `2026-10-05` 两次 schedule 失败都是 `categories:seo >= 0.85` 断言挂在 **0.83** 上，而失败对象不是产品首页 —— `staticDistDir` 会把 `dist/` 下每个 HTML 当独立页面审计，其中 `rollup-plugin-visualizer` 产出的 `dist/stats.html` 没有 `title` / `meta description` / `lang`，恒得 0.83 并拖垮整项断言（同时这张 bundle 分析页还被公开部署）。修复 = 分析产物改写 `.tmp-metrics/stats.html`（已 gitignore），`dist/` 现只含 `index.html`；`.lighthouserc.cjs` 里「83+fix 后 ~100」的错误归因同步更正。
 
 ## [3.6.3] — 2026-09-29
 

@@ -66,7 +66,13 @@ module.exports = {
       //   2. 字体 preload + 关键 CSS inline (FCP)
       //   3. 首屏图片 modern format (LCP)
       // 每收回 5 分, 阈值 +0.05, 目标回到 0.76.
-      // accessibility / best-practices / seo: 实测 94 / 100 / 83+fix 后 ~100, 阈值不变.
+      // accessibility / best-practices / seo: 实测 94 / 100 / 83 → 阈值不变.
+      // v1.6.4 收口轮更正: 当时的 83 分**不是** index.html 的 SEO 缺陷, 而是
+      // staticDistDir 会把 dist/ 下每个 HTML 都当独立页面审计, 其中
+      // rollup-plugin-visualizer 产出的 dist/stats.html 无 title / description /
+      // lang, 恒得 0.83 并拖垮 categories:seo >= 0.85 (计划任务 2026-09-28 与
+      // 2026-10-05 两次失败均源于此). 修复 = 分析产物改写到 .tmp-metrics/
+      // (见 vite.config.ts), 本文件不再需要为它放宽断言.
       assertions: {
         'categories:performance': ['error', { minScore: 0.55 }],
         'categories:accessibility': ['error', { minScore: 0.85 }],

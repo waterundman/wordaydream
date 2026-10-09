@@ -351,9 +351,12 @@ export default defineConfig(({ mode }) => {
       ]),
       // v0.3.0-harmony Stage 3: chunk 体积分析 (R-PERF-3 缓解)
       // open=false (CI 环境, 不自动打开浏览器), sunburst 模板可视化 chunk 边界
+      // 产物写到 .tmp-metrics/ 而非 dist/: dist/ 里任何 HTML 都会被 Lighthouse CI
+      // 当作独立页面审计, 而这张分析页没有 title / meta description / lang, SEO
+      // 评级恒为 0.83, 令 categories:seo >= 0.85 断言长期失败; 同时它也不该被公开部署.
       visualizer({
         open: false,
-        filename: 'dist/stats.html',
+        filename: '.tmp-metrics/stats.html',
         template: 'sunburst',
       }),
     ],
