@@ -28,47 +28,52 @@ export const PROVIDER_PRESETS: Record<LLMProvider, { defaultBaseUrl: string; def
 
 // v2.1.1 Stage 3 (D3): 移除所有 kimi/qwen/minimax 条目, 仅保留 7 个有实现的 preset.
 // 导出供测试 (T19) 验证不含已废弃 provider.
+//
+// v1.6.4 Stage 1 (P3 修复): 每条 preset 的 config **不再含 `enabled`** ——
+// 预设的语义是 provider / model / temperature 组合, 不是总开关; 应用预设静默改写
+// `llm.enabled` 会让「LLM 路由开关」出现第二个写入点. 总开关的唯一交互写入点是
+// 常显层「语言模型」区块内的 switch (SettingsPanel.tsx).
 export const SETTINGS_PRESETS = [
   {
     id: 'demo',
     name: '演示模式',
     description: '模拟数据，无需 API Key',
-    config: { provider: 'mock' as LLMProvider, model: '', temperature: 0.5, enabled: false },
+    config: { provider: 'mock' as LLMProvider, model: '', temperature: 0.5 },
   },
   {
     id: 'openai-fast',
     name: 'OpenAI 快速',
     description: 'GPT-4o-mini，响应迅速',
-    config: { provider: 'openai' as LLMProvider, model: 'gpt-4o-mini', temperature: 0.3, enabled: true },
+    config: { provider: 'openai' as LLMProvider, model: 'gpt-4o-mini', temperature: 0.3 },
   },
   {
     id: 'openai-quality',
     name: 'OpenAI 高质量',
     description: 'GPT-4o，最佳质量',
-    config: { provider: 'openai' as LLMProvider, model: 'gpt-4o', temperature: 0.5, enabled: true },
+    config: { provider: 'openai' as LLMProvider, model: 'gpt-4o', temperature: 0.5 },
   },
   {
     id: 'anthropic-fast',
     name: 'Anthropic 快速',
     description: 'Claude 3 Haiku，响应迅速',
-    config: { provider: 'anthropic' as LLMProvider, model: 'claude-3-haiku-20240307', temperature: 0.3, enabled: true },
+    config: { provider: 'anthropic' as LLMProvider, model: 'claude-3-haiku-20240307', temperature: 0.3 },
   },
   {
     id: 'anthropic-quality',
     name: 'Anthropic 高质量',
     description: 'Claude 3.5 Sonnet，最佳平衡',
-    config: { provider: 'anthropic' as LLMProvider, model: 'claude-3-5-sonnet-20241022', temperature: 0.5, enabled: true },
+    config: { provider: 'anthropic' as LLMProvider, model: 'claude-3-5-sonnet-20241022', temperature: 0.5 },
   },
   {
     id: 'deepseek-fast',
     name: 'DeepSeek 快速',
     description: 'deepseek-chat (V3)，响应迅速',
-    config: { provider: 'deepseek' as LLMProvider, model: 'deepseek-chat', temperature: 0.3, enabled: true },
+    config: { provider: 'deepseek' as LLMProvider, model: 'deepseek-chat', temperature: 0.3 },
   },
   {
     id: 'deepseek-reasoner',
     name: 'DeepSeek 推理',
     description: 'deepseek-reasoner (R1)，深度思考',
-    config: { provider: 'deepseek' as LLMProvider, model: 'deepseek-reasoner', temperature: 0.5, enabled: true },
+    config: { provider: 'deepseek' as LLMProvider, model: 'deepseek-reasoner', temperature: 0.5 },
   },
 ];

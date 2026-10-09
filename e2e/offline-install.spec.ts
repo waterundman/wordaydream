@@ -24,6 +24,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { expandAllSettingsGroups } from './settingsPanelGroups';
 
 const SHOTS_DIR = 'debug_shots_v151';
 
@@ -219,6 +220,10 @@ test.describe('Wordaydream v2.4.0 PWA + offline E2E', () => {
     // SettingsPanel 挂载 (role="dialog" + aria-modal="true")
     const dialog = page.locator('[role="dialog"][aria-modal="true"]');
     await dialog.waitFor({ state: 'visible', timeout: 5_000 });
+
+    // v1.6.4 Stage 1: 展开折叠层 —— 安装入口本身在语境化层 (折叠层外), 但折叠组展开后
+    // 面板高度变化不影响本用例; 展开是为了让「面板内容可见」的语义与后续截图一致.
+    await expandAllSettingsGroups(dialog);
 
     // 验证 InstallPromptButton 显示 (InstallPromptButton.tsx data-testid="install-prompt-button")
     const installButton = page.locator('[data-testid="install-prompt-button"]');

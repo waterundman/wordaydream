@@ -27,6 +27,7 @@
 
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { expandAllSettingsGroups } from './settingsPanelGroups';
 
 const SHOTS_DIR = 'debug_shots_web';
 
@@ -39,14 +40,22 @@ function localDateStamp(): string {
   return `${y}${m}${d}`;
 }
 
-/** 打开首页设置面板 (dialog), 供导出/快捷键区块用例复用. */
+/**
+ * 打开首页设置面板 (dialog) 并展开全部折叠组, 供导出/快捷键区块用例复用.
+ *
+ * v1.6.4 Stage 1: 设置面板改为三层 IA, 错词导出/导入、快捷键等区块移入默认折叠的
+ * `<details>` (settings-group-data-advanced). 折叠态下这些区块无渲染盒, 直接
+ * `toBeVisible()` 必判 hidden, 故打开面板后先展开折叠组 (见 e2e/settingsPanelGroups.ts).
+ */
 async function openSettingsPanel(page: Page): Promise<void> {
   await page.goto('/');
   await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 15_000 });
   const settingsBtn = page.locator('[aria-label="设置"]').first();
   await settingsBtn.waitFor({ state: 'visible', timeout: 10_000 });
   await settingsBtn.click();
-  await page.locator('[role="dialog"][aria-modal="true"]').waitFor({ state: 'visible', timeout: 10_000 });
+  const dialog = page.locator('[role="dialog"][aria-modal="true"]');
+  await dialog.waitFor({ state: 'visible', timeout: 10_000 });
+  await expandAllSettingsGroups(dialog);
 }
 
 interface SeedCard {
@@ -231,17 +240,8 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
 
   // T03 [non-critical]: 设置链 — 设置面板快捷键区 (ShortcutsSection) 与错词导出区 (WrongWordsExportSection) 可见
   test('T03 [non-critical]: 设置链 — 快捷键区与错词导出区在设置面板可见', async ({ page }, testInfo) => {
-    await page.goto('/');
-    await page.waitForSelector('[data-testid="hero-section"]', { state: 'visible', timeout: 15_000 });
-
-    // 首页头部设置按钮 (aria-label="设置") 打开全局 SettingsPanel
-    const settingsBtn = page.locator('[aria-label="设置"]').first();
-    await settingsBtn.waitFor({ state: 'visible', timeout: 10_000 });
-    await settingsBtn.click();
-
-    // 设置面板以 dialog 形式挂载
-    const dialog = page.locator('[role="dialog"][aria-modal="true"]');
-    await dialog.waitFor({ state: 'visible', timeout: 10_000 });
+    // v1.6.4 Stage 1: 复用 openSettingsPanel (含折叠组展开) —— 两区块均在折叠层 B 内
+    await openSettingsPanel(page);
 
     // 快捷键编辑区块 (ShortcutsSection) + 错词导出区块 (WrongWordsExportSection)
     await expect(page.getByTestId('shortcut-row-again')).toBeVisible();

@@ -87,6 +87,26 @@ const TARGETS = [
     method: 6,
   },
   {
+    id: 'course-cover-de',
+    kind: 'webp',
+    source: 'assets-sources/img/course-cover-de.jpg',
+    output: 'public/assets/img/course-cover-de.webp',
+    quality: 80,
+    method: 6,
+    // 原图 2560x1440; 卡片封面最宽 = --reading-max-width (672px), 2x DPR 下 1344px,
+    // 故降采样到 1440 宽即可 (2.14x), 直接分发 2.5K 原图是纯浪费。
+    maxWidth: 1440,
+  },
+  {
+    id: 'course-cover-en',
+    kind: 'webp',
+    source: 'assets-sources/img/course-cover-en.jpg',
+    output: 'public/assets/img/course-cover-en.webp',
+    quality: 80,
+    method: 6,
+    maxWidth: 1440,
+  },
+  {
     id: 'icon-192',
     kind: 'png-palette',
     source: 'assets-sources/icons/icon-192.png',
@@ -225,6 +245,14 @@ for job in jobs:
             rec["srcBytes"] = os.path.getsize(job["src"])
             if job["kind"] == "webp":
                 work = opened.convert("RGB")
+                # maxWidth: 按显示尺寸上限降采样 (LANCZOS), 避免把 2.5K 原图直接分发给
+                # 最宽 672px 的课程卡片。见 docs/spec/v1.6.3/main.md 静态资源预算。
+                max_w = job.get("maxWidth")
+                if max_w and work.width > max_w:
+                    ratio = max_w / work.width
+                    work = work.resize(
+                        (max_w, max(1, round(work.height * ratio))), Image.LANCZOS
+                    )
                 work.save(job["dst"], "WEBP", quality=job["quality"], method=job["method"])
             elif job["kind"] == "png-palette":
                 # alpha 恒为 255 时先降为 RGB, 既去掉冗余通道又能用高质量量化器
@@ -243,10 +271,15 @@ for job in jobs:
             rec["outWidth"], rec["outHeight"] = check.size
             rec["outColors"] = len(set(check.convert("RGB").getdata()))
         rec["outBytes"] = os.path.getsize(job["dst"])
-        if (rec["outWidth"], rec["outHeight"]) != (rec["width"], rec["height"]):
+        exp_w, exp_h = rec["width"], rec["height"]
+        max_w = job.get("maxWidth")
+        if job["kind"] == "webp" and max_w and exp_w > max_w:
+            ratio = max_w / exp_w
+            exp_w, exp_h = max_w, max(1, round(exp_h * ratio))
+        if (rec["outWidth"], rec["outHeight"]) != (exp_w, exp_h):
             raise ValueError(
-                "dimension mismatch: %sx%s -> %sx%s"
-                % (rec["width"], rec["height"], rec["outWidth"], rec["outHeight"])
+                "dimension mismatch: %sx%s -> %sx%s (expected %sx%s)"
+                % (rec["width"], rec["height"], rec["outWidth"], rec["outHeight"], exp_w, exp_h)
             )
         rec["ok"] = True
     except Exception as exc:
@@ -266,6 +299,7 @@ function runPython(pythonBin, jobs) {
       dst: path.join(ROOT, job.target),
       quality: job.quality,
       method: job.method,
+      maxWidth: job.maxWidth,
       colors: job.colors,
       quantizer: job.quantizer,
     })),
@@ -333,6 +367,7 @@ function main() {
       kind: target.kind,
       quality: target.quality,
       method: target.method,
+      maxWidth: target.maxWidth,
       colors: target.colors,
       quantizer: target.quantizer,
       source: target.source,

@@ -1,15 +1,23 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
 import { ShortcutsSection } from './ShortcutsSection';
 import { WrongWordsExportSection } from './WrongWordsExportSection';
 import { WrongWordsImportSection } from './WrongWordsImportSection';
+import { LlmAdvancedSection } from './LlmAdvancedSection';
+import {
+  AdvancedParamsSection,
+  SettingsMigrationSection,
+} from './DataAdvancedSection';
 import { InstallPromptButton } from '../../../components/InstallPromptButton';
 import { ThemeSwitcher } from '../../../components/ThemeSwitcher';
+import { CollapsibleSection } from '../../../components/CollapsibleSection';
 import styles from './SettingsPanel.module.css';
 import type { LLMProvider } from '../../../types';
 import { useMemoryStore } from '../../review/store/useMemoryStore';
 import { useToastStore } from '../../../store/useToastStore';
+import { useOfflineModeStore } from '../../llm/store/offlineMode';
+import { readEnvLLMConfig } from '../../../config/env';
 import { detectPlatform } from '../../../platform/detect';
 import { requestNotificationPermission } from '../../../platform/harmonyBridge';
 import {
@@ -30,30 +38,19 @@ import {
   getCachedGlossCount,
   clearAllCachedGlosses,
 } from '../../dictionary/services/glossPersistentCache';
-import { PROVIDER_PRESETS, SETTINGS_PRESETS } from '../lib/settingsPresets';
+import { PROVIDER_PRESETS } from '../lib/settingsPresets';
 
-// v2.1.1 Stage 3 (D3): PROVIDER_PRESETS / SETTINGS_PRESETS 已迁至 ../lib/settingsPresets
-// (v1.1.0 Stage 3: 非组件导出触发 react-refresh/only-export-components).
+// v1.1.0 Stage 3: 非组件导出 (PROVIDER_PRESETS / SETTINGS_PRESETS) 迁出本文件,
+// 避免 react-refresh/only-export-components.
 
 /**
- * v1.8.0 Stage 3 / v2.2.0 Stage 3: FSRS 参数优化 UI 区域.
+ * FSRS 参数优化 UI 区域 (v2.2.0 Stage 3: @open-spaced-repetition/binding).
  *
- * 功能状态:
- * - 可用 (v2.2.0 Stage 3, @open-spaced-repetition/binding): isOptimizationAvailable() = true,
- *   按钮可点击 + 进度条 + 成功 toast (含 loss) + 优化历史
- * - 不可用 (binding 未加载): 按钮禁用 + 显示通用不可用提示
+ * 为什么 history 存 localStorage 而非 store: 优化历史只是展示用审计信息,
+ * 不进 persist 白名单可避免与 fsrsWeights 的迁移逻辑耦合.
  *
- * UI 行为:
- * - ratingHistory < 30 条时按钮禁用 + 显示数据不足提示 (isAvailable=true 时)
- * - 优化成功: 保存 weights + backup, 注入 scheduler, 显示 success toast (含 loss),
- *   追加优化历史记录 (持久化到 localStorage)
- * - 优化失败 (OptimizationUnavailableError): 显示 error toast
- * - 优化失败 (其他错误如 NotEnoughData): 显示 error toast + 通用错误信息
- * - 回滚: 清除 weights + backup, 重置 scheduler, 显示 success toast
- * - 进度条仅在 isOptimizing 时显示
- * - 回滚按钮仅在 hasBackup 时显示
- * - 优化历史显示最近 5 次 (timestamp + loss + weights hash 前 8 字符)
- * - toast 使用全局 useToastStore (非本地 state)
+ * 行为: ratingHistory < 30 条时按钮禁用; 成功后保存 weights + backup 并注入
+ * scheduler, 失败按 OptimizationUnavailableError / 其他错误分别 toast.
  */
 const FSRS_OPTIMIZATION_HISTORY_KEY = 'wordaydream:fsrs-optimization-history';
 const FSRS_OPTIMIZATION_HISTORY_MAX = 5;
@@ -544,7 +541,7 @@ export function NotificationsSection() {
   const invalidWindow = notifications.startHour >= notifications.endHour;
 
   return (
-    <div className={styles.section} data-testid="notifications-section">
+    <div className={styles.section} data-testid="notifications-section" data-settings-level="top">
       <div className={styles.sectionTitle}>复习提醒</div>
       <div className={styles.toggleRow}>
         <div>
@@ -628,30 +625,33 @@ function persistNotifications(notifications: {
   }
 }
 
+// v1.6.4 Stage 1: 三层 IA — 常显层 (data-settings-level="top": 语言模型 / 外观主题 /
+// 课程模式 / 复习提醒) + 折叠层 A (LLM 高级) + 折叠层 B (数据与高级) + 语境化 (应用安装,
+// 整段条件渲染). 折叠层用 CollapsibleSection (<details>): 折叠态内容仍在 DOM, 既有断言不受影响.
 export function SettingsPanel() {
+  // 折叠层的调参控件 (temperature / timeout / maxRetries / streaming / 预设模板 /
+  // JSON 重试 / 难度) 由各自兄弟组件订阅自己的 setter, 本文件只保留常显层用到的.
+  // `enabled` 是例外: LLM 总开关语义属常显层, 因此 setEnabled 留在此处,
+  // 且全仓只有这一处交互式写入 (见下方 switch).
   const {
     llm,
     isTesting,
     testResult,
     setProvider,
     setModel,
-    setTemperature,
     setEnabled,
-    setTimeoutValue,
-    setMaxRetries,
-    setStreaming,
     testConnection,
     resetAll,
-    exportSettings,
-    importSettings,
   } = useSettingsStore();
 
   // v1.6.0: 课程模式 (闯关 / 自由)
   const linearMode = useWordlistStore((s) => s.linearMode);
   const setLinearMode = useWordlistStore((s) => s.setLinearMode);
 
-  const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // 鸿蒙端 / 未捕获 beforeinstallprompt 时不渲染 wrapper (修「空块」缺陷).
+  const installPromptEvent = useOfflineModeStore((s) => s.installPromptEvent);
+  const showInstallSection =
+    detectPlatform().supportsInstallPrompt() && installPromptEvent !== null;
 
   // v2.2.4 Stage 3 (D5): ESC 键关闭设置弹窗
   useEffect(() => {
@@ -671,45 +671,15 @@ export function SettingsPanel() {
     if (preset.defaultModel) setModel(preset.defaultModel);
   };
 
-  const handleApplyPreset = (preset: typeof SETTINGS_PRESETS[0]) => {
-    setProvider(preset.config.provider);
-    setModel(preset.config.model);
-    setTemperature(preset.config.temperature);
-    setEnabled(preset.config.enabled);
-  };
-
-  const handleExport = () => {
-    const json = exportSettings();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `wordaydream-settings-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const result = importSettings(content);
-      if (result) {
-        setImportResult({ success: true, message: '设置导入成功' });
-      } else {
-        setImportResult({ success: false, message: '设置导入失败，请检查文件格式' });
-      }
-      setTimeout(() => setImportResult(null), 3000);
-    };
-    reader.readAsText(file);
-  };
-
   const preset = PROVIDER_PRESETS[llm.provider];
   const isMock = llm.provider === 'mock';
   const currentModel = llm.model || preset.defaultModel;
+  // v1.6.4 Stage 1: Key 归属说明 (真实 provider 的 Key 由代理服务端持有).
+  const apiKeyHint = isMock
+    ? '模拟模式不需要 API Key。'
+    : readEnvLLMConfig(llm.provider) !== null
+      ? '构建时已通过 VITE_* 环境变量注入 Key。'
+      : 'Key 由代理服务端持有, 客户端无需填写; 用下方「测试连接」验证服务端是否已配置。';
 
   return (
     <div className={styles.backdrop} onClick={(e) => e.target === e.currentTarget && useSettingsStore.getState().closeSettings()}>
@@ -732,8 +702,9 @@ export function SettingsPanel() {
           </button>
         </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>语言模型提供商</div>
+        {/* ===== 常显层 (data-settings-level="top"): 语言模型 四合一 ===== */}
+        <div className={styles.section} data-settings-level="top">
+          <div className={styles.sectionTitle}>语言模型</div>
           {/* v2.2.0 Stage 1 (D4): LLM 状态指示器 */}
           <div
             data-testid="llm-status-indicator"
@@ -757,6 +728,27 @@ export function SettingsPanel() {
                 : '演示模式 (LLM 未启用)'}
             </span>
           </div>
+
+          {/* v1.6.4 Stage 1 (P3): llm.enabled 的**唯一**交互式写入点 (常显层).
+              折叠层 A 只保留状态行 + 指回本开关的说明; 预设模板不再写 enabled. */}
+          <div className={styles.toggleRow}>
+            <div>
+              <div className={styles.toggleLabel}>启用 LLM 路由</div>
+              <p className={styles.hint}>
+                关闭后所有 LLM 调用都走 mock 实现。提供商选「模拟」时无论开关如何都走 mock;
+                温度 / 超时 / 重试 / 流式在折叠层「LLM 高级参数」内调整。
+              </p>
+            </div>
+            <button
+              type="button"
+              className={`${styles.toggle} ${llm.enabled ? styles.on : ''}`}
+              onClick={() => setEnabled(!llm.enabled)}
+              aria-label="启用 LLM 路由"
+              role="switch"
+              aria-checked={llm.enabled}
+            />
+          </div>
+
           <div className={styles.providerGroup}>
             {(['mock', 'openai', 'anthropic', 'deepseek'] as LLMProvider[]).map((p) => (
               <button
@@ -768,128 +760,56 @@ export function SettingsPanel() {
               </button>
             ))}
           </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="settings-llm-model">模型</label>
+            <input
+              id="settings-llm-model"
+              className={styles.input}
+              type="text"
+              value={currentModel}
+              disabled={isMock}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder={isMock ? '模拟模式使用内置示例数据' : preset.defaultModel}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <span className={styles.label}>API Key</span>
+            <p className={styles.hint}>{apiKeyHint}</p>
+          </div>
+
           <p className={styles.hint} style={{ marginTop: 'var(--space-2)' }}>
             {isMock
               ? '模拟模式：内置示例数据，无需 API Key，适合演示和调试。'
-              : '真实模式：填入你的 API Key 后，文本生成、判题和补救将调用真实 LLM。'}
+              : '真实模式：文本生成、判题和补救将调用真实 LLM。'}
           </p>
-        </div>
 
-        {!isMock && (
-          <>
-            <div className={styles.section}>
-              <div className={styles.sectionTitle}>连接配置</div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>模型</label>
-                <input
-                  className={styles.input}
-                  type="text"
-                  value={currentModel}
-                  onChange={(e) => setModel(e.target.value)}
-                  placeholder={preset.defaultModel}
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>随机性 ({llm.temperature.toFixed(2)})</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={llm.temperature}
-                  onChange={(e) => setTemperature(Number(e.target.value))}
-                />
-              </div>
-
-              <div className={styles.row}>
-                <div className={styles.field}>
-                  <label className={styles.label}>超时时间 ({llm.timeout} 秒)</label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="120"
-                    step="5"
-                    value={llm.timeout}
-                    onChange={(e) => setTimeoutValue(Number(e.target.value))}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>最大重试次数 ({llm.maxRetries} 次)</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="5"
-                    step="1"
-                    value={llm.maxRetries}
-                    onChange={(e) => setMaxRetries(Number(e.target.value))}
-                  />
-                </div>
-              </div>
-
-              <div className={styles.section}>
-                <div className={styles.toggleRow}>
-                  <div>
-                    <div className={styles.toggleLabel}>启用流式响应</div>
-                    <p className={styles.hint}>启用后以流式方式接收 LLM 响应，体验更流畅。</p>
-                  </div>
-                  <button
-                    className={`${styles.toggle} ${llm.streaming ? styles.on : ''}`}
-                    onClick={() => setStreaming(!llm.streaming)}
-                    aria-label="启用流式响应"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.section}>
-              <div className={styles.testRow}>
-                <button
-                  className={styles.testBtn}
-                  onClick={() => testConnection()}
-                  disabled={isTesting}
-                >
-                  {isTesting ? '测试中…' : '测试连接'}
-                </button>
-                {testResult && (
-                  <span className={`${styles.testResult} ${testResult.ok ? styles.ok : styles.fail}`}>
-                    {testResult.ok ? '连接成功' : `连接失败：${testResult.error}`}
-                  </span>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className={styles.section}>
-          <div className={styles.toggleRow}>
-            <div>
-              <div className={styles.toggleLabel}>启用 LLM 路由</div>
-              <p className={styles.hint}>关闭后所有 LLM 调用都走 mock 实现。</p>
-            </div>
+          <div className={styles.testRow}>
             <button
-              className={`${styles.toggle} ${llm.enabled ? styles.on : ''}`}
-              onClick={() => setEnabled(!llm.enabled)}
-              aria-label="启用 LLM 路由"
-            />
+              className={styles.testBtn}
+              onClick={() => testConnection()}
+              disabled={isTesting || isMock}
+            >
+              {isTesting ? '测试中…' : '测试连接'}
+            </button>
+            {!isMock && testResult && (
+              <span className={`${styles.testResult} ${testResult.ok ? styles.ok : styles.fail}`}>
+                {testResult.ok ? '连接成功' : `连接失败：${testResult.error}`}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* v0.1.0-harmony Stage 7: 复习提醒通知 (仅鸿蒙端渲染, Web 端 NotificationsSection 返回 null) */}
-        <NotificationsSection />
+        <div className={styles.section} data-settings-level="top">
+          <div className={styles.sectionTitle}>外观主题</div>
+          <p className={styles.hint} style={{ marginBottom: 'var(--space-3)' }}>
+            选择明亮 / 暗色 / 羊皮纸 三种主题。偏好会保存到本地, 跨刷新保留。
+          </p>
+          <ThemeSwitcher />
+        </div>
 
-        {/* v1.0.0 Stage 2: 快捷键键位编辑区块 */}
-        <ShortcutsSection />
-
-        {/* v1.1.0 Stage 2: 错词导出区块 */}
-        <WrongWordsExportSection />
-
-        {/* v1.4.0 S2: 错词导入区块 (与导出对称, 备份恢复闭环) */}
-        <WrongWordsImportSection />
-
-        {/* v1.6.0: 课程模式 (闯关 / 自由) */}
-        <div className={styles.section}>
+        <div className={styles.section} data-settings-level="top">
           <div className={styles.sectionTitle}>课程模式</div>
           <div className={styles.providerGroup}>
             <button
@@ -912,83 +832,40 @@ export function SettingsPanel() {
           </p>
         </div>
 
-        <FsrsOptimizationSection />
+        {/* 复习提醒 (仅鸿蒙端渲染, Web 端返回 null) */}
+        <NotificationsSection />
 
-        {/* v2.2.0 Stage 2 (D2): CSV 词库管理 */}
-        <CsvWordlistManagementSection />
+        {/* ===== 折叠层 A: LLM 高级参数 (默认折叠, 内容见 LlmAdvancedSection) ===== */}
+        <LlmAdvancedSection />
 
-        {/* v2.2.0 Stage 4 (D3): AI 释义缓存 */}
-        <GlossCacheSection />
+        {/* ===== 折叠层 B: 数据与高级 (默认折叠) ===== */}
+        <CollapsibleSection
+          title="数据与高级"
+          description="清空类操作不可撤销; 导入设置会覆盖当前 LLM 配置; 快捷键、错词备份与词表文件也在这里。"
+          testId="settings-group-data-advanced"
+        >
+          {/* 数据管理 (FSRS / AI 释义缓存 / CSV 词库) + 错词导入导出 + 快捷键 */}
+          <FsrsOptimizationSection />
+          <GlossCacheSection />
+          <CsvWordlistManagementSection />
+          <WrongWordsExportSection />
+          <WrongWordsImportSection />
+          <ShortcutsSection />
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>预设模板</div>
-          <div className={styles.presetGrid}>
-            {SETTINGS_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                className={`${styles.presetCard} ${llm.provider === preset.config.provider && llm.model === preset.config.model ? styles.active : ''}`}
-                onClick={() => handleApplyPreset(preset)}
-              >
-                <div className={styles.presetName}>{preset.name}</div>
-                <div className={styles.presetDesc}>{preset.description}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+          <SettingsMigrationSection />
+          <AdvancedParamsSection />
+        </CollapsibleSection>
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>配置迁移</div>
-          <div className={styles.migrationRow}>
-            <button className={styles.migrationBtn} onClick={handleExport}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              导出设置
-            </button>
-            <button className={styles.migrationBtn} onClick={() => fileInputRef.current?.click()}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              导入设置
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleFileImport}
-              className={styles.fileInput}
-            />
-          </div>
-          <div className={styles.migrationHint}>
-            导出的设置文件不包含 API Key，可安全分享配置。
-          </div>
-          {importResult && (
-            <div className={`${styles.importResult} ${importResult.success ? styles.success : styles.error}`}>
-              {importResult.message}
+        {/* ===== 语境化: PWA 安装入口 (整段条件渲染, 鸿蒙端 / 未捕获安装事件时不渲染) ===== */}
+        {showInstallSection && (
+          <div className={styles.section} data-testid="install-prompt-section">
+            <div className={styles.sectionTitle}>应用安装</div>
+            <div className={styles.migrationHint} style={{ marginBottom: 'var(--space-3)' }}>
+              将 Wordaydream 安装到设备主屏幕, 离线时仍可使用。
             </div>
-          )}
-        </div>
-
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>外观主题</div>
-          <p className={styles.hint} style={{ marginBottom: 'var(--space-3)' }}>
-            选择明亮 / 暗色 / 羊皮纸 三种主题。偏好会保存到本地, 跨刷新保留。
-          </p>
-          <ThemeSwitcher />
-        </div>
-
-        {/* v1.4.1 Stage 2: PWA install 入口 (浏览器判定可安装时才出现) */}
-        <div className={styles.section} data-testid="install-prompt-section">
-          <div className={styles.sectionTitle}>应用安装</div>
-          <div className={styles.migrationHint} style={{ marginBottom: 'var(--space-3)' }}>
-            将 Wordaydream 安装到设备主屏幕, 离线时仍可使用。
+            <InstallPromptButton />
           </div>
-          <InstallPromptButton />
-        </div>
+        )}
 
         <div className={styles.actions}>
           <button className={styles.resetBtn} onClick={resetAll}>

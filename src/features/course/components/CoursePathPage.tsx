@@ -20,6 +20,7 @@ import { courses, getCourseById } from '../../../data/courses';
 import { useCourseStore } from '../store/useCourseStore';
 import type { LessonProgress } from '../store/useCourseStore';
 import { ModuleSection } from './ModuleSection';
+import { courseCoverUrl } from './courseCover';
 import styles from './CoursePathPage.module.css';
 
 interface CoursePathPageProps {
@@ -105,22 +106,32 @@ export function CoursePathPage({ onGoHome, onStartReading }: CoursePathPageProps
             </div>
           ) : (
             <div className={styles.courseList}>
-              {courses.map((course) => (
-                <button
-                  key={course.id}
-                  type="button"
-                  className={styles.courseCard}
-                  onClick={() => handleEnroll(course.id)}
-                  aria-label={`选择课程 ${course.title}`}
-                  data-testid={`course-card-${course.id}`}
-                >
-                  <span className={styles.courseCardTitle}>{course.title}</span>
-                  <span className={styles.courseCardMeta}>
-                    {course.modules.length} 个 Module · 目标语言 {course.targetLanguage.toUpperCase()}
-                  </span>
-                  <span className={styles.courseCardCta}>开始学习</span>
-                </button>
-              ))}
+              {courses.map((course) => {
+                const coverUrl = courseCoverUrl(course.targetLanguage);
+                return (
+                  <button
+                    key={course.id}
+                    type="button"
+                    className={styles.courseCard}
+                    onClick={() => handleEnroll(course.id)}
+                    aria-label={`选择课程 ${course.title}`}
+                    data-testid={`course-card-${course.id}`}
+                  >
+                    {coverUrl && (
+                      <span className={styles.courseCardCover}>
+                        <img src={coverUrl} alt="" aria-hidden="true" loading="lazy" />
+                      </span>
+                    )}
+                    <span className={styles.courseCardBody}>
+                      <span className={styles.courseCardTitle}>{course.title}</span>
+                      <span className={styles.courseCardMeta}>
+                        {course.modules.length} 个 Module · 目标语言 {course.targetLanguage.toUpperCase()}
+                      </span>
+                      <span className={styles.courseCardCta}>开始学习</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </main>

@@ -35,6 +35,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { expandAllSettingsGroups } from './settingsPanelGroups';
 
 const SHOTS_DIR = 'debug_shots_harmony';
 
@@ -204,6 +205,8 @@ test.describe('Wordaydream Harmony Stage 4 — ArkWeb 主流程 E2E (soft gate)'
     await dialog.waitFor({ state: 'visible', timeout: 10_000 });
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    // v1.6.4 Stage 1: 折叠层内容在折叠态无渲染盒, 展开后再截图/断言 (防后续用例踩坑)
+    await expandAllSettingsGroups(dialog);
     await page.screenshot({
       path: join(SHOTS_DIR, `H04-settings-${testInfo.project.name}.png`),
       fullPage: true,

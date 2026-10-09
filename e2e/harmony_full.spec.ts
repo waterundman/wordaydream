@@ -44,6 +44,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir, access } from 'node:fs/promises';
 import { join } from 'node:path';
+import { expandAllSettingsGroups } from './settingsPanelGroups';
 
 const SHOTS_DIR = 'debug_shots_harmony_full';
 
@@ -587,6 +588,10 @@ test.describe('Wordaydream Harmony Stage 8 — 完整 E2E 套件 (soft gate)', (
     const dialog = page.locator('[role="dialog"][aria-modal="true"]');
     await dialog.waitFor({ state: 'visible', timeout: 10_000 });
     await expect(dialog).toBeVisible();
+
+    // v1.6.4 Stage 1: 展开折叠层 (复习提醒本身在常显层; 展开是为了让折叠层内容在
+    // 后续断言/截图中具有渲染盒, 与 web.spec.ts 的处理保持一致)
+    await expandAllSettingsGroups(dialog);
 
     // 鸿蒙端: NotificationsSection 应渲染 (data-testid="notifications-section")
     // SettingsPanel.tsx line 587: <div data-testid="notifications-section">
