@@ -11,7 +11,7 @@
  * HarmonyBridge interface 得出并双向断言, 不再硬编码数量.
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const REGISTRY_PATH: string = join(
@@ -42,6 +42,33 @@ const ETS_BRIDGE_PATH: string = join(
   'bridge',
   'HarmonyBridge.ets'
 );
+
+/**
+ * B1 拆分后 HarmonyBridge.ets 只剩薄 façade, 真实实现迁入 delegates/.
+ * 任何「实现是否存在」的守卫都必须读整个桥闭包, 只读 façade 会被转发桩满足.
+ */
+const ETS_DELEGATES_DIR: string = join(
+  process.cwd(),
+  'harmony',
+  'entry',
+  'src',
+  'main',
+  'ets',
+  'bridge',
+  'delegates'
+);
+
+function readBridgeClosure(): string {
+  const delegateFiles: string[] = readdirSync(ETS_DELEGATES_DIR)
+    .filter((f: string) => f.endsWith('.ets'))
+    .sort();
+  expect(delegateFiles.length).toBeGreaterThan(0);
+  const sources: string[] = [readFileSync(ETS_BRIDGE_PATH, 'utf-8')];
+  for (const f of delegateFiles) {
+    sources.push(readFileSync(join(ETS_DELEGATES_DIR, f), 'utf-8'));
+  }
+  return sources.join('\n');
+}
 
 /**
  * 原生自用方法 (服务卡片 / 恢复推送在 ArkTS 侧调用, Web 侧零调用方):
@@ -171,10 +198,13 @@ describe('Stage 2 — T03 [critical]: BridgeMethodRegistry 含 notifyReviewCompl
     ]);
   });
 
-  it('T03 [critical]: 原生自用豁免清单仍在 ArkTS 桥实现中 (防豁免清单僵化)', () => {
-    const bridgeSource: string = readFileSync(ETS_BRIDGE_PATH, 'utf-8');
+  it('T03 [critical]: 原生自用豁免清单仍有 RDB store 支撑的真实实现', () => {
+    const closure: string = readBridgeClosure();
     for (const name of NATIVE_ONLY_METHODS) {
-      expect(bridgeSource).toContain(`async ${name}(`);
+      expect(closure).toContain(`async ${name}(`);
+      // façade 的转发桩同样满足上一条, 故这里要求 store 调用真实存在:
+      // 删掉 delegate 里的 RDB 读取只会被这条拦住.
+      expect(closure, name).toContain(`store.${name}(`);
     }
   });
 });

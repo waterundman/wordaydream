@@ -26,8 +26,13 @@ const reminderAgentSource = readFileSync(
   'utf8',
 );
 
+// v1.6.3 S1: 通知域实现下沉到 NotifyBridgeDelegate (facade 只转发).
+// 断言文本不变, 读取路径改指委托文件.
 const bridgeSource = readFileSync(
-  resolve(process.cwd(), 'harmony/entry/src/main/ets/bridge/HarmonyBridge.ets'),
+  resolve(
+    process.cwd(),
+    'harmony/entry/src/main/ets/bridge/delegates/NotifyBridgeDelegate.ets',
+  ),
   'utf8',
 );
 

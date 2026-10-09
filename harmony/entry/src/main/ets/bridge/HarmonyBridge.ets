@@ -1,37 +1,23 @@
 /**
- * HarmonyBridge (v0.1.0-harmony)
+ * HarmonyBridge (v1.6.3 S1 — B1 上帝文件拆分后 facade)
  *
  * ArkTS 侧通过 registerJavaScriptProxy 注入到 window.harmonyBridge 的原生 bridge.
- * 方法签名与 src/platform/harmonyBridge.ts 的 HarmonyBridge TS interface 一一对应:
- *   - getDueCardsCount(): Promise<number>
- *   - registerReminder(payload: ReminderPayload): Promise<void>
- *   - readPreferences(key: string): Promise<string | null>
- *   - writePreferences(key: string, value: string): Promise<void>
- *   - triggerHapticFeedback(intensity: string): void
- *   - handleHarmonyLaunch(query: string): void  (Stage 5)
+ * 方法签名与 src/platform/harmonyBridge.ts 的 HarmonyBridge TS interface 一一对应.
  *
- * 实现状态:
- * - getDueCardsCount: 占位返回 0 (Stage 6 已实现真实 relationalStore 读取)
- * - registerReminder: 占位 hilog.info (Stage 7 实现真实 notificationManager.publish)
- * - readPreferences / writePreferences: 真实 @ohos.data.preferences 调用
- * - triggerHapticFeedback: 真实 @ohos.vibrator 调用
- *
- * Stage 5 实现状态:
- * - handleHarmonyLaunch: 真实 AppStorage + runJavaScript 派发 (供 EntryAbility.onNewWant
- *   处理元服务分享卡片 / 桌面服务卡片唤起时的 ArkWeb 跳转).
- *
- * Stage 6 实现状态:
- * - getDueCardsCount: 真实 MemoryCardStore.getDueCardsCount(Date.now()) 读取 RDB
- *   (wordaydream_memory.db / wordaydream_memory_cards 表, WHERE due <= now).
- *
- * Stage 7 实现状态:
- * - registerReminder: 真实 NotificationService.scheduleReviewReminder 调用,
- *   读取 preferences (app_language + notifications_config) 获取语言 + 时间窗,
- *   通过 MemoryCardStore.getDueCardsCount 获取到期卡片数, 发布本地通知.
+ * 拆分后的职责边界 (v1.6.3 S1):
+ * - facade 保留: 单例 / refreshContext / 方法注册面 (方法名即契约, Index.ets 的
+ *   registerJavaScriptProxy 按名反射 facade 实例, 故 20 个契约方法名全部保留),
+ *   launch 域 (handleHarmonyLaunch / notifyWebReady / notifyWebContentReady /
+ *   resumePendingLaunches / 超时复位) 与体量小的 triggerHapticFeedback.
+ * - 低风险纯请求-响应域下沉到 bridge/delegates/:
+ *   CardBridgeDelegate (RDB 卡片镜像/查询)、PrefsBridgeDelegate (preferences 读写)、
+ *   SpeechBridgeDelegate (TTS 朗读控制)、NotifyBridgeDelegate (通知/提醒/服务卡片刷新).
+ *   BridgeMethodRegistry.ets 仍是唯一方法真源; 契约面 (方法名/签名) 不变.
+ * - 委托的 context 由本 facade.refreshContext 同源刷新, 委托不自持陈旧 context.
  *
  * Contract: 所有方法 try/catch 兜底, 异常返回空值不抛错 (ArkTS 侧异常不传播到 Web).
+ * 具体实现语义见各委托文件 (逐字迁自拆分前 HarmonyBridge.ets).
  */
-import { preferences } from '@kit.ArkData';
 import vibrator from '@ohos.vibrator';
 import { webview } from '@kit.ArkWeb';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -41,15 +27,11 @@ import type {
   ReminderPayload,
   NotifyReviewCompletedResult,
   NotificationPermissionResult,
-  NotificationPermissionState,
   ScheduleReminderResult,
   CancelReminderResult,
 } from './types';
-import { FormRefresher } from '../widget/FormRefresher';
-import type { MemoryCardRecord, TodayReviewStats } from '../data/MemoryCardSchema';
-import { MemoryCardStore } from '../data/MemoryCardStore';
-import { NotificationService, NotificationWindow } from '../notification/NotificationService';
-import { ReminderAgentService } from '../notification/ReminderAgentService';
+import type { MemoryCardRecord } from '../data/MemoryCardSchema';
+import type { SpeakPayload } from '../tts/TextToSpeechService';
 import { BridgeInputValidator } from './BridgeInputValidator';
 import {
   WEB_CONTROLLER_STORAGE_KEY,
@@ -57,14 +39,13 @@ import {
   WEB_HANDLER_READY_STORAGE_KEY,
   WEB_READY_GENERATION_STORAGE_KEY,
 } from './BridgeMethodRegistry';
-import { TextToSpeechService } from '../tts/TextToSpeechService';
-import type { SpeakPayload, SpeechEngineInfo } from '../tts/TextToSpeechService';
-import { getReviewReminderText } from '../notification/templates';
-import type { NotificationText } from '../notification/templates';
+import { CardBridgeDelegate } from './delegates/CardBridgeDelegate';
+import { PrefsBridgeDelegate } from './delegates/PrefsBridgeDelegate';
+import { SpeechBridgeDelegate } from './delegates/SpeechBridgeDelegate';
+import { NotifyBridgeDelegate } from './delegates/NotifyBridgeDelegate';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'HarmonyBridge';
-const PREFS_NAME: string = 'wordaydream_prefs';
 
 /** H4: 单次 launch 派发等待 runJavaScript 结算的上限, 超时强制复位 FIFO. */
 const LAUNCH_DISPATCH_TIMEOUT_MS: number = 8000;
@@ -75,14 +56,26 @@ const MAX_PENDING_LAUNCH_QUERIES: number = 16;
 export class HarmonyBridge {
   private static instance: HarmonyBridge | null = null;
   private context: common.Context;
-  private prefsName: string = PREFS_NAME;
-  private cachedPrefs: preferences.Preferences | null = null;
+  private cardDelegate: CardBridgeDelegate;
+  private prefsDelegate: PrefsBridgeDelegate;
+  private speechDelegate: SpeechBridgeDelegate;
+  private notifyDelegate: NotifyBridgeDelegate;
   private pendingLaunchQueries: Array<string> = [];
   private launchDispatchInProgress: boolean = false;
   private launchDispatchTimerId: number = -1;
 
   private constructor(context: common.Context) {
     this.context = context;
+    this.cardDelegate = new CardBridgeDelegate(context);
+    this.prefsDelegate = new PrefsBridgeDelegate(context);
+    // SpeechBridgeDelegate 无 context (TextToSpeechService 为无 context 单例).
+    this.speechDelegate = new SpeechBridgeDelegate();
+    // NotifyBridgeDelegate 复用 card/prefs 委托的同一条 RDB / prefs 访问路径.
+    this.notifyDelegate = new NotifyBridgeDelegate(
+      context,
+      this.cardDelegate,
+      this.prefsDelegate
+    );
   }
 
   /**
@@ -99,7 +92,8 @@ export class HarmonyBridge {
   }
 
   /**
-   * H5: 刷新单例 context (同引用直接返回; 换引用时丢弃绑定旧 context 的 prefs 缓存).
+   * H5: 刷新单例 context (同引用直接返回; 换引用时同源刷新所有持 context 委托,
+   * 丢弃绑定旧 context 的 prefs 缓存).
    * 调用点: HarmonyBridge.getInstance — Index.ets 桥注册处每次传入
    * getUIContext().getHostContext() 的最新 context, EntryAbility 侧同样可调用.
    */
@@ -112,260 +106,107 @@ export class HarmonyBridge {
       return;
     }
     this.context = newContext;
-    this.cachedPrefs = null;
+    this.cardDelegate.refreshContext(newContext);
+    this.prefsDelegate.refreshContext(newContext);
+    this.notifyDelegate.refreshContext(newContext);
     hilog.info(DOMAIN, TAG, 'HarmonyBridge context refreshed');
   }
 
-  /** 缓存 preferences 实例 (避免每次 read/write 重新 getPreferences). */
-  private async getPrefs(): Promise<preferences.Preferences> {
-    if (this.cachedPrefs !== null) {
-      return this.cachedPrefs;
-    }
-    try {
-      this.cachedPrefs =
-        await preferences.getPreferences(this.context, this.prefsName);
-      return this.cachedPrefs;
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'getPreferences failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      throw new Error(err.message);
-    }
-  }
+  // ===========================================================================
+  // 契约方法 (方法名即契约面, registerJavaScriptProxy 按名反射) — 转发到域委托.
+  // ===========================================================================
 
-  /** 每次 RDB 操作均等待共享初始化任务，首次失败时允许后续调用重试. */
-  private async getMemoryCardStore(): Promise<MemoryCardStore> {
-    const store: MemoryCardStore = MemoryCardStore.getInstance();
-    await store.initialize(this.context);
-    return store;
-  }
-
-  /**
-   * 获取当前到期卡片数 (供首页角标 / 通知展示).
-   *
-   * Stage 6: 实现真实 MemoryCardStore.getDueCardsCount(Date.now()) 读取 RDB
-   * (wordaydream_memory_cards 表, WHERE due <= now). 异常兜底返回 0.
-   */
+  /** 获取当前到期卡片数 (供首页角标 / 通知展示). 见 CardBridgeDelegate. */
   async getDueCardsCount(): Promise<number> {
-    try {
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const count: number =
-        await store.getDueCardsCount(Date.now());
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'getDueCardsCount (Stage 6) -> %{public}d',
-        count
-      );
-      return count;
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'getDueCardsCount failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return 0;
-    }
+    return await this.cardDelegate.getDueCardsCount();
   }
 
-  /**
-   * 注册本地复习提醒 (Stage 7: 真实 NotificationService 调用).
-   *
-   * 流程:
-   * 1. 读取 preferences 'app_language' (默认 'en') 作为通知文案语言.
-   * 2. 读取 preferences 'notifications_config' (JSON: {enabled, startHour, endHour}),
-   *    默认 {enabled:true, startHour:8, endHour:22}.
-   * 3. 通过 MemoryCardStore.getDueCardsCount(payload.dueAt) 获取到期卡片数.
-   * 4. 调用 NotificationService.scheduleReviewReminder 发布本地通知.
-   *
-   * 异常 try/catch 兜底返回 void (ArkTS 侧异常不传播到 Web).
-   */
-  async registerReminder(payload: ReminderPayload): Promise<void> {
-    try {
-      if (!BridgeInputValidator.validateReminderPayload(payload)) {
-        hilog.warn(DOMAIN, TAG, 'registerReminder rejected: invalid payload');
-        return;
-      }
-      // 1. 读取语言偏好 (默认 'en')
-      const langValue: string | null = await this.readPreferences('app_language');
-      const language: string = langValue !== null ? langValue : 'en';
-
-      // 2. 读取通知时间窗配置 (默认 8:00-22:00, enabled=true)
-      const win: NotificationWindow = await this.readNotificationWindow();
-
-      // 3. 获取到期卡片数 (供通知文案展示 "有 N 个词汇到期")
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const dueCount: number =
-        await store.getDueCardsCount(payload.dueAt);
-
-      // 4. 调度通知 (NotificationService 内部 try/catch 兜底)
-      await NotificationService.getInstance().scheduleReviewReminder(
-        payload.dueAt,
-        dueCount,
-        language,
-        win
-      );
-
-      hilog.debug(
-        DOMAIN,
-        TAG,
-        'registerReminder (Stage 7): dueCount=%{public}d lang=%{public}s',
-        dueCount,
-        language
-      );
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'registerReminder failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-    }
+  /** Web → 鸿蒙 relationalStore 镜像 (upsert). 见 CardBridgeDelegate. */
+  async upsertCard(card: MemoryCardRecord): Promise<void> {
+    return await this.cardDelegate.upsertCard(card);
   }
 
-  /**
-   * 读取通知时间窗配置 (Stage 7).
-   *
-   * 从 preferences 'notifications_config' 读取 JSON 字符串, 解析为 NotificationWindow.
-   * 键不存在 / 解析失败 / 字段缺失时返回默认 {enabled:true, startHour:8, endHour:22}.
-   */
-  private async readNotificationWindow(): Promise<NotificationWindow> {
-    const defaultWin: NotificationWindow = {
-      enabled: true,
-      startHour: 8,
-      endHour: 22,
-    };
-    try {
-      const raw: string | null = await this.readPreferences('notifications_config');
-      if (raw === null || raw.length === 0) {
-        return defaultWin;
-      }
-      const obj: Record<string, object> = JSON.parse(raw) as Record<string, object>;
-      const enabled: boolean =
-        typeof obj.enabled === 'boolean' ? obj.enabled : true;
-      const startHour: number =
-        typeof obj.startHour === 'number' && obj.startHour >= 0 && obj.startHour <= 23
-          ? Math.floor(obj.startHour)
-          : 8;
-      const endHour: number =
-        typeof obj.endHour === 'number' && obj.endHour >= 0 && obj.endHour <= 23
-          ? Math.floor(obj.endHour)
-          : 22;
-      const win: NotificationWindow = { enabled, startHour, endHour };
-      return win;
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.warn(
-        DOMAIN,
-        TAG,
-        'readNotificationWindow fallback to default: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return defaultWin;
-    }
+  /** Web → 鸿蒙 relationalStore 镜像 (delete). 见 CardBridgeDelegate. */
+  async deleteCard(lexemeGroupId: string): Promise<void> {
+    return await this.cardDelegate.deleteCard(lexemeGroupId);
   }
 
-  /**
-   * 读取 preferences 键值 (返回 null 表示键不存在).
-   * 真实 @ohos.data.preferences 调用.
-   */
+  /** 鸿蒙 → Web 卡片恢复 (R-1 闭环核心, 返回 JSON 字符串). 见 CardBridgeDelegate. */
+  async getAllCards(): Promise<string> {
+    return await this.cardDelegate.getAllCards();
+  }
+
+  /** 查询最近复习过的卡片 (返回 JSON 字符串). 见 CardBridgeDelegate. */
+  async getRecentlyReviewedCards(limit: number): Promise<string> {
+    return await this.cardDelegate.getRecentlyReviewedCards(limit);
+  }
+
+  /** 查询今日复习统计 (返回 JSON 字符串). 见 CardBridgeDelegate. */
+  async getTodayReviewStats(): Promise<string> {
+    return await this.cardDelegate.getTodayReviewStats();
+  }
+
+  /** 读取 preferences 键值 (null = 键不存在). 见 PrefsBridgeDelegate. */
   async readPreferences(key: string): Promise<string | null> {
-    try {
-      if (!BridgeInputValidator.validatePreferencesKey(key)) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'readPreferences rejected: invalid key=%{public}s',
-          key
-        );
-        return null;
-      }
-      const prefs: preferences.Preferences = await this.getPrefs();
-      const exists: boolean = await prefs.has(key);
-      if (!exists) {
-        hilog.info(
-          DOMAIN,
-          TAG,
-          'readPreferences: key=%{public}s -> null (not found)',
-          key
-        );
-        return null;
-      }
-      // API 22: prefs.get 返回 ValueType 联合类型, 需 typeof 收窄到 string.
-      const raw: preferences.ValueType = await prefs.get(key, '');
-      const value: string = typeof raw === 'string' ? raw : '';
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'readPreferences: key=%{public}s -> (value len=%{public}d)',
-        key,
-        value.length
-      );
-      return value;
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'readPreferences failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return null;
-    }
+    return await this.prefsDelegate.readPreferences(key);
   }
 
-  /**
-   * 写入 preferences 键值.
-   * 真实 @ohos.data.preferences 调用.
-   */
+  /** 写入 preferences 键值. 见 PrefsBridgeDelegate. */
   async writePreferences(key: string, value: string): Promise<void> {
-    try {
-      if (
-        !BridgeInputValidator.validatePreferencesKey(key) ||
-        !BridgeInputValidator.validatePreferencesValue(value)
-      ) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'writePreferences rejected: invalid key or value (key=%{public}s)',
-          key
-        );
-        return;
-      }
-      const prefs: preferences.Preferences =
-        await preferences.getPreferences(this.context, this.prefsName);
-      await prefs.put(key, value);
-      await prefs.flush();
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'writePreferences: key=%{public}s (value len=%{public}d) flushed',
-        key,
-        value.length
-      );
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'writePreferences failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-    }
+    return await this.prefsDelegate.writePreferences(key, value);
   }
+
+  /** 朗读文本 ('' = 已派发, 非空 = 拒绝/失败原因). 见 SpeechBridgeDelegate. */
+  async speak(payload: SpeakPayload): Promise<string> {
+    return await this.speechDelegate.speak(payload);
+  }
+
+  /** 立即停止朗读 (fire-and-forget). 见 SpeechBridgeDelegate. */
+  stopSpeech(): void {
+    this.speechDelegate.stopSpeech();
+  }
+
+  /** 查询原生 TTS 引擎是否可用. 见 SpeechBridgeDelegate. */
+  async isSpeechSupported(): Promise<boolean> {
+    return await this.speechDelegate.isSpeechSupported();
+  }
+
+  /** 列出可用 TTS 引擎 (返回 JSON 字符串). 见 SpeechBridgeDelegate. */
+  async getSpeechEngines(): Promise<string> {
+    return await this.speechDelegate.getSpeechEngines();
+  }
+
+  /** 注册本地复习提醒 (真实 NotificationService 调用). 见 NotifyBridgeDelegate. */
+  async registerReminder(payload: ReminderPayload): Promise<void> {
+    return await this.notifyDelegate.registerReminder(payload);
+  }
+
+  /** Stage 2: 复习完成后主动刷新所有已持久化的服务卡片. 见 NotifyBridgeDelegate. */
+  async notifyReviewCompleted(): Promise<NotifyReviewCompletedResult> {
+    return await this.notifyDelegate.notifyReviewCompleted();
+  }
+
+  /** Stage 3: 请求通知权限 (三态: granted / denied / error). 见 NotifyBridgeDelegate. */
+  async requestNotificationPermission(): Promise<NotificationPermissionResult> {
+    return await this.notifyDelegate.requestNotificationPermission();
+  }
+
+  /** Stage 3: 调度 reminderAgent 定时提醒 (无权益安全降级). 见 NotifyBridgeDelegate. */
+  async scheduleReviewReminder(
+    reminderId: string,
+    triggerAt: number
+  ): Promise<ScheduleReminderResult> {
+    return await this.notifyDelegate.scheduleReviewReminder(reminderId, triggerAt);
+  }
+
+  /** Stage 3: 取消 reminderAgent 定时提醒 (幂等). 见 NotifyBridgeDelegate. */
+  async cancelReviewReminder(reminderId: string): Promise<CancelReminderResult> {
+    return await this.notifyDelegate.cancelReviewReminder(reminderId);
+  }
+
+  // ===========================================================================
+  // launch 域 + 触感: 留在 facade (体量小 / 与冷启动链路强耦合).
+  // ===========================================================================
 
   /**
    * 触发触觉反馈 (线性马达振动).
@@ -567,8 +408,8 @@ export class HarmonyBridge {
         );
         return;
       }
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const cards: MemoryCardRecord[] = await store.getAllCards();
+      const cards: MemoryCardRecord[] =
+        await this.cardDelegate.getAllCardsRaw();
       if (cards.length === 0) {
         hilog.info(DOMAIN, TAG, 'pushCardsToWeb skipped: empty store');
         return;
@@ -725,489 +566,6 @@ export class HarmonyBridge {
     if (this.launchDispatchTimerId >= 0) {
       clearTimeout(this.launchDispatchTimerId);
       this.launchDispatchTimerId = -1;
-    }
-  }
-
-  /**
-   * Web → 鸿蒙 relationalStore 镜像 (upsert).
-   *
-   * 1. 校验 16 字段 (BridgeInputValidator.validateCardRecord), 失败 hilog.warn + return.
-   * 2. 调用 MemoryCardStore.upsertCard (Stage 6 已有方法, INSERT OR REPLACE).
-   * 3. hilog.info 记录成功日志.
-   */
-  async upsertCard(card: MemoryCardRecord): Promise<void> {
-    try {
-      if (!BridgeInputValidator.validateCardRecord(card)) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'upsertCard rejected: invalid card (id=%{public}s)',
-          card?.id ?? ''
-        );
-        return;
-      }
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      await store.upsertCard(card);
-      hilog.debug(
-        DOMAIN,
-        TAG,
-        'upsertCard done: id=%{public}s due=%{public}d',
-        card.id,
-        card.due
-      );
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'upsertCard failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-    }
-  }
-
-  /**
-   * Web → 鸿蒙 relationalStore 镜像 (delete).
-   *
-   * Web 传入的键是 MemoryCard Map key (lexemeGroupId), 并非 RDB 主键 id.
-   * 1. 校验 lexemeGroupId (复用 ID 格式校验), 失败 hilog.warn + return.
-   * 2. 调用 MemoryCardStore.deleteCardByLexemeGroupId.
-   * 3. hilog.info 记录成功日志.
-   */
-  async deleteCard(lexemeGroupId: string): Promise<void> {
-    try {
-      if (!BridgeInputValidator.validateCardId(lexemeGroupId)) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'deleteCard rejected: invalid lexemeGroupId'
-        );
-        return;
-      }
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      await store.deleteCardByLexemeGroupId(lexemeGroupId);
-      hilog.debug(
-        DOMAIN,
-        TAG,
-        'deleteCard done: lexemeGroupId=%{public}s',
-        lexemeGroupId
-      );
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'deleteCard failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-    }
-  }
-
-  /**
-   * 鸿蒙 → Web 卡片恢复 (R-1 闭环核心).
-   *
-   * 返回所有卡片 (按 due 升序) 的 JSON 字符串, 供 Web 端 onRehydrateStorage 在
-   * localStorage 为空时调用恢复. 异常返回 '[]'.
-   *
-   * v1.6.0 D1 实机契约 (API 22 模拟器实测): async JSProxy 复杂返回值
-   * (对象/数组) 无法跨桥 — Web 端 Promise resolve 得到 number (原生 count=5,
-   * Web rawType=number cards=0). 基本类型 string 可靠传输, 故统一序列化为
-   * JSON 字符串; Web 侧 parseBridgeRecords 兼容解析 (useMemoryStore.ts).
-   * getRecentlyReviewedCards / getTodayReviewStats / getSpeechEngines 同契约.
-   */
-  async getAllCards(): Promise<string> {
-    try {
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const cards: MemoryCardRecord[] =
-        await store.getAllCards();
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'getAllCards done: count=%{public}d',
-        cards.length
-      );
-      return JSON.stringify(cards);
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'getAllCards failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return '[]';
-    }
-  }
-
-  /**
-   * 查询最近复习过的卡片 (Web 端 dashboard 展示).
-   *
-   * 1. 校验 limit: Number.isInteger(limit) && limit > 0 && limit <= 100, 失败返回 '[]'.
-   * 2. 调用 MemoryCardStore.getRecentlyReviewedCards(limit) (新增).
-   * 3. 返回 JSON 字符串 (v1.6.0 D1: 与 getAllCards 同契约, 异常返回 '[]').
-   */
-  async getRecentlyReviewedCards(limit: number): Promise<string> {
-    try {
-      if (
-        !Number.isInteger(limit) ||
-        limit <= 0 ||
-        limit > 100
-      ) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'getRecentlyReviewedCards rejected: invalid limit=%{public}d',
-          limit
-        );
-        return '[]';
-      }
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const cards: MemoryCardRecord[] =
-        await store.getRecentlyReviewedCards(limit);
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'getRecentlyReviewedCards done: limit=%{public}d count=%{public}d',
-        limit,
-        cards.length
-      );
-      return JSON.stringify(cards);
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'getRecentlyReviewedCards failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return '[]';
-    }
-  }
-
-  /**
-   * 查询今日复习统计 (服务卡片进度环 + Web dashboard).
-   *
-   * 调用 MemoryCardStore.getTodayReviewStats(Date.now()) (新增).
-   * 返回 TodayReviewStats 的 JSON 字符串 (v1.6.0 D1 契约), 异常返回默认值 JSON.
-   */
-  async getTodayReviewStats(): Promise<string> {
-    const defaultStats: TodayReviewStats = {
-      dueCount: 0,
-      reviewedCount: 0,
-      totalCount: 0,
-    };
-    try {
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const stats: TodayReviewStats =
-        await store.getTodayReviewStats(Date.now());
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'getTodayReviewStats done: due=%{public}d reviewed=%{public}d total=%{public}d',
-        stats.dueCount,
-        stats.reviewedCount,
-        stats.totalCount
-      );
-      return JSON.stringify(stats);
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'getTodayReviewStats failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return JSON.stringify(defaultStats);
-    }
-  }
-
-  /**
-   * 朗读文本 (命令型异步).
-   *
-   * 流程:
-   * 1. 三段校验 (validateSpeechText / validateSpeechLanguage / validateSpeechRate),
-   *    失败 hilog.warn + 返回原因字符串 (不抛到 Web).
-   * 2. 调用 TextToSpeechService.getInstance().speak(payload).
-   * 3. try/catch 兜底, 异常 hilog.warn + 返回原因字符串.
-   *
-   * 返回约定 (M8): '' = 已派发; 非空 = 拒绝/失败原因. 返回 string 而非对象,
-   * 与 v1.6.0 D1 的 API 22 基本类型跨桥契约一致, 且遵循文件头"异常不抛到 Web".
-   *
-   * @param payload 朗读载荷 (text / language / rate / voiceId?).
-   */
-  async speak(payload: SpeakPayload): Promise<string> {
-    try {
-      if (payload === null || payload === undefined) {
-        hilog.warn(DOMAIN, TAG, 'speak rejected: null payload');
-        return 'null payload';
-      }
-      if (!BridgeInputValidator.validateSpeechText(payload.text)) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'speak rejected: invalid text (len=%{public}d)',
-          typeof payload.text === 'string' ? payload.text.length : -1
-        );
-        return 'invalid text';
-      }
-      if (!BridgeInputValidator.validateSpeechLanguage(payload.language)) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'speak rejected: invalid language=%{public}s',
-          payload.language
-        );
-        return 'invalid language';
-      }
-      if (!BridgeInputValidator.validateSpeechRate(payload.rate)) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'speak rejected: invalid rate=%{public}f',
-          payload.rate
-        );
-        return 'invalid rate';
-      }
-      await TextToSpeechService.getInstance().speak(payload);
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'speak dispatched: textLen=%{public}d lang=%{public}s rate=%{public}f',
-        payload.text.length,
-        payload.language,
-        payload.rate
-      );
-      return '';
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.warn(
-        DOMAIN,
-        TAG,
-        'speak failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return err.message;
-    }
-  }
-
-  /**
-   * 立即停止朗读.
-   *
-   * 同步调用 TextToSpeechService.getInstance().stop().
-   * try/catch 兜底, 异常 hilog.warn + return (fire-and-forget).
-   */
-  stopSpeech(): void {
-    try {
-      TextToSpeechService.getInstance().stop();
-      hilog.info(DOMAIN, TAG, 'stopSpeech dispatched');
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.warn(
-        DOMAIN,
-        TAG,
-        'stopSpeech failed (fire-and-forget fallback): code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-    }
-  }
-
-  /**
-   * 查询原生 TTS 引擎是否可用.
-   *
-   * 调用 TextToSpeechService.getInstance().isSupported().
-   * try/catch 兜底, 异常 return false (不抛到 Web).
-   */
-  async isSpeechSupported(): Promise<boolean> {
-    try {
-      const supported: boolean =
-        await TextToSpeechService.getInstance().isSupported();
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'isSpeechSupported -> %{public}s',
-        supported ? 'true' : 'false'
-      );
-      return supported;
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.warn(
-        DOMAIN,
-        TAG,
-        'isSpeechSupported failed (fallback false): code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return false;
-    }
-  }
-
-  /**
-   * 列出可用 TTS 引擎.
-   *
-   * 调用 TextToSpeechService.getInstance().getEngines().
-   * 返回 SpeechEngineInfo[] 的 JSON 字符串 (v1.6.0 D1 契约), 异常返回 '[]'.
-   */
-  async getSpeechEngines(): Promise<string> {
-    try {
-      const engines: SpeechEngineInfo[] =
-        await TextToSpeechService.getInstance().getEngines();
-      hilog.info(
-        DOMAIN,
-        TAG,
-        'getSpeechEngines done: count=%{public}d',
-        engines.length
-      );
-      return JSON.stringify(engines);
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.warn(
-        DOMAIN,
-        TAG,
-        'getSpeechEngines failed (fallback []): code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return '[]';
-    }
-  }
-
-  /**
-   * Stage 2: 复习完成后主动刷新所有已持久化的服务卡片.
-   *
-   * 由 Web 侧 useReviewSessionStore.completeReview 完成路径 fire-and-forget 调用.
-   * 委托 FormRefresher.refreshAllForms 读 RDB + 持久化 formId 集合并 updateForm.
-   * FormRefresher 内部已对所有异常静默降级 (无 formId / 全部失败均不抛错).
-   *
-   * 返回约定: 成功 {ok:true}; refreshAllForms 抛错 {ok:false, reason}.
-   */
-  async notifyReviewCompleted(): Promise<NotifyReviewCompletedResult> {
-    try {
-      await FormRefresher.getInstance().refreshAllForms(this.context);
-      hilog.info(DOMAIN, TAG, 'notifyReviewCompleted -> refreshed all forms');
-      return { ok: true };
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'notifyReviewCompleted failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return { ok: false, reason: err.message };
-    }
-  }
-
-  /**
-   * Stage 3: 请求通知权限 (三态: granted / denied / error).
-   *
-   * 由 Web 设置面板通知开关首次开启时调用. 委托
-   * NotificationService.requestEnableNotification (requestEnableNotification
-   * 为运行时用户授权 API, 无需 manifest 权限声明). 异常转为 error 态不抛错.
-   */
-  async requestNotificationPermission(): Promise<NotificationPermissionResult> {
-    try {
-      const ctx: common.UIAbilityContext = this.context as common.UIAbilityContext;
-      const state: NotificationPermissionState = await NotificationService.getInstance()
-        .requestEnableNotification(ctx);
-      return { state: state };
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'requestNotificationPermission failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return { state: 'error', reason: err.message };
-    }
-  }
-
-  /**
-   * Stage 3: 调度 reminderAgent 定时提醒 (无权益安全降级).
-   *
-   * 校验先行: reminderId 白名单 + triggerAt 必须为未来时间 (过去时间拒绝,
-   * 防止"未来提醒"被误发布). 委托 ReminderAgentService.publishReminder —
-   * 权益不可用时 {skipped:true}, 绝不真实发布 (安全契约).
-   * 文案取自 notification/templates.getReviewReminderText (按 app_language 本地化).
-   */
-  async scheduleReviewReminder(
-    reminderId: string,
-    triggerAt: number
-  ): Promise<ScheduleReminderResult> {
-    try {
-      if (!BridgeInputValidator.validateReminderId(reminderId)) {
-        hilog.warn(DOMAIN, TAG, 'scheduleReviewReminder rejected: invalid reminderId');
-        return { skipped: true, reason: 'invalid reminderId' };
-      }
-      if (!BridgeInputValidator.validateReminderTime(triggerAt, Date.now())) {
-        hilog.warn(
-          DOMAIN,
-          TAG,
-          'scheduleReviewReminder rejected: triggerAt not in future, reminderId=%{public}s',
-          reminderId
-        );
-        return { skipped: true, reason: 'triggerAt must be a future time' };
-      }
-      await ReminderAgentService.getInstance().initialize(this.context);
-      // 提醒文案 i18n: 标题/正文取自 notification/templates 多语言模板
-      // (按 app_language 偏好 + 到期卡片数生成), 不再硬编码中文.
-      const langValue: string | null = await this.readPreferences('app_language');
-      const language: string = langValue !== null ? langValue : 'en';
-      const store: MemoryCardStore = await this.getMemoryCardStore();
-      const dueCount: number = await store.getDueCardsCount(triggerAt);
-      const reminderText: NotificationText = getReviewReminderText(
-        language,
-        dueCount
-      );
-      return await ReminderAgentService.getInstance().publishReminder(
-        reminderId,
-        triggerAt,
-        reminderText.title,
-        reminderText.text
-      );
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'scheduleReviewReminder failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return { skipped: true, reason: err.message };
-    }
-  }
-
-  /**
-   * Stage 3: 取消 reminderAgent 定时提醒 (幂等: 不存在视为成功).
-   */
-  async cancelReviewReminder(reminderId: string): Promise<CancelReminderResult> {
-    try {
-      if (!BridgeInputValidator.validateReminderId(reminderId)) {
-        hilog.warn(DOMAIN, TAG, 'cancelReviewReminder rejected: invalid reminderId');
-        return { ok: false, reason: 'invalid reminderId' };
-      }
-      await ReminderAgentService.getInstance().initialize(this.context);
-      return await ReminderAgentService.getInstance().cancelReminder(reminderId);
-    } catch (e) {
-      const err: BusinessError = e as BusinessError;
-      hilog.error(
-        DOMAIN,
-        TAG,
-        'cancelReviewReminder failed: code=%{public}d msg=%{public}s',
-        err.code,
-        err.message
-      );
-      return { ok: false, reason: err.message };
     }
   }
 }

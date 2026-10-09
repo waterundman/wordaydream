@@ -52,7 +52,9 @@ const ENTRY_ABILITY_PATH: string = join(
   'entryability',
   'EntryAbility.ets',
 );
-const HARMONY_BRIDGE_PATH: string = join(
+// v1.6.3 S1: TTS 桥接实现下沉到 SpeechBridgeDelegate (facade 只转发).
+// 断言文本不变, 读取路径改指委托文件.
+const SPEECH_DELEGATE_PATH: string = join(
   PROJECT_ROOT,
   'harmony',
   'entry',
@@ -60,7 +62,8 @@ const HARMONY_BRIDGE_PATH: string = join(
   'main',
   'ets',
   'bridge',
-  'HarmonyBridge.ets',
+  'delegates',
+  'SpeechBridgeDelegate.ets',
 );
 
 // =============================================================================
@@ -745,7 +748,7 @@ describe('TextToSpeechService + HarmonyBridge TTS (v0.3.0-harmony Stage 1)', () 
     });
 
     it('M8/H2: 原生 speak 返回原因串 (不抛出), getSpeechEngines 返回 JSON 字符串', () => {
-      const source: string = readFileSync(HARMONY_BRIDGE_PATH, 'utf-8');
+      const source: string = readFileSync(SPEECH_DELEGATE_PATH, 'utf-8');
       expect(source).toContain('async speak(payload: SpeakPayload): Promise<string>');
       expect(source).toContain('async getSpeechEngines(): Promise<string>');
       expect(source).toContain('return JSON.stringify(engines)');

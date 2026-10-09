@@ -85,11 +85,14 @@ const MODULE_CONFIG_PATH: string = join(
   'main',
   'module.json5'
 );
+// v1.6.3 S1: RDB 卡片镜像/查询实现下沉到 CardBridgeDelegate (facade 只转发).
+// 断言文本不变, 读取路径改指委托文件.
 const BRIDGE_PATH: string = join(
   HARMONY_MAIN,
   'ets',
   'bridge',
-  'HarmonyBridge.ets'
+  'delegates',
+  'CardBridgeDelegate.ets'
 );
 const FORM_CONFIG_PATH: string = join(
   HARMONY_MAIN,

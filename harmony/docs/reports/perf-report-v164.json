@@ -1,0 +1,11 @@
+{
+  "skipped": false,
+  "ok": true,
+  "metrics": {
+    "coldStartMs": 388,
+    "pssKb": 138496,
+    "pid": "6526"
+  },
+  "bundle": "com.wordaydream.app",
+  "generatedAt": "2026-10-09T15:02:44.275Z"
+}

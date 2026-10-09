@@ -344,6 +344,7 @@ describe('CardDataProvider (v0.2.0-harmony Stage 4 TS mirror)', () => {
       expect(arkRefresher).not.toContain('emitter');
 
       // 桥接侧入口 (复习完成 -> 主动刷新所有卡片) 保留且被 EntryAbility 之外的链路调用.
+      // v1.6.3 S1: 通知域实现下沉到 NotifyBridgeDelegate (facade 只转发), 断言文本不变.
       const bridgePath: string = join(
         PROJECT_ROOT,
         'harmony',
@@ -352,7 +353,8 @@ describe('CardDataProvider (v0.2.0-harmony Stage 4 TS mirror)', () => {
         'main',
         'ets',
         'bridge',
-        'HarmonyBridge.ets',
+        'delegates',
+        'NotifyBridgeDelegate.ets',
       );
       const arkBridge: string = readFileSync(bridgePath, 'utf-8');
       expect(arkBridge).toContain('async notifyReviewCompleted(');
