@@ -48,8 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **S3 de A2/B1/B2 例句回填 NOT DELIVERED**：根因为语料**规模上限**（59.4% < 80%）与德语**弱命中率超标**（25.4% > 10%），非语料不可得（Tatoeba 导出 HTTP 200 / CC-BY 2.0 FR 允许分发）。
 - **S4 focus-visible 34/42 < 规格 35/42**：规格分母与实际不符（42 个模块中仅 34 个渲染可聚焦元素），非覆盖缺口。
-- **`verify:wordlists` 未接入任何 CI workflow**：`netlify-deploy` 只跑 lint / check:versions / test:run / tsc / build，N1–N9 的「可阻断」当前只在手动执行时生效；是否接入 CI 属范围决策，本轮未擅自改 CI，记为待决项。
-- **v1.6.3 结转未闭环项**：~~S1 运行时复证 A1–A7~~ **已于 2026-10-09 收口轮结清**（见本节「收口轮」）；仍开放的是 **S2 服务卡跨进程刷新运行时探针**。原文「本轮未改原生 `.ets`」不准确：工作树相对 HEAD 的 `harmony/entry/src/**` 差异（桥 façade + 4 委托 + `Index.ets` 色值资源 + `base/dark` `color.json`）与 v1.6.3 S1 属同一批未提交改动，无法按版本切分，须整体提交。
+- **`verify:wordlists` 未接入任何 CI workflow**：~~N1–N9 的「可阻断」只在手动执行时生效；是否接入 CI 属范围决策~~ —— **2026-10-09 收口轮已接入** `netlify-deploy` 的 ci job（当前 PASS 39 / EXEMPT 8 / BLOCK 0，豁免按 ratchet 基线放行，缺口扩大即阻断）。
+- **v1.6.3 结转未闭环项**：~~S1 运行时复证 A1–A7~~ **已于 2026-10-09 收口轮结清**；~~S2 服务卡跨进程刷新运行时探针~~ **探针已执行并定性**（FormMgr 已登记 `review_card`、`aa start` 可拉起 `:form` 宿主并加载 `ReviewCardFormAbility.abc`；但模拟器 launcher 不暴露可访问性树、无 CLI 添加通道 → 实例级刷新不可自动化，转真机/人工验收）。原文「本轮未改原生 `.ets`」不准确：工作树相对 HEAD 的 `harmony/entry/src/**` 差异（桥 façade + 4 委托 + `Index.ets` 色值资源 + `base/dark` `color.json`）与 v1.6.3 S1 属同一批未提交改动，无法按版本切分，须整体提交。
 - 签名 HAP / 真机验收（TTS / 振动 / 通知触觉）、`reminderAgent` 权益、`.env.harmony` LLM 代理端到端：外部条件不变，仍缺。
 
 #### 测试与门禁证据
@@ -68,7 +68,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **两处守护退化修复**：`bridgeRegistry.test.ts` 的豁免清单用例改为读**桥闭包**（façade + `delegates/*.ets`，并断言委托文件数 > 0）且追加 `store.<name>(` 断言，转发桩不再能冒充实现；新增 `scripts/harmony/assertion-keywords.test.mjs`（5 项）把 A1–A7 关键词与日志源做双向契约，搜索面剥除注释以排除「EntryAbility 注释原文复述 A6 关键词」的假阳性陷阱。
 - **v1.6.4 构建与 Web 侧复证**：`build:harmony` 通过（89 files 口径）· `build:harmony:hap` 通过 · `measure:bundle` 首屏 JS 306.1 KB 零回退 / 全量 2753.4 KB / CSS 180.8 KB / 位图 599.3 KB（预算 640 KB）· E2E chromium **24/24**（3.1m）。
 - **文档真源收敛**：`harmony/CURRENT_STATUS.md` 原「v1.6.4 暂无构建数字」与 spec / CHANGELOG / 质量报告的 4,815,454 B 记录互相矛盾，已按实测统一；`test:harmony-scripts` 由过时的 10 files / 136 tests 更正为 **15 files / 166 tests**；两处 `docs/reports/*` 失效路径改为 `harmony/docs/reports/*`；`[3.6.3]` 补记「从未成为独立提交或发布」的发布状态说明；「本轮未改原生 `.ets`」的不准确口径在 SPEC / 质量报告 / CHANGELOG 三处同步更正。
-- **人工三主题视觉复核补齐**（SPEC §S4 验收的最后一项）：chromium 1280×900 + `reducedMotion` + preview 构建，10 张截图覆盖 base/dark/sepia 首页与课程页、键盘焦点环、设置面板折叠组（收起 + 展开）、词表行 —— **判定无视觉回归**：新 `--color-focus`（#d97757）在 base 与 dark 下焦点环清晰且未被裁切，课程封面全出血渲染正常，两个 `<details>` 组头带后果说明且展开层级正确。未覆盖窄屏断点与阅读页释义面板（如实记录于 SPEC）。
+- **人工三主题视觉复核补齐**（SPEC §S4 验收的最后一项）：chromium 1280×900 + `reducedMotion` + preview 构建，10 张截图覆盖 base/dark/sepia 首页与课程页、键盘焦点环、设置面板折叠组（收起 + 展开）、词表行 —— **判定无视觉回归**：新 `--color-focus`（#d97757）在 base 与 dark 下焦点环清晰且未被裁切，课程封面全出血渲染正常，两个 `<details>` 组头带后果说明且展开层级正确。
+- **窄屏与阅读页复核补齐**：390×844（DPR 2 / isMobile）与 768×900 各拍首页、课程页、设置折叠组、阅读页、词表行 —— **6 个视口横向溢出全部为 0**（`scrollWidth == innerWidth`），阅读页首字下沉/目标词下划线/倍速胶囊/底部栏在窄屏下无重叠无裁切。
+- **服务卡运行时探针定性**（v1.6.3 S2 结转项）：FormMgr `static-form-infos` 已登记 `review_card` / `ReviewCardFormAbility` / `isDynamic=1`，`aa start` 可拉起独立进程 `com.wordaydream.app:form` 并加载 `ets/widget/ReviewCardFormAbility.abc` —— 卡片元数据与跨进程宿主在 API 22 模拟器上均可工作；但卡片实例只能由 launcher 请求，模拟器 launcher 的 `uitest dumpLayout` 返回空树（同工具在应用页可 dump 出 52 KB 节点，属 launcher 不暴露可访问性树，非工具失效），亦无 hidumper/CLI 添加通道 → **实例级刷新链路不可在模拟器自动化**，如实转真机/人工验收，复现命令已写入 §6。
+- **CI 与门禁口径**：`verify:wordlists` 接入 `netlify-deploy` 的 ci job（N1–N9 从「仅手动可阻断」升级为真门禁，当前 PASS 39 / EXEMPT 8 / BLOCK 0）；`E2E_FULL_MATRIX` 内联环境变量机制整体移除（Windows 的 cmd 下 `npm run test:e2e:full` 必失败，已实测），改为 4 个 project 始终定义 + `npm run test:e2e` 走 chromium 基线 + `--project=chromium` 显式化，CI 与文档口径同步。
+- **封面尺寸口径更正**：`optimize-static-assets.mjs` 曾以 `--reading-max-width` (672px) 论证 1440px 降采样，实际封面在 `--page-max-width` (960px) 容器内全出血；保留 1440px（2x DPR 理想值 1920px，但位图预算余量仅 6.8%，且封面属装饰图），注释改为记录真实显示宽度与取舍依据。
 
 ## [3.6.3] — 2026-09-29
 

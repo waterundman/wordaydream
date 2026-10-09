@@ -65,9 +65,10 @@ jobs:
       # v2.4.0 fix: 删单独 build 步骤.
       # 由 playwright.config.ts webServer 统一 build + preview (带完整 VITE env),
       # 避免 CI 重复 build 导致 20min 超时.
-      # v1.6.3 S4: 无 E2E_FULL_MATRIX 时 config 默认集合仅 chromium.
+      # v1.6.4 收口轮: config 的 4 个 project 始终定义, 基线靠显式 --project 选定
+      # (原 E2E_FULL_MATRIX 环境变量口径在 Windows/cmd 下不可用).
       - name: Run Playwright tests (chromium baseline)
-        run: npx playwright test
+        run: npx playwright test --project=chromium
         env:
           # CI 模式, 启用 retries=1 (在 playwright.config.ts 已判断)
           CI: 'true'
@@ -94,5 +95,5 @@ jobs:
         if: always()
         run: |
           echo "Playwright E2E run completed (chromium baseline: offline / install / SW / streaming)"
-          echo "v1.6.3 S4: 默认仅 chromium; 全矩阵为手动 opt-in (E2E_FULL_MATRIX=true, 见 playwright.config.ts)"
+          echo "v1.6.4 收口轮: 4 个 project 始终定义, 基线由 --project=chromium 显式选定; 全矩阵跑 npm run test:e2e:full"
           echo "失败时: trace.zip + video.webm 保留 (见 playwright-report/)"

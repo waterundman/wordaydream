@@ -64,6 +64,11 @@ jobs:
           npm run check:tokens
           npm run check:theme-parity
 
+      - name: Verify wordlist data quality gates
+        # v1.6.4 收口轮: N1–N9 闸门接入 CI (当前 PASS 39 / EXEMPT 8 / BLOCK 0).
+        # 已声明豁免按 ratchet 基线放行, 缺口扩大即 BLOCK 并 exit 1.
+        run: npm run verify:wordlists
+
       - name: Test
         run: npm run test:run
 

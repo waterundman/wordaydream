@@ -133,7 +133,7 @@
 
 **S4（已完成）— E2E 矩阵收缩（决策落地）**
 
-- 默认与 CI 只跑 chromium；firefox / webkit / mobile-chrome 降级为手动 opt-in（`E2E_FULL_MATRIX=true`）。`playwright.config.ts` 已加定性注释，`.github/workflows/playwright.yml` 同步（`playwright install` 只装 chromium）。
+- 默认与 CI 只跑 chromium；firefox / webkit / mobile-chrome 降级为手动 opt-in（`E2E_FULL_MATRIX=true`）。`playwright.config.ts` 已加定性注释，`.github/workflows/playwright.yml` 同步（`playwright install` 只装 chromium）。**（2026-10-09 收口轮更新：该环境变量口径已移除 —— 内联赋值在 Windows/cmd 下不可用；现 4 个 project 始终定义，基线由 `--project=chromium` 显式选定，全矩阵跑 `npm run test:e2e:full`。矩阵收缩的产品结论不变，见 `harmony/CURRENT_STATUS.md` §4.1。）**
 
 **S5（已完成，2026-09-29 收口）— 版本收口**
 

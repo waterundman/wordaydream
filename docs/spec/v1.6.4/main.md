@@ -160,7 +160,7 @@ v1.6.3 收口后有三条**已量化、未兑现**的产品级欠账被显式结
 - `check:tokens`：模块内 `var(--x)` 引用集合 − `tokens.css` 定义集合 = **空**（排除运行时注入的 `--progress` / `--path-length` / `--panel-shift-x`）。
 - `check:theme-parity`：`tokens.css` 三块（base / dark / sepia）的颜色 token 差集 = **空**。
 
-**验收**：`rg '#[0-9a-fA-F]{3,8}' src/features --glob '*.module.css'` ≤ 15 行（仅保留 rgba 遮罩/SVG）；无任何 fallback 与 token 真值矛盾；两个新脚本接入 `npm run` + CI；视觉零回归（E2E chromium 24/24 + 人工截图复核）。**人工三主题截图复核已于 2026-10-09 执行**（chromium 1280×900 / `reducedMotion: reduce` / preview 构建，10 张截图）：base·dark·sepia 首页与课程页、焦点环、设置面板折叠组（收起 + 展开）、词表行 —— 判定**无视觉回归**：新 `--color-focus`（#d97757）在 base 与 dark 下焦点环均清晰可见且未被 `overflow: hidden` 裁切；课程封面全出血（`padding: 0`）渲染正常、无裁切或变形；`数据与高级` / `LLM 高级参数` 两个 `<details>` 组头带后果说明文案且展开层级正确；`--color-danger*` 家族在 FSRS 降级提示上正常生效。**未覆盖范围**（如实记录）：窄屏 / 移动端断点、阅读页释义输入面板、sepia 下的词表长列表。
+**验收**：`rg '#[0-9a-fA-F]{3,8}' src/features --glob '*.module.css'` ≤ 15 行（仅保留 rgba 遮罩/SVG）；无任何 fallback 与 token 真值矛盾；两个新脚本接入 `npm run` + CI；视觉零回归（E2E chromium 24/24 + 人工截图复核）。**人工三主题截图复核已于 2026-10-09 执行**（chromium 1280×900 / `reducedMotion: reduce` / preview 构建，10 张截图）：base·dark·sepia 首页与课程页、焦点环、设置面板折叠组（收起 + 展开）、词表行 —— 判定**无视觉回归**：新 `--color-focus`（#d97757）在 base 与 dark 下焦点环均清晰可见且未被 `overflow: hidden` 裁切；课程封面全出血（`padding: 0`）渲染正常、无裁切或变形；`数据与高级` / `LLM 高级参数` 两个 `<details>` 组头带后果说明文案且展开层级正确；`--color-danger*` 家族在 FSRS 降级提示上正常生效。**未覆盖范围**（如实记录）：sepia 下的词表长列表逐屏核对。**已补覆盖**（同日第二轮）：390×844（DPR 2 / isMobile）与 768×900 的首页 / 课程页 / 设置折叠组 / 阅读页 / 词表行 6 个视口 —— 横向溢出全部为 0（`scrollWidth == innerWidth`），阅读页首字下沉、目标词下划线、倍速胶囊与底部栏在窄屏下无重叠无裁切。
 
 ### S5 — 版本收口
 

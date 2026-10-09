@@ -58,7 +58,7 @@ React/Vite source (src/)
 | `action=startReview` | 已实现，部分运行验证 | 分享、服务卡或通知可唤起复习；会等待原生卡片恢复并选择可用语言。当前无到期卡片的模拟器热启动保持首页且无异常，尚未覆盖有到期卡片的实际跳转。 |
 | `action=debugSeed`（运行验证） | 已实现（仅 debug 构建） | `hdc shell aa start --ps query action=debugSeed` 在原生 RDB 预置 5 张到期卡（3 en + 2 de，due=now-1h，幂等）；`applicationInfo.debug` 守卫使 release 构建直接跳过，且该 query 不在 Web 派发白名单内。配套 `scripts/harmony/seed-and-verify.mjs` 自动断言 RDB 恢复 → FIFO → 复习页日志链。 |
 | `action=openCard` | 已闭环 | 2*4 卡片词位区点击 → 携带 `action=openCard&cardId=<id>` 拉起 App → 复习会话 `jumpToCard` 定位（Web 域层 openCard 行为表 + 原生 `nextCardId` 同源推送）；运行验证脚本已含 openCard 断言（seed-and-verify A6/A7），模拟器在线即可执行 |
-| 服务卡 | 已实现主动刷新闭环，跨进程待运行验证 | 正规 `FormExtensionAbility` 支持创建、系统更新、尺寸变化和移除；`FormIdStore` 持久化 formId 集合，复习完成后 `notifyReviewCompleted` 经 `FormRefresher.refreshAllForms` 主动 `updateForm` 推送最新到期/今日统计（失败静默降级）。跨进程实际刷新行为待模拟器/真机验证。 |
+| 服务卡 | 已实现主动刷新闭环，**宿主启动已实机证实，实例级刷新不可自动化** | 正规 `FormExtensionAbility` 支持创建、系统更新、尺寸变化和移除；`FormIdStore` 持久化 formId 集合，复习完成后 `notifyReviewCompleted` 经 `FormRefresher.refreshAllForms` 主动 `updateForm` 推送最新到期/今日统计（失败静默降级）。2026-10-09 探针定性：FormMgr 已登记本包静态卡片（`review_card` / `ReviewCardFormAbility` / `isDynamic=1`，与系统 35 项卡片同列），且 `aa start -a ReviewCardFormAbility` 可真实拉起独立进程 `com.wordaydream.app:form` 并加载 `ets/widget/ReviewCardFormAbility.abc`（type 5 = FormExtension）。**边界**：创建卡片实例只能由 launcher 请求，模拟器桌面 launcher 的 `uitest dumpLayout` 返回空树（同工具在应用页可 dump 出 52 KB 节点，故为 launcher 不暴露可访问性树，非工具失效），且无 hidumper/CLI 添加通道 → 实例级跨进程刷新在模拟器上不可自动化，转真机/人工验收，不伪造。 |
 | 元服务分享入口 | 已实现配置，待设备验收 | `share_card.json` 指向 `pages/Index`，默认触发 `action=startReview`。 |
 | 到期通知 | 权限产品流程已实现 | 已到期请求可发布普通本地通知并携带复习 Want；设置面板通知开关首次开启时经 `requestNotificationPermission` 触发系统授权弹窗（granted/denied/error 三态），denied/error 时 UI 显示引导提示。 |
 | 未来定时提醒 | 安全降级 + 代码就绪 | `ReminderAgentService` 已封装发布去重、取消与启动对账恢复（`getAllValidReminders` 对账，过期条目自动清理）；未配置 `reminderAgent` 开放能力、`PUBLISH_AGENT_REMINDER` 与签名 Profile 时，`isSupported()` 探测失败 → 全部 API 返回 `{skipped:true}`，未来通知/提醒继续被安全跳过，绝不误发布。权益开通后即插即用。 |
@@ -92,7 +92,7 @@ React/Vite source (src/)
 
 **S4 — E2E 矩阵收缩（决策落地）**
 
-- 默认与 CI 只跑 chromium（产品目标平台 ArkWeb/Chromium 内核 + 桌面 Chrome）；firefox / webkit / mobile-chrome 降级为手动 opt-in（`E2E_FULL_MATRIX=true`）。`playwright.config.ts` 与 `.github/workflows/playwright.yml` 已同步（CI 的 `playwright install` 只装 chromium）。定性依据见 `docs/vault/v1.6.2-WAVE1-TECHDEBT-REPORT.md` §3.1（webkit ×6 + firefox ×1 均为 webkit-on-Windows 能力差异，非本项目回归）。
+- 默认与 CI 只跑 chromium（产品目标平台 ArkWeb/Chromium 内核 + 桌面 Chrome）；firefox / webkit / mobile-chrome 降级为手动 opt-in（`E2E_FULL_MATRIX=true`）。`playwright.config.ts` 与 `.github/workflows/playwright.yml` 已同步（CI 的 `playwright install` 只装 chromium）。定性依据见 `docs/vault/v1.6.2-WAVE1-TECHDEBT-REPORT.md` §3.1（webkit ×6 + firefox ×1 均为 webkit-on-Windows 能力差异，非本项目回归）。**2026-10-09 收口轮机制更正**：`E2E_FULL_MATRIX` 内联环境变量在 Windows 的 cmd（npm 默认 shell）下必失败，已从 config / package.json / workflow 三处移除；现 4 个 project 始终定义，`npm run test:e2e` 走 chromium 基线（CI 用 `--project=chromium`），`npm run test:e2e:full` 跑全矩阵。矩阵收缩的结论与依据不变。
 
 **验证层级**：S1 落在 API 22 运行链路上，2026-09-29 当轮模拟器离线，只到「自动测试 + HAP 编译通过」层级；**2026-10-09 已对当前工作树重建的 HAP 补跑 `verify:harmony-runtime`，A1–A7 全 PASS**（详见 §5 v1.6.4 运行时复证条目与 `harmony/docs/reports/seed-report-v164-runtime.json`）。
 
@@ -134,7 +134,7 @@ React/Vite source (src/)
 | `npm run typecheck` | 通过（tsc 0 errors） |
 | `npm run test:run` | **177 个测试文件、1655 项测试全部通过**（2026-10-09 收口轮实测；v1.6.3 基线 170/1604，v1.6.4 净增 **7 files / 51 tests**：`SettingsPanel.ia.test.tsx` +10、`CollapsibleSection.test.tsx` +11、`check-tokens.test.mjs` +8、`check-theme-parity.test.mjs` +6、`verify-wordlists.gates.test.mjs` +10、`verify-wordlists.smoke.test.mjs` +1、**`scripts/harmony/assertion-keywords.test.mjs` +5（收口轮新增）**，**零回归**） |
 | `npm run lint` | 通过（oxlint 0 个警告 0 个错误，399 文件） |
-| `npm run verify:wordlists` | 通过（exit 0；**`PASS 39 / EXEMPT 8 / BLOCK 0`**）。v1.6.4 S2 起校验面为 **R1–R5 字段契约 + N1–N9 数据质量闸门**：N1 例句覆盖率（每文件 ≥80% / priority=1 ≥95%）· N2 translation 非空 + 含 CJK + trim 一致 · N3 跨等级重复 lemma · N4 同等级同 pos 重复（已声明 `semanticConflicts` 的同形异义不计）· N5 例句跨词复用 · N6 弱命中率（`matchTier>=2` ≤10%）· N7 `exampleSource=unknown:*` 占比 ≤20% 且缺出处 = 0 · **N8 `courses/*.ts` 纳入校验（由 `courses/en.ts` 单文件扩为 en + de）** · N9 courses 跨模块 `targetLemma` 重复。未达标项经**显式豁免清单**（check + scope + ratchet 基线 + 理由）判定：计数 ≤ 基线打印 `EXEMPT` 不阻断，缺口超过基线即 `BLOCK`；当前 8 项豁免为 N1×3（de A2/B1/B2，待 S3 例句回填）· N3（en 719）· N5（global 582）· N6（de/a1 100）· N7（de/a1 642）· N9（en 11）。**注意：该脚本未接入任何 CI workflow（`netlify-deploy` 只跑 lint / check:versions / test:run / tsc / build），当前「可阻断」只在手动执行时生效** |
+| `npm run verify:wordlists` | 通过（exit 0；**`PASS 39 / EXEMPT 8 / BLOCK 0`**）。v1.6.4 S2 起校验面为 **R1–R5 字段契约 + N1–N9 数据质量闸门**：N1 例句覆盖率（每文件 ≥80% / priority=1 ≥95%）· N2 translation 非空 + 含 CJK + trim 一致 · N3 跨等级重复 lemma · N4 同等级同 pos 重复（已声明 `semanticConflicts` 的同形异义不计）· N5 例句跨词复用 · N6 弱命中率（`matchTier>=2` ≤10%）· N7 `exampleSource=unknown:*` 占比 ≤20% 且缺出处 = 0 · **N8 `courses/*.ts` 纳入校验（由 `courses/en.ts` 单文件扩为 en + de）** · N9 courses 跨模块 `targetLemma` 重复。未达标项经**显式豁免清单**（check + scope + ratchet 基线 + 理由）判定：计数 ≤ 基线打印 `EXEMPT` 不阻断，缺口超过基线即 `BLOCK`；当前 8 项豁免为 N1×3（de A2/B1/B2，待 S3 例句回填）· N3（en 719）· N5（global 582）· N6（de/a1 100）· N7（de/a1 642）· N9（en 11）。**2026-10-09 收口轮起该脚本已接入 CI**（`netlify-deploy` 的 ci job 在 check:tokens / check:theme-parity 之后执行 `npm run verify:wordlists`），N1–N9 的「可阻断」不再只在手动执行时生效 |
 | `npm run check:tokens` | 通过（exit 0；token 闭包：168 定义 / 6 运行时注入 / 未定义引用 0；断点违规 0；`font-size` 裸 px 0）—— v1.6.4 S4 新增守护脚本 + 单测 8 项 |
 | `npm run check:theme-parity` | 通过（exit 0；`tokens.css` 三块颜色 token base 54 / dark 51 / sepia 51，差集 0）—— v1.6.4 S4 新增守护脚本 + 单测 6 项 |
 | `npm run verify:static-assets` | 通过（v1.6.3：7 项静态资源均已优化 —— 3 纹理 WebP、2 图标量化 PNG、2 张课程封面 WebP（Seedream 生成 + `maxWidth` 降采样），原图保留在 `assets-sources/` 回滚路径） |
@@ -142,7 +142,7 @@ React/Vite source (src/)
 | `npm run build` | 普通 Web 生产构建通过，仍保留代码分包、module Worker 与 PWA |
 | `npm run build:harmony` | 通过（2026-10-09 当前工作树实测：`[verify:harmony-build] passed (60 ESM/Worker JS, 8 CSS, 89 files, 72 local references)`，与 v1.6.3 同为 89 文件口径） |
 | `npm run measure:bundle` | 2026-10-09 实测：首屏 JS **306.1 KB**（19 chunk，vs v1.6.2 基线 306.2 KB 零回退）· 全量 JS **2753.4 KB**（63 chunk，v1.6.2 为 2748.9 KB ⇒ **+4.5 KB**）· CSS **180.8 KB**（8 文件，v1.6.2 为 178.7 KB ⇒ **+2.1 KB**）· 公共静态 **639.2 KB**，其中位图 **599.3 KB / 7 文件**（`staticAssets.test.ts` 预算 640 KB，余量 6.8%）。**口径提示**：`bundle-report.json` 自 v1.6.3 清理轮起被 gitignore，故体积复核的证据链只存在于本表，仓库内不再留存报告副本 |
-| E2E（`npx playwright test --project=chromium`） | **24/24 全过**（2026-10-09 在当前工作树复证，3.1m，含 build + preview）—— 基线口径 = web 20 + offline-install 4。该轮覆盖了 v1.6.4 设置面板折叠组（T03 / T06 / T07 经 `e2e/settingsPanelGroups.ts` 的 `expandAllSettingsGroups`）、课程封面（T15）与词表例句行（T20）。S4 起默认只跑 chromium，firefox / webkit / mobile-chrome 为手动 opt-in（`E2E_FULL_MATRIX=true`；注意该 npm 入口用 POSIX 内联赋值，Windows 下须改用 `E2E_FULL_MATRIX=true npx playwright test` 的 shell 形式或经 Git Bash 执行） |
+| E2E（`npm run test:e2e` = `playwright test --project=chromium`） | **24/24 全过**（2026-10-09 在当前工作树复证，3.1m，含 build + preview）—— 基线口径 = web 20 + offline-install 4。该轮覆盖了 v1.6.4 设置面板折叠组（T03 / T06 / T07 经 `e2e/settingsPanelGroups.ts` 的 `expandAllSettingsGroups`）、课程封面（T15）与词表例句行（T20）。**2026-10-09 收口轮口径变更**：`playwright.config.ts` 的 4 个 project 改为**始终定义**，基线由命令行 `--project=chromium` 显式选定，`npm run test:e2e:full` 跑全矩阵 —— 原 `E2E_FULL_MATRIX=true` 内联环境变量写法在 Windows 的 cmd（npm 默认 shell）下必失败，已实测并移除 |
 | 人工三主题视觉复核 | **2026-10-09 已执行**（v1.6.4 S4 验收最后一项）：chromium 1280×900、`reducedMotion: reduce`、preview 构建，10 张截图覆盖 base / dark / sepia 首页与课程页、键盘焦点环、设置面板折叠组（收起 + 展开）、词表行 —— **无视觉回归**。新 `--color-focus`（#d97757）在 base 与 dark 下焦点环均可见且未被 `overflow: hidden` 裁切；课程封面全出血（`padding: 0`）无裁切变形；`--color-danger*` 在 FSRS 降级提示上正常生效。**未覆盖**：窄屏 / 移动端断点、阅读页释义输入面板、sepia 词表长列表 |
 | 虚拟同源定向测试 | 通过（origin/path/MIME、双编码穿越和源码接线契约） |
 | Harmony 构建验证器 | 9/9 通过；要求标准 ESM 入口、modulepreload、两个 module Worker、多 JS/CSS 分包、严格 CSP，并从 `index.html` 遍历依赖图拒绝缺失或不可达产物 |
@@ -234,6 +234,20 @@ npm run test:harmony-scripts
 FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true` 且退出码 0。
 `collect-perf` 采集冷启动耗时与进程 PSS 基线。
 
+服务卡运行时探针（2026-10-09 定性，见 §7 第 12 项）：
+
+```powershell
+# 1. 系统是否登记本包卡片元数据（-b 连未添加的静态卡片一起 dump）
+& $hdc shell "hidumper -s FormMgr -a '-b'" | Select-String -Context 0,6 wordaydream
+# 2. 跨进程宿主能否拉起并加载卡片 ArkTS 模块（type 5 = FormExtension）
+& $hdc shell "aa start -b com.wordaydream.app -a ReviewCardFormAbility"
+& $hdc shell "hilog -x | grep -E 'ReviewCardFormAbility|com.wordaydream.app:form'"
+& $hdc shell "aa force-stop com.wordaydream.app"   # 收尾, 不留进程
+# 3. 桌面 launcher 不暴露可访问性树 → 卡片实例无法自动化添加
+& $hdc shell "uitest uiInput keyEvent Home"
+& $hdc shell "uitest dumpLayout -p /data/local/tmp/home.json"   # 返回空树; 同工具在应用页可 dump 出 52 KB 节点
+```
+
 然后在 DevEco Studio 中打开 `harmony/`，配置有效调试签名，选择 HarmonyOS 6.0.2 / API 22 设备运行。连接状态可用下列命令检查：
 
 ```powershell
@@ -255,7 +269,7 @@ FIFO queued），输出 JSON 报告；模拟器不在线时输出 `skipped:true`
 9. ✅（2026-09-26 已结清）文档收口：根包 / AppScope 版本口径已统一并由 CI 强制（`check:versions` + `last-release.json` 单调性护栏）；`harmony/` 其余文档已停止各自维护数字副本，统一以本文件为唯一数字真源（各文件顶部有真源声明）。
 10. ✅（2026-09-29 已结清）**v1.6.3 S3 HAP 体积归因**：Wave 1 `+133,600 B` 与 v1.6.2 轮 `−249,171 B` 两个历史欠账全部归因清零，共同根因为记录产物缺 `ets/sourceMaps.map`（129,676 B）；真实源码级增量分别为 `+15,270 B` / `−120,062 B`。工具 + 单测 + Vault 报告已落地（见 §4.1 S3）。
 11. ✅（2026-09-29 已结清）**v1.6.3 S4 E2E 矩阵收缩**：默认与 CI 只跑 chromium，firefox/webkit/mobile-chrome 降级为手动 opt-in（`E2E_FULL_MATRIX=true`），`playwright.config.ts` + workflow 已同步（见 §4.1 S4）。
-12. **v1.6.3 S2 服务卡跨进程刷新运行时验证**（探针先行）：模拟器桌面能否添加 2×4 服务卡，15 分钟内定性；可行则固化为自动化断言，不可行则如实 NOT DELIVERED 转真机验收项，不伪造。依赖模拟器在线。
+12. 🔶（2026-10-09 探针已执行，**定性完成**）**v1.6.3 S2 服务卡跨进程刷新运行时验证**：模拟器在线后按 15 分钟时间盒探针 —— (a) FormMgr `static-form-infos` 已登记 `com.wordaydream.app / entry / ReviewCardFormAbility / review_card`（`isDynamic=1`，与系统 35 项卡片同列）；(b) `aa start -a ReviewCardFormAbility` 真实拉起独立进程 `com.wordaydream.app:form` 并加载 `ets/widget/ReviewCardFormAbility.abc`（`type is 5` = FormExtension，hilog 可见 `ScheduleLaunchAbility` / `ExecuteModuleBuffer`）。**结论**：卡片元数据与跨进程宿主在 API 22 模拟器上均可工作；但卡片实例只能由 launcher 请求，模拟器 launcher 的 `uitest dumpLayout` 返回空树（同工具在应用页可 dump 出 52 KB 节点，故属 launcher 不暴露可访问性树，非工具失效），且无 hidumper/CLI 添加通道 → **实例级 `onAddForm → FormIdStore → notifyReviewCompleted → updateForm` 链路在模拟器上不可自动化**，如实转真机/人工验收项，不伪造。复现命令见 §6。
 13. ✅（2026-09-29 已结清）**v1.6.3 S5 版本收口**：bump web `3.6.3` / AppScope·entry `1.6.3` / versionCode `1000080`（1.x 线每版 +5 规则）；CHANGELOG `[3.6.3]` 章节、`docs/vault/v1.6.3-HARMONY-QUALITY-REPORT.md`、本文件版本口径均已同步。`check:versions` PASS（3.6.3 / 1.6.3 / 1000080，已高于 `last-release.json` 的 `1000075`，无 WARN）。
 14. ✅（2026-10-09 已结清）**B1 拆分暴露的两处守护退化**：① `bridgeRegistry.test.ts` 的「原生自用豁免清单仍在 ArkTS 桥实现中」用例在拆分后只读 façade，一条转发桩即可满足，RDB 实现是否还活着不再被证明 → 改为读**桥闭包**（façade + `delegates/*.ets`，并断言委托文件数 > 0，防闭包静默塌回 façade-only），除 `async <name>(` 外追加 `store.<name>(` 断言，删掉 delegate 里的 RDB 读取会立刻失败；② 断言关键词清单此前只有结构校验（id 顺序 / level），A4 日志串被静默迁入 `CardBridgeDelegate` 而无人拦截 → 新增 `scripts/harmony/assertion-keywords.test.mjs` 关键词 ↔ 日志源双向契约，并实测确认「EntryAbility 注释原文复述 A6 关键词」这一假阳性陷阱已被剥注释逻辑排除。实测数字见 §5 表（`test:harmony-scripts` 15 文件 / 166 项）。
 

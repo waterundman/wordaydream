@@ -93,8 +93,12 @@ const TARGETS = [
     output: 'public/assets/img/course-cover-de.webp',
     quality: 80,
     method: 6,
-    // 原图 2560x1440; 卡片封面最宽 = --reading-max-width (672px), 2x DPR 下 1344px,
-    // 故降采样到 1440 宽即可 (2.14x), 直接分发 2.5K 原图是纯浪费。
+    // 原图 2560x1440. 封面在课程卡内全出血, 卡片宽 = --page-max-width (960px),
+    // 故 1x DPR 下 1440 已绰绰有余; 2x DPR 的理想值是 1920px, 但封面属装饰图,
+    // 1440 对 960 CSS px 只是 1.33x 放大, 而两张封面合计 127.4 KB —— 位图预算
+    // (staticAssets.test.ts 的 640 KB) 当前实测 599.3 KB / 余量 6.8%, 重编码到
+    // 1920 会顶破预算. 权衡后保留 1440. (v1.6.2 起此处曾误写为 --reading-max-width
+    // 672px —— 那是阅读页宽度, 与课程卡容器无关, 2026-10-09 收口轮更正.)
     maxWidth: 1440,
   },
   {
