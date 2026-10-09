@@ -15,12 +15,15 @@
 
   /* Surface tokens (design-aligned aliases) */
   --color-surface-base: var(--color-paper);
-  --color-surface-elevated: #ffffff;
   --color-surface-subtle: var(--color-paper-warm);
   --color-surface-sidebar: var(--color-paper-warm);
   --color-surface-inset: #f1f1ef;
   --color-surface-dark: var(--color-ink);
   --color-surface-card: #ffffff;
+  /* v1.6.4 S4: --color-surface 被 TodayReviewCard 引用却未定义, 回退值 #faf8f5 在
+     dark/sepia 下渲染成浅色卡片 (串色). 现指向已具备三主题覆盖的 --color-surface-card.
+     同批删除重复死 token --color-surface-elevated (与 surface-card 同值同义, 0 引用). */
+  --color-surface: var(--color-surface-card);
   --color-primary: var(--color-accent);
   --color-primary-foreground: #faf9f5;
 
@@ -58,6 +61,10 @@
   --color-underline-hover: var(--color-accent-muted);
   --color-underline-resolved: transparent;
 
+  /* v1.6.4 S4: 焦点环唯一真源 (此前全仓 6 种描边色 + 1 处引用未定义 token).
+     取 accent 别名 -> 三主题自动继承, 无需 dark/sepia 覆盖. */
+  --color-focus: var(--color-accent);
+
   --color-grammar: #c25e3e;
   --color-grammar-light: #fbe8de;
 
@@ -72,13 +79,24 @@
   --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
+  /* v1.6.4 S4: 字号阶梯补齐 —— 原 24 个 off-scale px 字号全部 token 化,
+     取值与原 px 逐一等价 (视觉零回归). */
+  --text-2xs: 0.625rem;        /* 10px */
+  --text-xs: 0.75rem;          /* 12px */
+  --text-sm: 0.875rem;         /* 14px */
+  --text-md: 0.9375rem;        /* 15px */
+  --text-base: 1rem;           /* 16px */
+  --text-lg: 1.125rem;         /* 18px */
+  --text-xl: 1.25rem;          /* 20px */
+  --text-2xl: 1.5rem;          /* 24px */
+  --text-3xl: 1.875rem;        /* 30px */
+  --text-4xl: 2.25rem;         /* 36px */
+  --text-display-sm: 1.75rem;  /* 28px */
+  --text-display-md: 2rem;     /* 32px */
+  --text-display-lg: 2.125rem; /* 34px */
+  --text-5xl: 2.5rem;          /* 40px */
+  --text-6xl: 2.75rem;         /* 44px */
+  --text-7xl: 3.375rem;        /* 54px */
 
   --leading-tight: 1.3;
   --leading-snug: 1.5;
@@ -91,6 +109,7 @@
   --tracking-wide: 0.02em;
   --tracking-wider: 0.05em;
 
+  --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -129,15 +148,23 @@
   --z-base: 1;
   --z-elevated: 10;
   --z-overlay: 100;
-  --z-modal: 1000;
 
+  /* 页面外壳宽度: 首页 / 课程页 / 词表页共用的居中容器 */
+  --page-max-width: 60rem;
   --reading-max-width: 42rem;
   --sidebar-width: 21.25rem;
   --sidebar-width-tablet: 18rem;
   --sidebar-width-mobile: 3.5rem;
 
-  /* Breakpoints */
+  /* Breakpoints — 媒体查询断点的唯一真源 (min-width 阈值, 升序).
+     注意: CSS 自定义属性无法用于 @media 条件 (CSS Variables L1 / MDN:
+     "Variables do not work inside media queries"), 故媒体查询保留字面量 px,
+     由 scripts/check-tokens.mjs 的断点校验锁定: 每个 @media 数值必须命中本表,
+     max-width 侧允许 token 值 - 1px. 见 scripts/check-tokens.mjs. */
   --breakpoint-sm: 375px;
+  --breakpoint-xs: 480px;
+  --breakpoint-narrow: 600px;
+  --breakpoint-compact: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
 
@@ -166,18 +193,25 @@
   --space-home-3: var(--space-4);
   --space-home-4: var(--space-6);
   --z-modal: 1100;
+  /* v1.6.4 S4: 遮罩层 z-index (ExportButton 引用未定义 token). 低于 --z-modal. */
+  --z-modal-backdrop: 1090;
 
   /* === v1.5.1 Home refined tokens (Stage 3) === */
   --home-card-gap: 1rem;            /* 16px 卡片内间距 */
   --home-section-gap: 1.5rem;       /* 24px 区块间距 */
   --home-paragraph-leading: 1.8;    /* 段落行高 */
   --home-progress-label-size: 0.875rem;  /* 14px 进度副标签 */
-  --home-progress-label-color: var(--color-text-tertiary, #78716c);
+  --home-progress-label-color: var(--color-text-tertiary);
 
   /* === v2.2.4 Stage 3: 状态色变量 (danger/warning/success/error) === */
   --color-danger: #c45c4a;
   --color-danger-hover: #a84d3d;
   --color-danger-text: #ffffff;
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
+  --color-info-border: #3b82f6;
+  --color-info-text: #1d4ed8;
+  --color-warning: #f59e0b;
   --color-warning-bg: #fef3c7;
   --color-warning-border: #f59e0b;
   --color-warning-text: #92400e;
@@ -207,6 +241,10 @@ html, body {
   text-wrap: pretty;
 }
 
+/* === v1.6.4 S4: 断点派生媒体查询 (断点字面量的唯一合法落点) ===
+   值由 --breakpoint-* 派生: max-width 侧 = token 值 - 1px, min-width 侧 = token 值.
+   CSS 自定义属性不能用于 @media 条件, 故此处保留字面量并由
+   scripts/check-tokens.mjs 的断点校验锁定 (全仓其余 @media 同规则). */
 @media (max-width: 767px) {
   html, body {
     font-size: var(--font-size-base-mobile);
@@ -255,6 +293,14 @@ input {
   }
 }
 
+/* === v1.6.4 S4: 焦点环基线 ===
+   此前全仓无全局 focus 样式, 6 种描边色散落在各模块. 这里给唯一基线;
+   模块级 :focus-visible 规则 (更高特异性) 仍可覆盖 offset / radius. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 /* === v1.5.2 Stage 1: Theme switching (D-3) === */
 
 /* Theme: dark mode (warm dark, preserves accent and paper-text metaphor) */
@@ -290,10 +336,27 @@ input {
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
 
+  /* === v1.6.4 S4: 主题 parity 补齐 (base-only 语义色) ===
+     --color-analytics / --color-wrong(-bg) / --color-partial(-bg) /
+     --color-grammar-light / --color-compound-light 此前仅 base 定义,
+     dark 下会沿用浅底/深字; 覆盖值取本主题既有语义近似色. */
+  --color-analytics: #d6d3d1;
+  --color-partial: #d4b86a;
+  --color-partial-bg: #33291a;
+  --color-wrong: #e8a09a;
+  --color-wrong-bg: #3a2422;
+  --color-grammar-light: #4a2818;
+  --color-compound-light: #2e2a24;
+
   /* === v2.2.4 Stage 3: 状态色变量 (danger/warning/success/error) === */
   --color-danger: #e0705f;
   --color-danger-hover: #c45c4a;
   --color-danger-text: #ffffff;
+  --color-info: #60a5fa;
+  --color-info-bg: #172554;
+  --color-info-border: #3b82f6;
+  --color-info-text: #93c5fd;
+  --color-warning: #f59e0b;
   --color-warning-bg: #422006;
   --color-warning-border: #f59e0b;
   --color-warning-text: #fcd34d;
@@ -338,10 +401,24 @@ input {
   --shadow-md: 0 4px 12px rgba(91, 70, 54, 0.12);
   --shadow-lg: 0 12px 24px rgba(91, 70, 54, 0.16);
 
+  /* === v1.6.4 S4: 主题 parity 补齐 (base-only 语义色), 见 dark 块说明. === */
+  --color-analytics: #5b4636;
+  --color-partial: #7a6220;
+  --color-partial-bg: #f1e8cf;
+  --color-wrong: #8b3a3a;
+  --color-wrong-bg: #f2e3dd;
+  --color-grammar-light: #f7e4d6;
+  --color-compound-light: #ece0c8;
+
   /* === v2.2.4 Stage 3: 状态色变量 (danger/warning/success/error) === */
   --color-danger: #c45c4a;
   --color-danger-hover: #a84d3d;
   --color-danger-text: #faf8f5;
+  --color-info: #3b82f6;
+  --color-info-bg: #e9eef8;
+  --color-info-border: #3b82f6;
+  --color-info-text: #1e40af;
+  --color-warning: #c9a227;
   --color-warning-bg: #f4ecd8;
   --color-warning-border: #c9a227;
   --color-warning-text: #7c5e10;

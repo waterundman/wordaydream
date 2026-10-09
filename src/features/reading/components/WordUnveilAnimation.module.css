@@ -22,7 +22,7 @@
   background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 50%, transparent 100%);
   z-index: 2;
   transform: translateX(-100%);
-  animation: unveil 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: unveil var(--duration-dramatic) cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 .sparkle {
@@ -34,7 +34,7 @@
   background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.8), transparent);
   z-index: 3;
   transform: translateY(-50%) translateX(-100%);
-  animation: sparkle 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: sparkle var(--duration-dramatic) cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes unveil {

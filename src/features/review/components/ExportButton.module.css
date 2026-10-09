@@ -18,7 +18,7 @@
 
 .exportButton:hover {
   background: var(--color-bg-subtle);
-  border-color: var(--color-border-hover);
+  border-color: var(--color-border-strong);
 }
 
 .exportLabel {
@@ -66,6 +66,18 @@
 
 .menuItem:hover {
   background: var(--color-bg-subtle);
+}
+
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则).
+   .menuItem 在 overflow: hidden 的 .menu 内, 环内收避免被裁切. */
+.exportButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.menuItem:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .itemLabel {

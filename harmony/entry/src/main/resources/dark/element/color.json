@@ -1,5 +1,11 @@
 {
   "color": [
+    { "name": "start_window_background", "value": "#1C1917" },
+    { "name": "app_background", "value": "#1C1917" },
+    { "name": "app_foreground", "value": "#FAF8F5" },
+    { "name": "overlay_background", "value": "#1C1917" },
+    { "name": "overlay_text_primary", "value": "#FAF8F5" },
+    { "name": "overlay_text_secondary", "value": "#A8A29E" },
     { "name": "card_background", "value": "#1F1F1F" },
     { "name": "card_text_primary", "value": "#E5E5E5" },
     { "name": "card_text_secondary", "value": "#999999" },

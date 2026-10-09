@@ -260,6 +260,16 @@
   color: var(--color-text-primary);
 }
 
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则).
+   .input 的键盘焦点环由上方 .input:focus 的 box-shadow 承担, 此处仅补按钮. */
+.speakBtn:focus-visible,
+.submitBtn:focus-visible,
+.retryBtn:focus-visible,
+.closeBtn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 @media (max-width: 767px) {
   .panel {
     left: 0;

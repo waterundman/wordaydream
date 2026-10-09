@@ -29,6 +29,14 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则).
+   本模块自身无交互元素, 但容器内渲染可聚焦后代 (ExportButton / EmptyState action);
+   容器 overflow: hidden, 焦点环内收避免被裁切. */
+.tray :focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
 .title {
   font-size: var(--text-sm);
   font-weight: 700;

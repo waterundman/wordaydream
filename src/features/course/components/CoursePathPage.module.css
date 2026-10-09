@@ -19,7 +19,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  max-width: 1024px;
+  max-width: var(--page-max-width);
   margin: 0 auto;
   padding: var(--space-8) var(--space-6);
   min-height: 100vh;
@@ -89,7 +89,7 @@
 }
 
 .switchBtn:focus-visible {
-  outline: 2px solid var(--color-flame);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -118,7 +118,7 @@
 }
 
 .homeBtn:focus-visible {
-  outline: 2px solid var(--color-flame);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -149,11 +149,11 @@
 .courseCard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-5) var(--space-6);
+  padding: 0;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  overflow: hidden;
   font-family: var(--font-sans);
   text-align: left;
   cursor: pointer;
@@ -161,6 +161,44 @@
     border-color var(--duration-fast) var(--ease-out-quart),
     background-color var(--duration-fast) var(--ease-out-quart),
     transform var(--duration-fast) var(--ease-out-quart);
+}
+
+.courseCardCover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.courseCardCover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out-expo);
+}
+
+.courseCard:hover .courseCardCover img {
+  transform: scale(1.03);
+}
+
+.courseCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .courseCardCover img {
+    transition: none;
+  }
+
+  .courseCard:hover .courseCardCover img {
+    transform: none;
+  }
 }
 
 .courseCard:hover {
@@ -173,7 +211,7 @@
 }
 
 .courseCard:focus-visible {
-  outline: 2px solid var(--color-flame);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -242,12 +280,14 @@
     font-size: 1.5rem;
   }
 
-  .courseCard {
-    padding: var(--space-4) var(--space-5);
-  }
-
   .courseCardTitle {
     font-size: var(--text-lg);
+  }
+
+  /* 注意: 不要给 .courseCard 加 padding —— 封面是全出血的 (padding: 0)。
+     内边距只作用于文字区。 */
+  .courseCardBody {
+    padding: var(--space-4) var(--space-5);
   }
 }
 

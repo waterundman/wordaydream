@@ -73,7 +73,7 @@
   stroke-linejoin: round;
   stroke-dasharray: var(--sprig-length, 500);
   stroke-dashoffset: var(--sprig-length, 500);
-  transition: stroke-dashoffset 800ms ease-in-out 700ms;
+  transition: stroke-dashoffset var(--duration-dramatic) ease-in-out 700ms;
 }
 
 /* revealing 阶段触发 sprig 绘制 (CSS delay 控制时序) */

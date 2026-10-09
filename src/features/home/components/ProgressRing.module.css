@@ -7,26 +7,26 @@
 }
 
 .progress {
-  transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: stroke-dashoffset var(--transition-slow);
 }
 
 .value {
-  font-size: 24px;
+  font-size: var(--text-2xl);
   font-weight: 600;
-  fill: var(--color-ink, #1c1917);
-  font-family: var(--font-sans, system-ui, sans-serif);
+  fill: var(--color-ink);
+  font-family: var(--font-sans);
 }
 
 .sublabel {
-  font-size: 12px;
-  fill: var(--color-text-tertiary, #6b655b);
-  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--text-xs);
+  fill: var(--color-text-tertiary);
+  font-family: var(--font-sans);
 }
 
 .label {
-  font-size: var(--home-progress-label-size, 0.875rem);
-  color: var(--home-progress-label-color, #78716c);
-  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--home-progress-label-size);
+  color: var(--home-progress-label-color);
+  font-family: var(--font-sans);
   margin: 12px 0 0;
   text-align: center;
   line-height: 1.5;

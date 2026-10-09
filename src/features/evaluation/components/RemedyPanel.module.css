@@ -171,6 +171,12 @@
   transform: translateY(0);
 }
 
+/* v1.6.4 S4: 补齐键盘焦点环 (此前全模块无 :focus-visible) */
+.showAnswerBtn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .answerReveal {
   margin-top: var(--space-4);
   padding: var(--space-4);

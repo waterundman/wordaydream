@@ -121,6 +121,12 @@
   transform: translateY(0) scale(0.98);
 }
 
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本组件无 focus-visible 规则) */
+.actionBtn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .emptyState,
   .iconWrapper,

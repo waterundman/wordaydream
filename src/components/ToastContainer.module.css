@@ -38,7 +38,7 @@
 }
 
 .warning {
-  border-left: 3px solid var(--color-warning-accent, #c9a227);
+  border-left: 3px solid var(--color-warning-accent);
 }
 
 .message {

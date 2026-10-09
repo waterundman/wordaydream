@@ -34,7 +34,14 @@
 }
 
 .btn.focused {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则).
+   .focused 由 JS roving tabindex 驱动, 此处补原生键盘焦点兜底. */
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

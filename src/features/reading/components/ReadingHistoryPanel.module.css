@@ -160,3 +160,10 @@
   background: var(--color-bg-primary);
   color: var(--color-text-secondary);
 }
+
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则) */
+.panelHeader:focus-visible,
+.actionButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

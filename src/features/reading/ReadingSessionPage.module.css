@@ -125,7 +125,7 @@
 .langPill.active {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-primary-foreground);
 }
 
 /* Difficulty dots */
@@ -147,7 +147,7 @@
   justify-content: center;
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform 0.1s ease;
+  transition: border-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-instant) ease;
 }
 
 .diffDot:not(.active):hover {
@@ -158,7 +158,7 @@
 .diffDot.active {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-primary-foreground);
 }
 
 .diffDot.active:active {
@@ -366,14 +366,14 @@
   height: 0;
   border-style: solid;
   border-width: 6px 0 6px 10px;
-  border-color: transparent transparent transparent #ffffff;
+  border-color: transparent transparent transparent var(--color-primary-foreground);
   margin-left: 2px;
 }
 
 .playStop {
   width: 10px;
   height: 10px;
-  background: #ffffff;
+  background: var(--color-primary-foreground);
   border-radius: 1px;
 }
 
@@ -415,15 +415,15 @@
 
 .ratePillActive {
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-primary-foreground);
 }
 
 .ratePillActive:hover {
-  color: #ffffff;
+  color: var(--color-primary-foreground);
 }
 
 .ratePill:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
 
@@ -462,7 +462,7 @@
 
 .readingContainer {
   width: 100%;
-  max-width: 680px;
+  max-width: var(--reading-max-width);
   margin: 0 auto;
 }
 
@@ -552,7 +552,7 @@
   border: 2px solid var(--color-border);
   border-top-color: var(--color-accent);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--duration-dramatic) linear infinite;
 }
 
 @keyframes spin {
@@ -635,7 +635,7 @@
 }
 
 .replayBtn:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -758,10 +758,10 @@
   }
 
   .ratePill {
-    min-width: 24px;
-    height: 22px;
-    padding: 0 var(--space-1);
-    font-size: 10px;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 var(--space-2);
+    font-size: var(--text-xs);
   }
 }
 

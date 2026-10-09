@@ -33,7 +33,7 @@
 .inkSvg path {
   stroke-dasharray: var(--path-length, 1000);
   stroke-dashoffset: var(--path-length, 1000);
-  transition: stroke-dashoffset 0.8s ease-out;
+  transition: stroke-dashoffset var(--duration-dramatic) ease-out;
 }
 
 .inkSvg.visible path {

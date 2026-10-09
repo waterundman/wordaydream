@@ -113,7 +113,7 @@
   font-weight: 500;
   font-family: var(--font-sans);
   cursor: pointer;
-  transition: background 0.2s ease-out, transform 0.2s ease-out;
+  transition: background var(--duration-fast) ease-out, transform var(--duration-fast) ease-out;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -127,7 +127,7 @@
 }
 
 .cta:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

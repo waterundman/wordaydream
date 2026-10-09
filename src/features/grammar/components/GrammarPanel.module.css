@@ -84,6 +84,12 @@
   color: var(--color-text-primary);
 }
 
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则) */
+.closeBtn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .content {
   padding: var(--space-4);
   position: relative;

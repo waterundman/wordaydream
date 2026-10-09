@@ -30,6 +30,13 @@
   -webkit-appearance: none;
 }
 
+/* v1.6.4 S4: 折叠头是 <button>, 补齐键盘焦点环 (此前全模块无 :focus-visible).
+   offset 取负值 —— 头行铺满面板宽度, 外扩环会被面板圆角裁掉. */
+.panelHeader:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
 .icon {
   color: var(--color-analytics);
   flex-shrink: 0;

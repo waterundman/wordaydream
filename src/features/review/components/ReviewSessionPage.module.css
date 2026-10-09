@@ -373,7 +373,7 @@
   margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: var(--line-height-normal);
+  line-height: var(--leading-normal);
 }
 
 /* v0.9.0 Stage 2: 刷新态提示行 (queue 清空后无错词明细可渲染). */
@@ -385,7 +385,7 @@
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: var(--line-height-normal);
+  line-height: var(--leading-normal);
 }
 
 /* 区块内 "错词本" 文字按钮: 视觉上像链接, 行为上跳转 wordlist. */
@@ -407,7 +407,7 @@
 }
 
 .completedWrongLink:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }

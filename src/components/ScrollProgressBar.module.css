@@ -26,8 +26,8 @@
   width: 100%;
   background: linear-gradient(
     90deg,
-    var(--color-accent, #2d5a4d) 0%,
-    var(--color-flame, #e07a3b) 100%
+    var(--color-accent) 0%,
+    var(--color-flame) 100%
   );
   transform: scaleX(0);
   transform-origin: left center;

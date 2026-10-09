@@ -10,25 +10,25 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--color-border, #e8e4dc);
-  border-radius: var(--radius-md, 0.5rem);
-  background: var(--color-bg-elevated, #ffffff);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
 }
 
 .title {
   margin: 0;
-  font-size: var(--text-base, 1rem);
+  font-size: var(--text-base);
   font-weight: 600;
-  font-family: var(--font-serif, Georgia, serif);
-  color: var(--color-ink, #1c1917);
+  font-family: var(--font-serif);
+  color: var(--color-ink);
 }
 
 .desc {
   margin: 0;
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-sm, 0.875rem);
-  line-height: var(--leading-normal, 1.5);
-  color: var(--color-text-tertiary, #6b655b);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-tertiary);
 }
 
 .list {
@@ -45,9 +45,9 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border, #e8e4dc);
-  border-radius: var(--radius-sm, 0.25rem);
-  background: var(--color-bg-subtle, #f5f2ed);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
 }
 
 .labelCol {
@@ -57,16 +57,16 @@
 }
 
 .keyLabel {
-  font-family: var(--font-serif, Georgia, serif);
-  font-size: var(--text-base, 1rem);
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
   font-weight: 500;
-  color: var(--color-text-primary, #1c1917);
+  color: var(--color-text-primary);
 }
 
 .keyDesc {
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-xs, 0.75rem);
-  color: var(--color-text-tertiary, #6b655b);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .kbd {
@@ -76,14 +76,14 @@
   min-width: 1.75rem;
   height: 1.75rem;
   padding: 0 var(--space-2);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--text-sm, 0.875rem);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-ink, #1c1917);
-  background: var(--color-bg-elevated, #ffffff);
-  border: 1px solid var(--color-border, #e8e4dc);
+  color: var(--color-ink);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-bottom-width: 2px;
-  border-radius: var(--radius-sm, 0.25rem);
+  border-radius: var(--radius-sm);
 }
 
 .capturePrompt {
@@ -91,19 +91,19 @@
   align-items: center;
   padding: 0 var(--space-3);
   height: 1.75rem;
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-sm, 0.875rem);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-accent, #1d4ed8);
-  background: color-mix(in srgb, var(--color-accent, #1d4ed8) 10%, transparent);
-  border: 1px dashed var(--color-accent, #1d4ed8);
-  border-radius: var(--radius-sm, 0.25rem);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border: 1px dashed var(--color-accent);
+  border-radius: var(--radius-sm);
 }
 
 .error {
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-xs, 0.75rem);
-  color: var(--color-error-strong, #b91c1c);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-error-strong);
 }
 
 .actions {
@@ -115,39 +115,49 @@
 .modifyBtn,
 .resetBtn,
 .resetAllBtn {
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--text-sm, 0.875rem);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm, 0.25rem);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition:
+    background-color var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-out-quart);
 }
 
 .modifyBtn {
-  color: var(--color-text-inverse, #ffffff);
-  background: var(--color-accent, #1d4ed8);
-  border: 1px solid var(--color-accent, #1d4ed8);
+  color: var(--color-text-inverse);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
 }
 
 .modifyBtn:hover {
-  background: color-mix(in srgb, var(--color-accent, #1d4ed8) 85%, #000);
+  background: var(--color-accent-hover);
 }
 
 .resetBtn,
 .resetAllBtn {
-  color: var(--color-text-secondary, #4a4540);
-  background: var(--color-bg-elevated, #ffffff);
-  border: 1px solid var(--color-border, #e8e4dc);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
 }
 
 .resetBtn:hover,
 .resetAllBtn:hover {
-  background: var(--color-bg-hover, #f5f2ed);
+  background: var(--color-bg-hover);
 }
 
 .resetAllBtn {
   align-self: flex-start;
   font-weight: 600;
+}
+
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则) */
+.modifyBtn:focus-visible,
+.resetBtn:focus-visible,
+.resetAllBtn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

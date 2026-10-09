@@ -54,7 +54,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    var(--color-border-soft) 50%,
+    var(--color-border-divider) 50%,
     transparent 100%
   );
 }
@@ -120,6 +120,13 @@
   color: var(--color-text-primary);
   background: var(--color-bg-subtle);
   border-color: var(--color-accent);
+}
+
+/* v1.6.4 S4: focus ring 统一为单一 --color-focus (此前本模块无 focus-visible 规则) */
+.hintAction:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

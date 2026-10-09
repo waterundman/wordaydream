@@ -503,10 +503,10 @@ struct Index {
             Text('Unable to load the app')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
-              .fontColor('#30302d')
+              .fontColor($r('app.color.overlay_text_primary'))
             Text('Please check the app package and try again.')
               .fontSize(14)
-              .fontColor('#6e6d68')
+              .fontColor($r('app.color.overlay_text_secondary'))
               .margin({ top: 8 })
             Button('Retry')
               .margin({ top: 20 })
@@ -520,13 +520,13 @@ struct Index {
               .color($r('app.color.start_window_background'))
             Text('Loading...')
               .fontSize(14)
-              .fontColor('#6e6d68')
+              .fontColor($r('app.color.overlay_text_secondary'))
               .margin({ top: 12 })
           }
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#faf9f5')
+        .backgroundColor($r('app.color.overlay_background'))
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
       }

@@ -3,11 +3,11 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  background: var(--color-surface, #faf8f5);
-  border: 1px solid var(--color-border, #e8e4dc);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
   font-size: 0.95rem;
-  color: var(--color-ink, #1c1917);
+  color: var(--color-ink);
   /* v1.6.1 Stage 1: 首屏之下 section 渲染隔离 (见 TodayCard.module.css 说明). */
   content-visibility: auto;
   contain-intrinsic-size: auto 90px;
@@ -15,7 +15,7 @@
 
 .icon {
   flex-shrink: 0;
-  color: var(--color-flame, #e07a3b);
+  color: var(--color-flame);
 }
 
 .text {
@@ -26,14 +26,14 @@
 .btn {
   flex-shrink: 0;
   padding: 0.5rem 1.25rem;
-  background: var(--color-flame, #e07a3b);
-  color: #faf8f5;
+  background: var(--color-flame);
+  color: var(--color-primary-foreground);
   border: none;
   border-radius: 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 200ms ease;
+  transition: opacity var(--duration-fast) ease;
 }
 
 .btn:hover {
@@ -41,7 +41,7 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--color-flame, #e07a3b);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

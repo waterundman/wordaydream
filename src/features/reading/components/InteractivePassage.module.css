@@ -1,14 +1,14 @@
 .passage {
-  max-width: 680px;
+  max-width: var(--reading-max-width);
   margin: 0 auto;
   font-family: var(--font-serif);
   text-wrap: pretty;
 }
 
 .title {
-  font-size: 2.25rem;
+  font-size: var(--text-4xl);
   font-weight: 400;
-  line-height: 1.35;
+  line-height: var(--leading-tight);
   margin-bottom: var(--space-10);
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
@@ -16,14 +16,14 @@
 }
 
 .text {
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
   color: var(--color-text-body);
   letter-spacing: 0.01em;
 }
 
 .paragraph {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
   text-indent: 2em;
   opacity: 0;
   transform: translateY(12px);
@@ -75,10 +75,10 @@
 }
 
 .tokenWrapper.focused {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: 2px;
-  background: var(--color-bg-subtle, #f0ede5);
+  background: var(--color-bg-subtle);
 }
 
 /* v2.1.0 Stage 4 (Contract 68): 重读模式 — 禁用 token 作答交互. */
@@ -102,7 +102,7 @@
 .wrongWordMark {
   text-decoration: underline;
   text-decoration-style: dashed;
-  text-decoration-color: var(--color-warning, #f59e0b);
+  text-decoration-color: var(--color-warning);
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
@@ -113,29 +113,29 @@
  * (因为 css modules 会将 .alignmentTooltip 编译为唯一类名).
  */
 .alignmentTooltip {
-  background: var(--color-bg-elevated, #1f2937);
-  color: var(--color-text-inverse, #f9fafb);
+  background: var(--color-surface-dark);
+  color: var(--color-bg);
   padding: 0.375rem 0.625rem;
   border-radius: 4px;
-  font-size: var(--text-sm, 0.875rem);
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   max-width: 240px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   user-select: none;
   z-index: 1000;
-  font-family: var(--font-sans, system-ui);
+  font-family: var(--font-sans);
 }
 
 .alignmentTooltip[data-alignment='corrected'] {
-  border-left: 3px solid var(--color-warning, #f59e0b);
+  border-left: 3px solid var(--color-warning);
 }
 
 .alignmentTooltip[data-alignment='fallback'] {
-  border-left: 3px solid var(--color-info, #3b82f6);
+  border-left: 3px solid var(--color-info);
 }
 
 .alignmentTooltip[data-alignment='dropped'] {
-  border-left: 3px solid var(--color-text-tertiary, #6b7280);
+  border-left: 3px solid var(--color-text-tertiary);
   font-style: italic;
 }
 
@@ -152,8 +152,7 @@
   }
 
   .text {
-    font-size: 15px;
-    line-height: 1.75;
+    line-height: var(--leading-relaxed);
   }
 
   .text p {

@@ -2,7 +2,7 @@
   position: fixed;
   top: var(--space-6);
   right: var(--space-6);
-  z-index: var(--z-modal, 1000);
+  z-index: var(--z-modal);
   pointer-events: none;
   max-width: calc(100vw - var(--space-6) * 2);
 }
@@ -47,8 +47,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--color-achievement-unlocked, #d4a574);
-  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-achievement-unlocked);
+  color: var(--color-text-inverse);
   flex-shrink: 0;
 }
 
@@ -63,7 +63,7 @@
 
 .title {
   font-size: 0.75rem;
-  color: var(--color-ink-faint, #6b655b);
+  color: var(--color-ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 500;
@@ -72,22 +72,22 @@
 .name {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-ink, #1c1917);
+  color: var(--color-ink);
   margin: 2px 0;
   font-family: var(--font-serif);
 }
 
 .desc {
   font-size: 0.85rem;
-  color: var(--color-ink-soft, #4a4540);
+  color: var(--color-ink-soft);
 }
 
 .badge {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: var(--color-flame, #e07a3b);
-  color: var(--color-text-inverse, #ffffff);
+  background: var(--color-flame);
+  color: var(--color-text-inverse);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.75rem;

@@ -10,7 +10,7 @@
   border-radius: 50%;
   border: 2px solid var(--color-border);
   border-top-color: var(--color-accent);
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--duration-dramatic) linear infinite;
 }
 
 .ink .inkDrop {

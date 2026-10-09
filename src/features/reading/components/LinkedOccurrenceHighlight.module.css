@@ -9,7 +9,7 @@
   background-size: 100% 0%;
   background-repeat: no-repeat;
   background-position: bottom;
-  transition: background-size 0.2s ease-out, opacity var(--transition-slow);
+  transition: background-size var(--duration-fast) ease-out, opacity var(--transition-slow);
 }
 
 .highlight::after {
@@ -75,9 +75,9 @@
  * 不用红色 (过强, 会让用户焦虑), 用柔和灰色 + 删除线表示"已处理但未掌握". */
 .resolvedWrong {
   cursor: default;
-  color: var(--color-text-muted, #999);
+  color: var(--color-text-muted);
   text-decoration: line-through;
-  text-decoration-color: var(--color-text-muted, #999);
+  text-decoration-color: var(--color-text-muted);
   text-decoration-thickness: 1px;
   opacity: 0.7;
 }
@@ -101,7 +101,7 @@
 }
 
 .highlight:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -174,7 +174,7 @@
     color: var(--color-correct);
   }
   .resolvedWrong {
-    color: var(--color-text-muted, #999);
+    color: var(--color-text-muted);
     opacity: 0.7;
   }
 }

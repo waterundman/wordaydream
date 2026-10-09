@@ -27,6 +27,14 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* v1.6.4 S4: 容器是 role="button" + tabIndex=0 的复合词触发器, 补齐键盘焦点环
+   (此前全模块无 :focus-visible). */
+.container:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 .previewTitle {
   font-weight: 600;
   color: var(--color-compound);

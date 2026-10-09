@@ -17,7 +17,7 @@
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 500ms ease-out;
+  transition: opacity var(--duration-slow) ease-out;
 }
 
 .overlay.visible {
@@ -90,7 +90,7 @@
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: stroke-dashoffset 500ms ease-in-out;
+  transition: stroke-dashoffset var(--duration-slow) ease-in-out;
 }
 
 .fleuron.visible path {
@@ -102,7 +102,7 @@
   stroke-width: 1;
   fill: var(--color-paper);
   opacity: 0;
-  transition: opacity 500ms ease-out;
+  transition: opacity var(--duration-slow) ease-out;
 }
 
 .fleuron.visible circle {
@@ -112,7 +112,7 @@
 /* 标题 */
 .title {
   font-family: var(--font-display);
-  font-size: 44px;
+  font-size: var(--text-6xl);
   font-weight: 400;
   color: var(--color-paper);
   margin-bottom: 8px;
@@ -128,7 +128,7 @@
 /* 副标题 */
 .subtitle {
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: rgba(138, 138, 130, 1);
   letter-spacing: 0.05em;
@@ -202,11 +202,11 @@
   }
 
   .title {
-    font-size: 32px;
+    font-size: var(--text-display-md);
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
 
   .sprig {
@@ -225,7 +225,7 @@
   }
 
   .title {
-    font-size: 28px;
+    font-size: var(--text-display-sm);
   }
 
   .sprig {
