@@ -57,6 +57,13 @@ jobs:
         # v0.5.0-harmony Stage 1: 单一版本真源校验, 在测试前阻止版本口径漂移
         run: npm run check:versions
 
+      - name: Check design tokens + theme parity
+        # v1.6.4 S4: 设计 token 闭包 (未定义 var(--x) = 0) / 断点由 --breakpoint-* 派生 /
+        # module css 字号裸 px = 0, 以及 tokens.css 三主题 (base/dark/sepia) 颜色 token 差集 = 空
+        run: |
+          npm run check:tokens
+          npm run check:theme-parity
+
       - name: Test
         run: npm run test:run
 

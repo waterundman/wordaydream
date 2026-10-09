@@ -1,0 +1,2336 @@
+{
+  "generatedAt": "2026-09-29T07:24:10.486Z",
+  "normalize": true,
+  "before": {
+    "path": "w:\\wd-wt-v162\\harmony\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap",
+    "beforeEntries": 101,
+    "afterEntries": 104,
+    "changedEntries": 97,
+    "onlyBeforeCount": 4,
+    "onlyAfterCount": 7,
+    "beforeTotal": 4628830,
+    "afterTotal": 4780120,
+    "delta": 151290,
+    "deltaCommon": 9947,
+    "deltaOnlyBefore": -50718,
+    "deltaOnlyAfter": 192061,
+    "entries": [
+      {
+        "name": "module.json",
+        "compressedSize": 1957,
+        "uncompressedSize": 1957,
+        "method": 0
+      },
+      {
+        "name": "resources.index",
+        "compressedSize": 2348,
+        "uncompressedSize": 2348,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/background.png",
+        "compressedSize": 18724,
+        "uncompressedSize": 18724,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/foreground.png",
+        "compressedSize": 374662,
+        "uncompressedSize": 374662,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/icon.png",
+        "compressedSize": 359333,
+        "uncompressedSize": 359333,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/README.md",
+        "compressedSize": 3612,
+        "uncompressedSize": 3612,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/form_config.json",
+        "compressedSize": 395,
+        "uncompressedSize": 395,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/main_pages.json",
+        "compressedSize": 23,
+        "uncompressedSize": 23,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/share_card.json",
+        "compressedSize": 396,
+        "uncompressedSize": 396,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+        "compressedSize": 140828,
+        "uncompressedSize": 140828,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+        "compressedSize": 197547,
+        "uncompressedSize": 197547,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+        "compressedSize": 197901,
+        "uncompressedSize": 197901,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+        "compressedSize": 95660,
+        "uncompressedSize": 95660,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+        "compressedSize": 130241,
+        "uncompressedSize": 130241,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+        "compressedSize": 181228,
+        "uncompressedSize": 181228,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+        "compressedSize": 323159,
+        "uncompressedSize": 323159,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+        "compressedSize": 206043,
+        "uncompressedSize": 206043,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/browser-BWJJ37kr.js",
+        "compressedSize": 33,
+        "uncompressedSize": 33,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/compoundSplitter-BnFO-IcG.js",
+        "compressedSize": 3724,
+        "uncompressedSize": 3724,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-Ctu_IW4t.css",
+        "compressedSize": 11136,
+        "uncompressedSize": 11136,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-Cuo5k0tM.js",
+        "compressedSize": 7969,
+        "uncompressedSize": 7969,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+        "compressedSize": 12111,
+        "uncompressedSize": 12111,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+        "compressedSize": 21605,
+        "uncompressedSize": 21605,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+        "compressedSize": 303489,
+        "uncompressedSize": 303489,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-Db3DvPBs.css",
+        "compressedSize": 5109,
+        "uncompressedSize": 5109,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-I27wxAR-.js",
+        "compressedSize": 3694,
+        "uncompressedSize": 3694,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+        "compressedSize": 72,
+        "uncompressedSize": 72,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-CK76Z4JM.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+        "compressedSize": 35885,
+        "uncompressedSize": 35885,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+        "compressedSize": 2559,
+        "uncompressedSize": 2559,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/harmonyBridge-DokzIY99.js",
+        "compressedSize": 6494,
+        "uncompressedSize": 6494,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-CmIJDChR.js",
+        "compressedSize": 31490,
+        "uncompressedSize": 31490,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-CyvrOVq_.css",
+        "compressedSize": 30097,
+        "uncompressedSize": 30097,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+        "compressedSize": 62576,
+        "uncompressedSize": 62576,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+        "compressedSize": 164540,
+        "uncompressedSize": 164540,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+        "compressedSize": 70258,
+        "uncompressedSize": 70258,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-DDJO9WAe.js",
+        "compressedSize": 32576,
+        "uncompressedSize": 32576,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-DyeZKij2.css",
+        "compressedSize": 25072,
+        "uncompressedSize": 25072,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+        "compressedSize": 87,
+        "uncompressedSize": 87,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+        "compressedSize": 5232,
+        "uncompressedSize": 5232,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+        "compressedSize": 292222,
+        "uncompressedSize": 292222,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/mockProvider-L5BsH_NK.js",
+        "compressedSize": 10544,
+        "uncompressedSize": 10544,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/offlineMode-n9FoKWXD.js",
+        "compressedSize": 1389,
+        "uncompressedSize": 1389,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+        "compressedSize": 67,
+        "uncompressedSize": 67,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passageGenerator-CJTxa6MX.js",
+        "compressedSize": 12556,
+        "uncompressedSize": 12556,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+        "compressedSize": 26255,
+        "uncompressedSize": 26255,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+        "compressedSize": 296,
+        "uncompressedSize": 296,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+        "compressedSize": 1271,
+        "uncompressedSize": 1271,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+        "compressedSize": 96,
+        "uncompressedSize": 96,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/react-vendor-CCIEwYL0.js",
+        "compressedSize": 189644,
+        "uncompressedSize": 189644,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-BvgOinGm.css",
+        "compressedSize": 56051,
+        "uncompressedSize": 56051,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-ruMqMb4E.js",
+        "compressedSize": 135347,
+        "uncompressedSize": 135347,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+        "compressedSize": 862,
+        "uncompressedSize": 862,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-C9-Vrq8g.js",
+        "compressedSize": 15755,
+        "uncompressedSize": 15755,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-DuzSCQdU.css",
+        "compressedSize": 16607,
+        "uncompressedSize": 16607,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+        "compressedSize": 694,
+        "uncompressedSize": 694,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+        "compressedSize": 14615,
+        "uncompressedSize": 14615,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-DHt0ARYu.css",
+        "compressedSize": 21859,
+        "uncompressedSize": 21859,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-RUHU-FJ_.js",
+        "compressedSize": 34602,
+        "uncompressedSize": 34602,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/state-fsrs-hLJEzDHz.js",
+        "compressedSize": 23137,
+        "uncompressedSize": 23137,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-book.svg",
+        "compressedSize": 993,
+        "uncompressedSize": 993,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+        "compressedSize": 827,
+        "uncompressedSize": 827,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+        "compressedSize": 1223,
+        "uncompressedSize": 1223,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+        "compressedSize": 896,
+        "uncompressedSize": 896,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+        "compressedSize": 1642,
+        "uncompressedSize": 1642,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+        "compressedSize": 582,
+        "uncompressedSize": 582,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+        "compressedSize": 604,
+        "uncompressedSize": 604,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+        "compressedSize": 525,
+        "uncompressedSize": 525,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+        "compressedSize": 1310,
+        "uncompressedSize": 1310,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+        "compressedSize": 380,
+        "uncompressedSize": 380,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useAnalyticsStore-P-7x8Kct.js",
+        "compressedSize": 2661,
+        "uncompressedSize": 2661,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+        "compressedSize": 3833,
+        "uncompressedSize": 3833,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useFocusTrap-CE6utN8J.js",
+        "compressedSize": 718,
+        "uncompressedSize": 718,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useHomeAnalytics-vif_4LBL.js",
+        "compressedSize": 731,
+        "uncompressedSize": 731,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useKeyboardShortcuts-CLRMnrFQ.js",
+        "compressedSize": 1495,
+        "uncompressedSize": 1495,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useMemoryStore-mM9zIUbd.js",
+        "compressedSize": 9530,
+        "uncompressedSize": 9530,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReadingSessionStore-BUowVHBi.js",
+        "compressedSize": 7245,
+        "uncompressedSize": 7245,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReviewSessionStore-CgFfTlQB.js",
+        "compressedSize": 12097,
+        "uncompressedSize": 12097,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useSettingsStore-CI3NQp50.js",
+        "compressedSize": 6105,
+        "uncompressedSize": 6105,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useShortcutsStore-DNTeu4TE.js",
+        "compressedSize": 816,
+        "uncompressedSize": 816,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useStreakStore-dzFBY5kL.js",
+        "compressedSize": 846,
+        "uncompressedSize": 846,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useToastStore-mHMhaDFN.js",
+        "compressedSize": 665,
+        "uncompressedSize": 665,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useWordlistStore-DAUuRvHt.js",
+        "compressedSize": 8045,
+        "uncompressedSize": 8045,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-DhRbbkl6.js",
+        "compressedSize": 24929,
+        "uncompressedSize": 24929,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-DQA668z2.css",
+        "compressedSize": 17522,
+        "uncompressedSize": 17522,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+        "compressedSize": 62,
+        "uncompressedSize": 62,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+        "compressedSize": 50,
+        "uncompressedSize": 50,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/favicon.svg",
+        "compressedSize": 26781,
+        "uncompressedSize": 26781,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-192.png",
+        "compressedSize": 24764,
+        "uncompressedSize": 24764,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-512.png",
+        "compressedSize": 161094,
+        "uncompressedSize": 161094,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons.svg",
+        "compressedSize": 5055,
+        "uncompressedSize": 5055,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/index.html",
+        "compressedSize": 3160,
+        "uncompressedSize": 3160,
+        "method": 0
+      },
+      {
+        "name": "ets/modules.abc",
+        "compressedSize": 214724,
+        "uncompressedSize": 214724,
+        "method": 0
+      },
+      {
+        "name": "ets/sourceMaps.map",
+        "compressedSize": 129676,
+        "uncompressedSize": 129676,
+        "method": 0
+      },
+      {
+        "name": "ets/widget/component_collection.json",
+        "compressedSize": 112,
+        "uncompressedSize": 112,
+        "method": 0
+      },
+      {
+        "name": "ets/widgets.abc",
+        "compressedSize": 32028,
+        "uncompressedSize": 32028,
+        "method": 0
+      },
+      {
+        "name": "pack.info",
+        "compressedSize": 802,
+        "uncompressedSize": 802,
+        "method": 0
+      },
+      {
+        "name": "pkgSdkInfo.json",
+        "compressedSize": 132,
+        "uncompressedSize": 132,
+        "method": 0
+      }
+    ]
+  },
+  "after": {
+    "path": "w:\\wordaydream\\harmony\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap",
+    "entries": [
+      {
+        "name": "module.json",
+        "compressedSize": 1957,
+        "uncompressedSize": 1957,
+        "method": 0
+      },
+      {
+        "name": "resources.index",
+        "compressedSize": 2633,
+        "uncompressedSize": 2633,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/background.png",
+        "compressedSize": 18724,
+        "uncompressedSize": 18724,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/foreground.png",
+        "compressedSize": 374662,
+        "uncompressedSize": 374662,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/icon.png",
+        "compressedSize": 359333,
+        "uncompressedSize": 359333,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/README.md",
+        "compressedSize": 3548,
+        "uncompressedSize": 3548,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/form_config.json",
+        "compressedSize": 395,
+        "uncompressedSize": 395,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/main_pages.json",
+        "compressedSize": 23,
+        "uncompressedSize": 23,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/share_card.json",
+        "compressedSize": 396,
+        "uncompressedSize": 396,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+        "compressedSize": 140828,
+        "uncompressedSize": 140828,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+        "compressedSize": 197547,
+        "uncompressedSize": 197547,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+        "compressedSize": 197901,
+        "uncompressedSize": 197901,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+        "compressedSize": 95660,
+        "uncompressedSize": 95660,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+        "compressedSize": 130241,
+        "uncompressedSize": 130241,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+        "compressedSize": 181228,
+        "uncompressedSize": 181228,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+        "compressedSize": 323159,
+        "uncompressedSize": 323159,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+        "compressedSize": 206043,
+        "uncompressedSize": 206043,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/browser-BWJJ37kr.js",
+        "compressedSize": 33,
+        "uncompressedSize": 33,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/compoundSplitter-B_iSp7-Q.js",
+        "compressedSize": 3724,
+        "uncompressedSize": 3724,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-CyU3DeOl.css",
+        "compressedSize": 11772,
+        "uncompressedSize": 11772,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-mitnZFFJ.js",
+        "compressedSize": 8455,
+        "uncompressedSize": 8455,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+        "compressedSize": 12111,
+        "uncompressedSize": 12111,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+        "compressedSize": 21605,
+        "uncompressedSize": 21605,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+        "compressedSize": 303489,
+        "uncompressedSize": 303489,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-C68SeIsL.js",
+        "compressedSize": 3689,
+        "uncompressedSize": 3689,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-Cg9lRYJQ.css",
+        "compressedSize": 5088,
+        "uncompressedSize": 5088,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+        "compressedSize": 72,
+        "uncompressedSize": 72,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-IGUKAlVq.js",
+        "compressedSize": 35885,
+        "uncompressedSize": 35885,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-ZBMyXZ7r.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+        "compressedSize": 2559,
+        "uncompressedSize": 2559,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/harmonyBridge-DokzIY99.js",
+        "compressedSize": 6494,
+        "uncompressedSize": 6494,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-B-W-5wlq.css",
+        "compressedSize": 30055,
+        "uncompressedSize": 30055,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-DF6kqnqI.js",
+        "compressedSize": 31450,
+        "uncompressedSize": 31450,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/course-cover-de.webp",
+        "compressedSize": 62824,
+        "uncompressedSize": 62824,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/course-cover-en.webp",
+        "compressedSize": 67594,
+        "uncompressedSize": 67594,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+        "compressedSize": 62576,
+        "uncompressedSize": 62576,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+        "compressedSize": 164540,
+        "uncompressedSize": 164540,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+        "compressedSize": 70258,
+        "uncompressedSize": 70258,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-CgHud_ck.js",
+        "compressedSize": 32559,
+        "uncompressedSize": 32559,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-DxGu-hVN.css",
+        "compressedSize": 25374,
+        "uncompressedSize": 25374,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+        "compressedSize": 87,
+        "uncompressedSize": 87,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+        "compressedSize": 5232,
+        "uncompressedSize": 5232,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+        "compressedSize": 292222,
+        "uncompressedSize": 292222,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/mockProvider-L5BsH_NK.js",
+        "compressedSize": 10544,
+        "uncompressedSize": 10544,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/offlineMode-n9FoKWXD.js",
+        "compressedSize": 1389,
+        "uncompressedSize": 1389,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+        "compressedSize": 67,
+        "uncompressedSize": 67,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passageGenerator-C6jQE_yn.js",
+        "compressedSize": 12556,
+        "uncompressedSize": 12556,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+        "compressedSize": 26255,
+        "uncompressedSize": 26255,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+        "compressedSize": 296,
+        "uncompressedSize": 296,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+        "compressedSize": 1271,
+        "uncompressedSize": 1271,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+        "compressedSize": 96,
+        "uncompressedSize": 96,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/react-vendor-CCIEwYL0.js",
+        "compressedSize": 189644,
+        "uncompressedSize": 189644,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-IoanfM2Z.css",
+        "compressedSize": 55890,
+        "uncompressedSize": 55890,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-S-DkFeWr.js",
+        "compressedSize": 134750,
+        "uncompressedSize": 134750,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+        "compressedSize": 862,
+        "uncompressedSize": 862,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-3ZJZRqgm.css",
+        "compressedSize": 16589,
+        "uncompressedSize": 16589,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-v5TP2eq1.js",
+        "compressedSize": 15747,
+        "uncompressedSize": 15747,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+        "compressedSize": 694,
+        "uncompressedSize": 694,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-BAMls7xZ.js",
+        "compressedSize": 14833,
+        "uncompressedSize": 14833,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-D1VMiIN4.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-C0P_zreV.css",
+        "compressedSize": 21810,
+        "uncompressedSize": 21810,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-zV7wUouz.js",
+        "compressedSize": 34563,
+        "uncompressedSize": 34563,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/state-fsrs-hLJEzDHz.js",
+        "compressedSize": 23137,
+        "uncompressedSize": 23137,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-book.svg",
+        "compressedSize": 975,
+        "uncompressedSize": 975,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+        "compressedSize": 817,
+        "uncompressedSize": 817,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+        "compressedSize": 1205,
+        "uncompressedSize": 1205,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+        "compressedSize": 883,
+        "uncompressedSize": 883,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+        "compressedSize": 1620,
+        "uncompressedSize": 1620,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+        "compressedSize": 577,
+        "uncompressedSize": 577,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+        "compressedSize": 591,
+        "uncompressedSize": 591,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+        "compressedSize": 519,
+        "uncompressedSize": 519,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+        "compressedSize": 1291,
+        "uncompressedSize": 1291,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+        "compressedSize": 376,
+        "uncompressedSize": 376,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useAnalyticsStore-P-7x8Kct.js",
+        "compressedSize": 2661,
+        "uncompressedSize": 2661,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+        "compressedSize": 3833,
+        "uncompressedSize": 3833,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useFocusTrap-CE6utN8J.js",
+        "compressedSize": 718,
+        "uncompressedSize": 718,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useHomeAnalytics-CuY8xDCm.js",
+        "compressedSize": 731,
+        "uncompressedSize": 731,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useKeyboardShortcuts-CLRMnrFQ.js",
+        "compressedSize": 1495,
+        "uncompressedSize": 1495,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useMemoryStore-B84vsYHb.js",
+        "compressedSize": 9442,
+        "uncompressedSize": 9442,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReadingSessionStore-BwClsgIO.js",
+        "compressedSize": 7245,
+        "uncompressedSize": 7245,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReviewSessionStore-Dou-oE0X.js",
+        "compressedSize": 12097,
+        "uncompressedSize": 12097,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useSettingsStore-BdNhOGVX.js",
+        "compressedSize": 6105,
+        "uncompressedSize": 6105,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useShortcutsStore-DNTeu4TE.js",
+        "compressedSize": 816,
+        "uncompressedSize": 816,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useStreakStore-dzFBY5kL.js",
+        "compressedSize": 846,
+        "uncompressedSize": 846,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useToastStore-mHMhaDFN.js",
+        "compressedSize": 665,
+        "uncompressedSize": 665,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useWordlistStore-CiiAE51Z.js",
+        "compressedSize": 8045,
+        "uncompressedSize": 8045,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-C2nUCQEJ.css",
+        "compressedSize": 17234,
+        "uncompressedSize": 17234,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-inG7UtbO.js",
+        "compressedSize": 24900,
+        "uncompressedSize": 24900,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+        "compressedSize": 62,
+        "uncompressedSize": 62,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+        "compressedSize": 50,
+        "uncompressedSize": 50,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/favicon.svg",
+        "compressedSize": 26781,
+        "uncompressedSize": 26781,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/harmony-chunk-graph.json",
+        "compressedSize": 10707,
+        "uncompressedSize": 10707,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-192.png",
+        "compressedSize": 24764,
+        "uncompressedSize": 24764,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-512.png",
+        "compressedSize": 161094,
+        "uncompressedSize": 161094,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons.svg",
+        "compressedSize": 5031,
+        "uncompressedSize": 5031,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/index.html",
+        "compressedSize": 3139,
+        "uncompressedSize": 3139,
+        "method": 0
+      },
+      {
+        "name": "ets/modules.abc",
+        "compressedSize": 227432,
+        "uncompressedSize": 227432,
+        "method": 0
+      },
+      {
+        "name": "ets/sourceMaps.map",
+        "compressedSize": 126011,
+        "uncompressedSize": 126011,
+        "method": 0
+      },
+      {
+        "name": "ets/widget/component_collection.json",
+        "compressedSize": 174,
+        "uncompressedSize": 174,
+        "method": 0
+      },
+      {
+        "name": "ets/widgets.abc",
+        "compressedSize": 32800,
+        "uncompressedSize": 32800,
+        "method": 0
+      },
+      {
+        "name": "pack.info",
+        "compressedSize": 802,
+        "uncompressedSize": 802,
+        "method": 0
+      },
+      {
+        "name": "pkgSdkInfo.json",
+        "compressedSize": 132,
+        "uncompressedSize": 132,
+        "method": 0
+      }
+    ]
+  },
+  "topByAbsDelta": [
+    {
+      "name": "resources/rawfile/dist/assets/img/course-cover-en.webp",
+      "before": 0,
+      "after": 67594,
+      "delta": 67594
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/course-cover-de.webp",
+      "before": 0,
+      "after": 62824,
+      "delta": 62824
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+      "before": 35885,
+      "after": 0,
+      "delta": -35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-IGUKAlVq.js",
+      "before": 0,
+      "after": 35885,
+      "delta": 35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BAMls7xZ.js",
+      "before": 0,
+      "after": 14833,
+      "delta": 14833
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+      "before": 14615,
+      "after": 0,
+      "delta": -14615
+    },
+    {
+      "name": "ets/modules.abc",
+      "beforeName": "ets/modules.abc",
+      "afterName": "ets/modules.abc",
+      "before": 214724,
+      "after": 227432,
+      "delta": 12708
+    },
+    {
+      "name": "resources/rawfile/dist/harmony-chunk-graph.json",
+      "before": 0,
+      "after": 10707,
+      "delta": 10707
+    },
+    {
+      "name": "ets/sourceMaps.map",
+      "beforeName": "ets/sourceMaps.map",
+      "afterName": "ets/sourceMaps.map",
+      "before": 129676,
+      "after": 126011,
+      "delta": -3665
+    },
+    {
+      "name": "ets/widgets.abc",
+      "beforeName": "ets/widgets.abc",
+      "afterName": "ets/widgets.abc",
+      "before": 32028,
+      "after": 32800,
+      "delta": 772
+    },
+    {
+      "name": "resources/rawfile/dist/assets/CoursePathPage.css",
+      "beforeName": "resources/rawfile/dist/assets/CoursePathPage-Ctu_IW4t.css",
+      "afterName": "resources/rawfile/dist/assets/CoursePathPage-CyU3DeOl.css",
+      "before": 11136,
+      "after": 11772,
+      "delta": 636
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.js",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-ruMqMb4E.js",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-S-DkFeWr.js",
+      "before": 135347,
+      "after": 134750,
+      "delta": -597
+    },
+    {
+      "name": "resources/rawfile/dist/assets/CoursePathPage.js",
+      "beforeName": "resources/rawfile/dist/assets/CoursePathPage-Cuo5k0tM.js",
+      "afterName": "resources/rawfile/dist/assets/CoursePathPage-mitnZFFJ.js",
+      "before": 7969,
+      "after": 8455,
+      "delta": 486
+    },
+    {
+      "name": "resources/rawfile/dist/assets/index.css",
+      "beforeName": "resources/rawfile/dist/assets/index-DyeZKij2.css",
+      "afterName": "resources/rawfile/dist/assets/index-DxGu-hVN.css",
+      "before": 25072,
+      "after": 25374,
+      "delta": 302
+    },
+    {
+      "name": "resources/rawfile/dist/assets/WordlistPage.css",
+      "beforeName": "resources/rawfile/dist/assets/WordlistPage-DQA668z2.css",
+      "afterName": "resources/rawfile/dist/assets/WordlistPage-C2nUCQEJ.css",
+      "before": 17522,
+      "after": 17234,
+      "delta": -288
+    },
+    {
+      "name": "resources.index",
+      "beforeName": "resources.index",
+      "afterName": "resources.index",
+      "before": 2348,
+      "after": 2633,
+      "delta": 285
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.css",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-BvgOinGm.css",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-IoanfM2Z.css",
+      "before": 56051,
+      "after": 55890,
+      "delta": -161
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+      "before": 141,
+      "after": 0,
+      "delta": -141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-D1VMiIN4.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useMemoryStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useMemoryStore-mM9zIUbd.js",
+      "afterName": "resources/rawfile/dist/assets/useMemoryStore-B84vsYHb.js",
+      "before": 9530,
+      "after": 9442,
+      "delta": -88
+    }
+  ],
+  "allRows": [
+    {
+      "name": "resources/rawfile/dist/assets/img/course-cover-en.webp",
+      "before": 0,
+      "after": 67594,
+      "delta": 67594
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/course-cover-de.webp",
+      "before": 0,
+      "after": 62824,
+      "delta": 62824
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+      "before": 35885,
+      "after": 0,
+      "delta": -35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-IGUKAlVq.js",
+      "before": 0,
+      "after": 35885,
+      "delta": 35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BAMls7xZ.js",
+      "before": 0,
+      "after": 14833,
+      "delta": 14833
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+      "before": 14615,
+      "after": 0,
+      "delta": -14615
+    },
+    {
+      "name": "ets/modules.abc",
+      "beforeName": "ets/modules.abc",
+      "afterName": "ets/modules.abc",
+      "before": 214724,
+      "after": 227432,
+      "delta": 12708
+    },
+    {
+      "name": "resources/rawfile/dist/harmony-chunk-graph.json",
+      "before": 0,
+      "after": 10707,
+      "delta": 10707
+    },
+    {
+      "name": "ets/sourceMaps.map",
+      "beforeName": "ets/sourceMaps.map",
+      "afterName": "ets/sourceMaps.map",
+      "before": 129676,
+      "after": 126011,
+      "delta": -3665
+    },
+    {
+      "name": "ets/widgets.abc",
+      "beforeName": "ets/widgets.abc",
+      "afterName": "ets/widgets.abc",
+      "before": 32028,
+      "after": 32800,
+      "delta": 772
+    },
+    {
+      "name": "resources/rawfile/dist/assets/CoursePathPage.css",
+      "beforeName": "resources/rawfile/dist/assets/CoursePathPage-Ctu_IW4t.css",
+      "afterName": "resources/rawfile/dist/assets/CoursePathPage-CyU3DeOl.css",
+      "before": 11136,
+      "after": 11772,
+      "delta": 636
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.js",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-ruMqMb4E.js",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-S-DkFeWr.js",
+      "before": 135347,
+      "after": 134750,
+      "delta": -597
+    },
+    {
+      "name": "resources/rawfile/dist/assets/CoursePathPage.js",
+      "beforeName": "resources/rawfile/dist/assets/CoursePathPage-Cuo5k0tM.js",
+      "afterName": "resources/rawfile/dist/assets/CoursePathPage-mitnZFFJ.js",
+      "before": 7969,
+      "after": 8455,
+      "delta": 486
+    },
+    {
+      "name": "resources/rawfile/dist/assets/index.css",
+      "beforeName": "resources/rawfile/dist/assets/index-DyeZKij2.css",
+      "afterName": "resources/rawfile/dist/assets/index-DxGu-hVN.css",
+      "before": 25072,
+      "after": 25374,
+      "delta": 302
+    },
+    {
+      "name": "resources/rawfile/dist/assets/WordlistPage.css",
+      "beforeName": "resources/rawfile/dist/assets/WordlistPage-DQA668z2.css",
+      "afterName": "resources/rawfile/dist/assets/WordlistPage-C2nUCQEJ.css",
+      "before": 17522,
+      "after": 17234,
+      "delta": -288
+    },
+    {
+      "name": "resources.index",
+      "beforeName": "resources.index",
+      "afterName": "resources.index",
+      "before": 2348,
+      "after": 2633,
+      "delta": 285
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.css",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-BvgOinGm.css",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-IoanfM2Z.css",
+      "before": 56051,
+      "after": 55890,
+      "delta": -161
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+      "before": 141,
+      "after": 0,
+      "delta": -141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-D1VMiIN4.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useMemoryStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useMemoryStore-mM9zIUbd.js",
+      "afterName": "resources/rawfile/dist/assets/useMemoryStore-B84vsYHb.js",
+      "before": 9530,
+      "after": 9442,
+      "delta": -88
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CK76Z4JM.js",
+      "before": 77,
+      "after": 0,
+      "delta": -77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-ZBMyXZ7r.js",
+      "before": 0,
+      "after": 77,
+      "delta": 77
+    },
+    {
+      "name": "resources/base/media/README.md",
+      "beforeName": "resources/base/media/README.md",
+      "afterName": "resources/base/media/README.md",
+      "before": 3612,
+      "after": 3548,
+      "delta": -64
+    },
+    {
+      "name": "ets/widget/component_collection.json",
+      "beforeName": "ets/widget/component_collection.json",
+      "afterName": "ets/widget/component_collection.json",
+      "before": 112,
+      "after": 174,
+      "delta": 62
+    },
+    {
+      "name": "resources/rawfile/dist/assets/SettingsPanel.css",
+      "beforeName": "resources/rawfile/dist/assets/SettingsPanel-DHt0ARYu.css",
+      "afterName": "resources/rawfile/dist/assets/SettingsPanel-C0P_zreV.css",
+      "before": 21859,
+      "after": 21810,
+      "delta": -49
+    },
+    {
+      "name": "resources/rawfile/dist/assets/HomePage.css",
+      "beforeName": "resources/rawfile/dist/assets/HomePage-CyvrOVq_.css",
+      "afterName": "resources/rawfile/dist/assets/HomePage-B-W-5wlq.css",
+      "before": 30097,
+      "after": 30055,
+      "delta": -42
+    },
+    {
+      "name": "resources/rawfile/dist/assets/HomePage.js",
+      "beforeName": "resources/rawfile/dist/assets/HomePage-CmIJDChR.js",
+      "afterName": "resources/rawfile/dist/assets/HomePage-DF6kqnqI.js",
+      "before": 31490,
+      "after": 31450,
+      "delta": -40
+    },
+    {
+      "name": "resources/rawfile/dist/assets/SettingsPanel.js",
+      "beforeName": "resources/rawfile/dist/assets/SettingsPanel-RUHU-FJ_.js",
+      "afterName": "resources/rawfile/dist/assets/SettingsPanel-zV7wUouz.js",
+      "before": 34602,
+      "after": 34563,
+      "delta": -39
+    },
+    {
+      "name": "resources/rawfile/dist/assets/WordlistPage.js",
+      "beforeName": "resources/rawfile/dist/assets/WordlistPage-DhRbbkl6.js",
+      "afterName": "resources/rawfile/dist/assets/WordlistPage-inG7UtbO.js",
+      "before": 24929,
+      "after": 24900,
+      "delta": -29
+    },
+    {
+      "name": "resources/rawfile/dist/icons.svg",
+      "beforeName": "resources/rawfile/dist/icons.svg",
+      "afterName": "resources/rawfile/dist/icons.svg",
+      "before": 5055,
+      "after": 5031,
+      "delta": -24
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+      "before": 1642,
+      "after": 1620,
+      "delta": -22
+    },
+    {
+      "name": "resources/rawfile/dist/assets/EmptyState.css",
+      "beforeName": "resources/rawfile/dist/assets/EmptyState-Db3DvPBs.css",
+      "afterName": "resources/rawfile/dist/assets/EmptyState-Cg9lRYJQ.css",
+      "before": 5109,
+      "after": 5088,
+      "delta": -21
+    },
+    {
+      "name": "resources/rawfile/dist/index.html",
+      "beforeName": "resources/rawfile/dist/index.html",
+      "afterName": "resources/rawfile/dist/index.html",
+      "before": 3160,
+      "after": 3139,
+      "delta": -21
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+      "before": 1310,
+      "after": 1291,
+      "delta": -19
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReviewSessionPage.css",
+      "beforeName": "resources/rawfile/dist/assets/ReviewSessionPage-DuzSCQdU.css",
+      "afterName": "resources/rawfile/dist/assets/ReviewSessionPage-3ZJZRqgm.css",
+      "before": 16607,
+      "after": 16589,
+      "delta": -18
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-book.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-book.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-book.svg",
+      "before": 993,
+      "after": 975,
+      "delta": -18
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+      "before": 1223,
+      "after": 1205,
+      "delta": -18
+    },
+    {
+      "name": "resources/rawfile/dist/assets/index.js",
+      "beforeName": "resources/rawfile/dist/assets/index-DDJO9WAe.js",
+      "afterName": "resources/rawfile/dist/assets/index-CgHud_ck.js",
+      "before": 32576,
+      "after": 32559,
+      "delta": -17
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+      "before": 896,
+      "after": 883,
+      "delta": -13
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+      "before": 604,
+      "after": 591,
+      "delta": -13
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+      "before": 827,
+      "after": 817,
+      "delta": -10
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReviewSessionPage.js",
+      "beforeName": "resources/rawfile/dist/assets/ReviewSessionPage-C9-Vrq8g.js",
+      "afterName": "resources/rawfile/dist/assets/ReviewSessionPage-v5TP2eq1.js",
+      "before": 15755,
+      "after": 15747,
+      "delta": -8
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+      "before": 525,
+      "after": 519,
+      "delta": -6
+    },
+    {
+      "name": "resources/rawfile/dist/assets/EmptyState.js",
+      "beforeName": "resources/rawfile/dist/assets/EmptyState-I27wxAR-.js",
+      "afterName": "resources/rawfile/dist/assets/EmptyState-C68SeIsL.js",
+      "before": 3694,
+      "after": 3689,
+      "delta": -5
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+      "before": 582,
+      "after": 577,
+      "delta": -5
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+      "before": 380,
+      "after": 376,
+      "delta": -4
+    },
+    {
+      "name": "module.json",
+      "beforeName": "module.json",
+      "afterName": "module.json",
+      "before": 1957,
+      "after": 1957,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/background.png",
+      "beforeName": "resources/base/media/background.png",
+      "afterName": "resources/base/media/background.png",
+      "before": 18724,
+      "after": 18724,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/foreground.png",
+      "beforeName": "resources/base/media/foreground.png",
+      "afterName": "resources/base/media/foreground.png",
+      "before": 374662,
+      "after": 374662,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/icon.png",
+      "beforeName": "resources/base/media/icon.png",
+      "afterName": "resources/base/media/icon.png",
+      "before": 359333,
+      "after": 359333,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/profile/form_config.json",
+      "beforeName": "resources/base/profile/form_config.json",
+      "afterName": "resources/base/profile/form_config.json",
+      "before": 395,
+      "after": 395,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/profile/main_pages.json",
+      "beforeName": "resources/base/profile/main_pages.json",
+      "afterName": "resources/base/profile/main_pages.json",
+      "before": 23,
+      "after": 23,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/profile/share_card.json",
+      "beforeName": "resources/base/profile/share_card.json",
+      "afterName": "resources/base/profile/share_card.json",
+      "before": 396,
+      "after": 396,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+      "beforeName": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+      "afterName": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+      "before": 140828,
+      "after": 140828,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+      "beforeName": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+      "afterName": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+      "before": 197547,
+      "after": 197547,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+      "beforeName": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+      "afterName": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+      "before": 197901,
+      "after": 197901,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+      "beforeName": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+      "afterName": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+      "before": 95660,
+      "after": 95660,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+      "beforeName": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+      "afterName": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+      "before": 130241,
+      "after": 130241,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+      "beforeName": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+      "afterName": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+      "before": 181228,
+      "after": 181228,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+      "beforeName": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+      "afterName": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+      "before": 323159,
+      "after": 323159,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+      "beforeName": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+      "afterName": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+      "before": 206043,
+      "after": 206043,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/browser.js",
+      "beforeName": "resources/rawfile/dist/assets/browser-BWJJ37kr.js",
+      "afterName": "resources/rawfile/dist/assets/browser-BWJJ37kr.js",
+      "before": 33,
+      "after": 33,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/compoundSplitter.js",
+      "beforeName": "resources/rawfile/dist/assets/compoundSplitter-BnFO-IcG.js",
+      "afterName": "resources/rawfile/dist/assets/compoundSplitter-B_iSp7-Q.js",
+      "before": 3724,
+      "after": 3724,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+      "beforeName": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+      "afterName": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+      "before": 141,
+      "after": 141,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+      "beforeName": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+      "afterName": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+      "before": 12111,
+      "after": 12111,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/csvParser.worker.js",
+      "beforeName": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+      "afterName": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+      "before": 21605,
+      "after": 21605,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/data-parsers.js",
+      "beforeName": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+      "afterName": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+      "before": 303489,
+      "after": 303489,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/esm.js",
+      "beforeName": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+      "afterName": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+      "before": 72,
+      "after": 72,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/glossPersistentCache.js",
+      "beforeName": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+      "afterName": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+      "before": 2559,
+      "after": 2559,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/harmonyBridge.js",
+      "beforeName": "resources/rawfile/dist/assets/harmonyBridge-DokzIY99.js",
+      "afterName": "resources/rawfile/dist/assets/harmonyBridge-DokzIY99.js",
+      "before": 6494,
+      "after": 6494,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+      "beforeName": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+      "afterName": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+      "before": 62576,
+      "after": 62576,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+      "beforeName": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+      "afterName": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+      "before": 164540,
+      "after": 164540,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+      "beforeName": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+      "afterName": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+      "before": 70258,
+      "after": 70258,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+      "beforeName": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+      "afterName": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+      "before": 87,
+      "after": 87,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+      "beforeName": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+      "afterName": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+      "before": 5232,
+      "after": 5232,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/llmJsonWorker.js",
+      "beforeName": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+      "afterName": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+      "before": 292222,
+      "after": 292222,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/mockProvider.js",
+      "beforeName": "resources/rawfile/dist/assets/mockProvider-L5BsH_NK.js",
+      "afterName": "resources/rawfile/dist/assets/mockProvider-L5BsH_NK.js",
+      "before": 10544,
+      "after": 10544,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/offlineMode.js",
+      "beforeName": "resources/rawfile/dist/assets/offlineMode-n9FoKWXD.js",
+      "afterName": "resources/rawfile/dist/assets/offlineMode-n9FoKWXD.js",
+      "before": 1389,
+      "after": 1389,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/papaparse.min.js",
+      "beforeName": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+      "afterName": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+      "before": 67,
+      "after": 67,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passageGenerator.js",
+      "beforeName": "resources/rawfile/dist/assets/passageGenerator-CJTxa6MX.js",
+      "afterName": "resources/rawfile/dist/assets/passageGenerator-C6jQE_yn.js",
+      "before": 12556,
+      "after": 12556,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+      "beforeName": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+      "afterName": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+      "before": 26255,
+      "after": 26255,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+      "beforeName": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+      "afterName": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+      "before": 296,
+      "after": 296,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/preload-helper.js",
+      "beforeName": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+      "afterName": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+      "before": 1271,
+      "after": 1271,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/publicAssetUrl.js",
+      "beforeName": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+      "afterName": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+      "before": 96,
+      "after": 96,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/react-vendor.js",
+      "beforeName": "resources/rawfile/dist/assets/react-vendor-CCIEwYL0.js",
+      "afterName": "resources/rawfile/dist/assets/react-vendor-CCIEwYL0.js",
+      "before": 189644,
+      "after": 189644,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/readingSummary.js",
+      "beforeName": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+      "afterName": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+      "before": 862,
+      "after": 862,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/rolldown-runtime.js",
+      "beforeName": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+      "afterName": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+      "before": 694,
+      "after": 694,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/state-fsrs.js",
+      "beforeName": "resources/rawfile/dist/assets/state-fsrs-hLJEzDHz.js",
+      "afterName": "resources/rawfile/dist/assets/state-fsrs-hLJEzDHz.js",
+      "before": 23137,
+      "after": 23137,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useAnalyticsStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useAnalyticsStore-P-7x8Kct.js",
+      "afterName": "resources/rawfile/dist/assets/useAnalyticsStore-P-7x8Kct.js",
+      "before": 2661,
+      "after": 2661,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+      "beforeName": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+      "afterName": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+      "before": 77,
+      "after": 77,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+      "beforeName": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+      "afterName": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+      "before": 3833,
+      "after": 3833,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useFocusTrap.js",
+      "beforeName": "resources/rawfile/dist/assets/useFocusTrap-CE6utN8J.js",
+      "afterName": "resources/rawfile/dist/assets/useFocusTrap-CE6utN8J.js",
+      "before": 718,
+      "after": 718,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useHomeAnalytics.js",
+      "beforeName": "resources/rawfile/dist/assets/useHomeAnalytics-vif_4LBL.js",
+      "afterName": "resources/rawfile/dist/assets/useHomeAnalytics-CuY8xDCm.js",
+      "before": 731,
+      "after": 731,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useKeyboardShortcuts.js",
+      "beforeName": "resources/rawfile/dist/assets/useKeyboardShortcuts-CLRMnrFQ.js",
+      "afterName": "resources/rawfile/dist/assets/useKeyboardShortcuts-CLRMnrFQ.js",
+      "before": 1495,
+      "after": 1495,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useReadingSessionStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useReadingSessionStore-BUowVHBi.js",
+      "afterName": "resources/rawfile/dist/assets/useReadingSessionStore-BwClsgIO.js",
+      "before": 7245,
+      "after": 7245,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useReviewSessionStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useReviewSessionStore-CgFfTlQB.js",
+      "afterName": "resources/rawfile/dist/assets/useReviewSessionStore-Dou-oE0X.js",
+      "before": 12097,
+      "after": 12097,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useSettingsStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useSettingsStore-CI3NQp50.js",
+      "afterName": "resources/rawfile/dist/assets/useSettingsStore-BdNhOGVX.js",
+      "before": 6105,
+      "after": 6105,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useShortcutsStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useShortcutsStore-DNTeu4TE.js",
+      "afterName": "resources/rawfile/dist/assets/useShortcutsStore-DNTeu4TE.js",
+      "before": 816,
+      "after": 816,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useStreakStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useStreakStore-dzFBY5kL.js",
+      "afterName": "resources/rawfile/dist/assets/useStreakStore-dzFBY5kL.js",
+      "before": 846,
+      "after": 846,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useToastStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useToastStore-mHMhaDFN.js",
+      "afterName": "resources/rawfile/dist/assets/useToastStore-mHMhaDFN.js",
+      "before": 665,
+      "after": 665,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useWordlistStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useWordlistStore-DAUuRvHt.js",
+      "afterName": "resources/rawfile/dist/assets/useWordlistStore-CiiAE51Z.js",
+      "before": 8045,
+      "after": 8045,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/zod.js",
+      "beforeName": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+      "afterName": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+      "before": 62,
+      "after": 62,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/_virtual_pwa-register.js",
+      "beforeName": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+      "afterName": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+      "before": 50,
+      "after": 50,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/favicon.svg",
+      "beforeName": "resources/rawfile/dist/favicon.svg",
+      "afterName": "resources/rawfile/dist/favicon.svg",
+      "before": 26781,
+      "after": 26781,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/icons/icon-192.png",
+      "beforeName": "resources/rawfile/dist/icons/icon-192.png",
+      "afterName": "resources/rawfile/dist/icons/icon-192.png",
+      "before": 24764,
+      "after": 24764,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/icons/icon-512.png",
+      "beforeName": "resources/rawfile/dist/icons/icon-512.png",
+      "afterName": "resources/rawfile/dist/icons/icon-512.png",
+      "before": 161094,
+      "after": 161094,
+      "delta": 0
+    },
+    {
+      "name": "pack.info",
+      "beforeName": "pack.info",
+      "afterName": "pack.info",
+      "before": 802,
+      "after": 802,
+      "delta": 0
+    },
+    {
+      "name": "pkgSdkInfo.json",
+      "beforeName": "pkgSdkInfo.json",
+      "afterName": "pkgSdkInfo.json",
+      "before": 132,
+      "after": 132,
+      "delta": 0
+    }
+  ],
+  "byTopDir": [
+    {
+      "dir": "resources",
+      "before": 4247051,
+      "after": 4388179,
+      "delta": 141128,
+      "count": 100
+    },
+    {
+      "dir": "ets",
+      "before": 376540,
+      "after": 386417,
+      "delta": 9877,
+      "count": 4
+    },
+    {
+      "dir": "(root)",
+      "before": 5239,
+      "after": 5524,
+      "delta": 285,
+      "count": 4
+    }
+  ],
+  "onlyAfter": [
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-IGUKAlVq.js",
+      "before": 0,
+      "after": 35885,
+      "delta": 35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-ZBMyXZ7r.js",
+      "before": 0,
+      "after": 77,
+      "delta": 77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/course-cover-de.webp",
+      "before": 0,
+      "after": 62824,
+      "delta": 62824
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/course-cover-en.webp",
+      "before": 0,
+      "after": 67594,
+      "delta": 67594
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BAMls7xZ.js",
+      "before": 0,
+      "after": 14833,
+      "delta": 14833
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-D1VMiIN4.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/harmony-chunk-graph.json",
+      "before": 0,
+      "after": 10707,
+      "delta": 10707
+    }
+  ],
+  "onlyBefore": [
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CK76Z4JM.js",
+      "before": 77,
+      "after": 0,
+      "delta": -77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+      "before": 35885,
+      "after": 0,
+      "delta": -35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+      "before": 14615,
+      "after": 0,
+      "delta": -14615
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+      "before": 141,
+      "after": 0,
+      "delta": -141
+    }
+  ]
+}

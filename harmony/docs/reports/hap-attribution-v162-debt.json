@@ -1,0 +1,2498 @@
+{
+  "generatedAt": "2026-09-29T07:29:14.626Z",
+  "normalize": true,
+  "before": {
+    "path": "w:\\wd-wt-v160\\harmony\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap",
+    "beforeEntries": 98,
+    "afterEntries": 101,
+    "changedEntries": 81,
+    "onlyBeforeCount": 17,
+    "onlyAfterCount": 20,
+    "beforeTotal": 4748892,
+    "afterTotal": 4628830,
+    "delta": -120062,
+    "deltaCommon": -98275,
+    "deltaOnlyBefore": -1458574,
+    "deltaOnlyAfter": 1436787,
+    "entries": [
+      {
+        "name": "module.json",
+        "compressedSize": 1957,
+        "uncompressedSize": 1957,
+        "method": 0
+      },
+      {
+        "name": "resources.index",
+        "compressedSize": 2348,
+        "uncompressedSize": 2348,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/background.png",
+        "compressedSize": 18724,
+        "uncompressedSize": 18724,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/foreground.png",
+        "compressedSize": 374662,
+        "uncompressedSize": 374662,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/icon.png",
+        "compressedSize": 359333,
+        "uncompressedSize": 359333,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/README.md",
+        "compressedSize": 3612,
+        "uncompressedSize": 3612,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/form_config.json",
+        "compressedSize": 395,
+        "uncompressedSize": 395,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/main_pages.json",
+        "compressedSize": 23,
+        "uncompressedSize": 23,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/share_card.json",
+        "compressedSize": 396,
+        "uncompressedSize": 396,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-D4IFkoAc.js",
+        "compressedSize": 99439,
+        "uncompressedSize": 99439,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-DgiNWmrd.js",
+        "compressedSize": 121478,
+        "uncompressedSize": 121478,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-DZCfFI-s.js",
+        "compressedSize": 97228,
+        "uncompressedSize": 97228,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+        "compressedSize": 95660,
+        "uncompressedSize": 95660,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+        "compressedSize": 130241,
+        "uncompressedSize": 130241,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-nWvCUWqY.js",
+        "compressedSize": 87298,
+        "uncompressedSize": 87298,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+        "compressedSize": 206043,
+        "uncompressedSize": 206043,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-CTxiUBZP.js",
+        "compressedSize": 157175,
+        "uncompressedSize": 157175,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/browser-C-Xdm27l.js",
+        "compressedSize": 33,
+        "uncompressedSize": 33,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/compoundSplitter-DxKqV3mx.js",
+        "compressedSize": 3724,
+        "uncompressedSize": 3724,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-7i0dIAlu.js",
+        "compressedSize": 7930,
+        "uncompressedSize": 7930,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-BwD-yvzI.css",
+        "compressedSize": 11167,
+        "uncompressedSize": 11167,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+        "compressedSize": 21605,
+        "uncompressedSize": 21605,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+        "compressedSize": 303489,
+        "uncompressedSize": 303489,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-7KckjJ76.js",
+        "compressedSize": 3690,
+        "uncompressedSize": 3690,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-Db3DvPBs.css",
+        "compressedSize": 5109,
+        "uncompressedSize": 5109,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+        "compressedSize": 72,
+        "uncompressedSize": 72,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-BTVq6n1i.js",
+        "compressedSize": 35885,
+        "uncompressedSize": 35885,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-DHMqzVQQ.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+        "compressedSize": 2559,
+        "uncompressedSize": 2559,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/harmonyBridge-DS8_VkT_.js",
+        "compressedSize": 6494,
+        "uncompressedSize": 6494,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-DLxIZ2OC.js",
+        "compressedSize": 31420,
+        "uncompressedSize": 31420,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-SIvZucPA.css",
+        "compressedSize": 29864,
+        "uncompressedSize": 29864,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.jpg",
+        "compressedSize": 211190,
+        "uncompressedSize": 211190,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-dark.jpg",
+        "compressedSize": 309241,
+        "uncompressedSize": 309241,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-warm.jpg",
+        "compressedSize": 218991,
+        "uncompressedSize": 218991,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-DeyhoeYx.css",
+        "compressedSize": 25050,
+        "uncompressedSize": 25050,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-qKimbLy2.js",
+        "compressedSize": 29560,
+        "uncompressedSize": 29560,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-BNomAn8E.js",
+        "compressedSize": 5232,
+        "uncompressedSize": 5232,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-CIT2ENXs.js",
+        "compressedSize": 87,
+        "uncompressedSize": 87,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+        "compressedSize": 292222,
+        "uncompressedSize": 292222,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/mockProvider-B85UbZcu.js",
+        "compressedSize": 10540,
+        "uncompressedSize": 10540,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/offlineMode-qXnrBHJ6.js",
+        "compressedSize": 1389,
+        "uncompressedSize": 1389,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+        "compressedSize": 67,
+        "uncompressedSize": 67,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passageGenerator-7KCYrY_E.js",
+        "compressedSize": 12556,
+        "uncompressedSize": 12556,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-sWfoVB8C.js",
+        "compressedSize": 26183,
+        "uncompressedSize": 26183,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+        "compressedSize": 1271,
+        "uncompressedSize": 1271,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+        "compressedSize": 96,
+        "uncompressedSize": 96,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/radix-ui-0sf1pm6A.js",
+        "compressedSize": 58430,
+        "uncompressedSize": 58430,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/react-vendor-Cb2kROmx.js",
+        "compressedSize": 178318,
+        "uncompressedSize": 178318,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-CEA82pYb.css",
+        "compressedSize": 56196,
+        "uncompressedSize": 56196,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-_G4wy6OW.js",
+        "compressedSize": 88079,
+        "uncompressedSize": 88079,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+        "compressedSize": 862,
+        "uncompressedSize": 862,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage--cOGkJ7L.js",
+        "compressedSize": 15751,
+        "uncompressedSize": 15751,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-B3wkNqRl.css",
+        "compressedSize": 16643,
+        "uncompressedSize": 16643,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+        "compressedSize": 694,
+        "uncompressedSize": 694,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-BUtIqBpN.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-BX5CpdtB.js",
+        "compressedSize": 14611,
+        "uncompressedSize": 14611,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-DHt0ARYu.css",
+        "compressedSize": 21859,
+        "uncompressedSize": 21859,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-WVsKlptI.js",
+        "compressedSize": 34594,
+        "uncompressedSize": 34594,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/state-fsrs-CHaxCVod.js",
+        "compressedSize": 23133,
+        "uncompressedSize": 23133,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-book.svg",
+        "compressedSize": 993,
+        "uncompressedSize": 993,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+        "compressedSize": 827,
+        "uncompressedSize": 827,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+        "compressedSize": 1223,
+        "uncompressedSize": 1223,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+        "compressedSize": 896,
+        "uncompressedSize": 896,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+        "compressedSize": 1642,
+        "uncompressedSize": 1642,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+        "compressedSize": 582,
+        "uncompressedSize": 582,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+        "compressedSize": 604,
+        "uncompressedSize": 604,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+        "compressedSize": 525,
+        "uncompressedSize": 525,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+        "compressedSize": 1310,
+        "uncompressedSize": 1310,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+        "compressedSize": 380,
+        "uncompressedSize": 380,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useAnalyticsStore-Dtc0jJNM.js",
+        "compressedSize": 2661,
+        "uncompressedSize": 2661,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-St6fiE5Z.js",
+        "compressedSize": 15888,
+        "uncompressedSize": 15888,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useFocusTrap-Bo7AU5_6.js",
+        "compressedSize": 714,
+        "uncompressedSize": 714,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useHomeAnalytics-D2ZWWNdv.js",
+        "compressedSize": 727,
+        "uncompressedSize": 727,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useKeyboardShortcuts-xOQv1Uix.js",
+        "compressedSize": 1491,
+        "uncompressedSize": 1491,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useMemoryStore-Ba65eZyy.js",
+        "compressedSize": 9530,
+        "uncompressedSize": 9530,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReadingSessionStore-D2G8ai_L.js",
+        "compressedSize": 6680,
+        "uncompressedSize": 6680,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReviewSessionStore-BeTlIy6g.js",
+        "compressedSize": 12086,
+        "uncompressedSize": 12086,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useSettingsStore-Ctc1Hqhy.js",
+        "compressedSize": 6101,
+        "uncompressedSize": 6101,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useShortcutsStore-BV257PMp.js",
+        "compressedSize": 816,
+        "uncompressedSize": 816,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useStreakStore-CRBEXlbC.js",
+        "compressedSize": 846,
+        "uncompressedSize": 846,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useToastStore-mtEeyROe.js",
+        "compressedSize": 665,
+        "uncompressedSize": 665,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useWordlistStore-CkgxloPp.js",
+        "compressedSize": 8045,
+        "uncompressedSize": 8045,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-CBZPlmCY.css",
+        "compressedSize": 16825,
+        "uncompressedSize": 16825,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-rHaGrg5T.js",
+        "compressedSize": 24530,
+        "uncompressedSize": 24530,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+        "compressedSize": 62,
+        "uncompressedSize": 62,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+        "compressedSize": 50,
+        "uncompressedSize": 50,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/favicon.svg",
+        "compressedSize": 26781,
+        "uncompressedSize": 26781,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-192.png",
+        "compressedSize": 45949,
+        "uncompressedSize": 45949,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-512.png",
+        "compressedSize": 301412,
+        "uncompressedSize": 301412,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons.svg",
+        "compressedSize": 5055,
+        "uncompressedSize": 5055,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/index.html",
+        "compressedSize": 3406,
+        "uncompressedSize": 3406,
+        "method": 0
+      },
+      {
+        "name": "ets/modules.abc",
+        "compressedSize": 214724,
+        "uncompressedSize": 214724,
+        "method": 0
+      },
+      {
+        "name": "ets/sourceMaps.map",
+        "compressedSize": 129676,
+        "uncompressedSize": 129676,
+        "method": 0
+      },
+      {
+        "name": "ets/widget/component_collection.json",
+        "compressedSize": 112,
+        "uncompressedSize": 112,
+        "method": 0
+      },
+      {
+        "name": "ets/widgets.abc",
+        "compressedSize": 32028,
+        "uncompressedSize": 32028,
+        "method": 0
+      },
+      {
+        "name": "pack.info",
+        "compressedSize": 802,
+        "uncompressedSize": 802,
+        "method": 0
+      },
+      {
+        "name": "pkgSdkInfo.json",
+        "compressedSize": 132,
+        "uncompressedSize": 132,
+        "method": 0
+      }
+    ]
+  },
+  "after": {
+    "path": "w:\\wd-wt-v162\\harmony\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap",
+    "entries": [
+      {
+        "name": "module.json",
+        "compressedSize": 1957,
+        "uncompressedSize": 1957,
+        "method": 0
+      },
+      {
+        "name": "resources.index",
+        "compressedSize": 2348,
+        "uncompressedSize": 2348,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/background.png",
+        "compressedSize": 18724,
+        "uncompressedSize": 18724,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/foreground.png",
+        "compressedSize": 374662,
+        "uncompressedSize": 374662,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/icon.png",
+        "compressedSize": 359333,
+        "uncompressedSize": 359333,
+        "method": 0
+      },
+      {
+        "name": "resources/base/media/README.md",
+        "compressedSize": 3612,
+        "uncompressedSize": 3612,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/form_config.json",
+        "compressedSize": 395,
+        "uncompressedSize": 395,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/main_pages.json",
+        "compressedSize": 23,
+        "uncompressedSize": 23,
+        "method": 0
+      },
+      {
+        "name": "resources/base/profile/share_card.json",
+        "compressedSize": 396,
+        "uncompressedSize": 396,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+        "compressedSize": 140828,
+        "uncompressedSize": 140828,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+        "compressedSize": 197547,
+        "uncompressedSize": 197547,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+        "compressedSize": 197901,
+        "uncompressedSize": 197901,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+        "compressedSize": 95660,
+        "uncompressedSize": 95660,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+        "compressedSize": 130241,
+        "uncompressedSize": 130241,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+        "compressedSize": 181228,
+        "uncompressedSize": 181228,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+        "compressedSize": 323159,
+        "uncompressedSize": 323159,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+        "compressedSize": 206043,
+        "uncompressedSize": 206043,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/browser-BWJJ37kr.js",
+        "compressedSize": 33,
+        "uncompressedSize": 33,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/compoundSplitter-BnFO-IcG.js",
+        "compressedSize": 3724,
+        "uncompressedSize": 3724,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-Ctu_IW4t.css",
+        "compressedSize": 11136,
+        "uncompressedSize": 11136,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/CoursePathPage-Cuo5k0tM.js",
+        "compressedSize": 7969,
+        "uncompressedSize": 7969,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+        "compressedSize": 12111,
+        "uncompressedSize": 12111,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+        "compressedSize": 21605,
+        "uncompressedSize": 21605,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+        "compressedSize": 303489,
+        "uncompressedSize": 303489,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-Db3DvPBs.css",
+        "compressedSize": 5109,
+        "uncompressedSize": 5109,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/EmptyState-I27wxAR-.js",
+        "compressedSize": 3694,
+        "uncompressedSize": 3694,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+        "compressedSize": 72,
+        "uncompressedSize": 72,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-CK76Z4JM.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+        "compressedSize": 35885,
+        "uncompressedSize": 35885,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+        "compressedSize": 2559,
+        "uncompressedSize": 2559,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/harmonyBridge-DokzIY99.js",
+        "compressedSize": 6494,
+        "uncompressedSize": 6494,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-CmIJDChR.js",
+        "compressedSize": 31490,
+        "uncompressedSize": 31490,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/HomePage-CyvrOVq_.css",
+        "compressedSize": 30097,
+        "uncompressedSize": 30097,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+        "compressedSize": 62576,
+        "uncompressedSize": 62576,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+        "compressedSize": 164540,
+        "uncompressedSize": 164540,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+        "compressedSize": 70258,
+        "uncompressedSize": 70258,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-DDJO9WAe.js",
+        "compressedSize": 32576,
+        "uncompressedSize": 32576,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/index-DyeZKij2.css",
+        "compressedSize": 25072,
+        "uncompressedSize": 25072,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+        "compressedSize": 87,
+        "uncompressedSize": 87,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+        "compressedSize": 5232,
+        "uncompressedSize": 5232,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+        "compressedSize": 292222,
+        "uncompressedSize": 292222,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/mockProvider-L5BsH_NK.js",
+        "compressedSize": 10544,
+        "uncompressedSize": 10544,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/offlineMode-n9FoKWXD.js",
+        "compressedSize": 1389,
+        "uncompressedSize": 1389,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+        "compressedSize": 67,
+        "uncompressedSize": 67,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passageGenerator-CJTxa6MX.js",
+        "compressedSize": 12556,
+        "uncompressedSize": 12556,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+        "compressedSize": 26255,
+        "uncompressedSize": 26255,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+        "compressedSize": 296,
+        "uncompressedSize": 296,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+        "compressedSize": 1271,
+        "uncompressedSize": 1271,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+        "compressedSize": 96,
+        "uncompressedSize": 96,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/react-vendor-CCIEwYL0.js",
+        "compressedSize": 189644,
+        "uncompressedSize": 189644,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-BvgOinGm.css",
+        "compressedSize": 56051,
+        "uncompressedSize": 56051,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReadingSessionPage-ruMqMb4E.js",
+        "compressedSize": 135347,
+        "uncompressedSize": 135347,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+        "compressedSize": 862,
+        "uncompressedSize": 862,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-C9-Vrq8g.js",
+        "compressedSize": 15755,
+        "uncompressedSize": 15755,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/ReviewSessionPage-DuzSCQdU.css",
+        "compressedSize": 16607,
+        "uncompressedSize": 16607,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+        "compressedSize": 694,
+        "uncompressedSize": 694,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+        "compressedSize": 14615,
+        "uncompressedSize": 14615,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+        "compressedSize": 141,
+        "uncompressedSize": 141,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-DHt0ARYu.css",
+        "compressedSize": 21859,
+        "uncompressedSize": 21859,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/SettingsPanel-RUHU-FJ_.js",
+        "compressedSize": 34602,
+        "uncompressedSize": 34602,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/state-fsrs-hLJEzDHz.js",
+        "compressedSize": 23137,
+        "uncompressedSize": 23137,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-book.svg",
+        "compressedSize": 993,
+        "uncompressedSize": 993,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+        "compressedSize": 827,
+        "uncompressedSize": 827,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+        "compressedSize": 1223,
+        "uncompressedSize": 1223,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+        "compressedSize": 896,
+        "uncompressedSize": 896,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+        "compressedSize": 1642,
+        "uncompressedSize": 1642,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+        "compressedSize": 582,
+        "uncompressedSize": 582,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+        "compressedSize": 604,
+        "uncompressedSize": 604,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+        "compressedSize": 525,
+        "uncompressedSize": 525,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+        "compressedSize": 1310,
+        "uncompressedSize": 1310,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+        "compressedSize": 380,
+        "uncompressedSize": 380,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useAnalyticsStore-P-7x8Kct.js",
+        "compressedSize": 2661,
+        "uncompressedSize": 2661,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+        "compressedSize": 77,
+        "uncompressedSize": 77,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+        "compressedSize": 3833,
+        "uncompressedSize": 3833,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useFocusTrap-CE6utN8J.js",
+        "compressedSize": 718,
+        "uncompressedSize": 718,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useHomeAnalytics-vif_4LBL.js",
+        "compressedSize": 731,
+        "uncompressedSize": 731,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useKeyboardShortcuts-CLRMnrFQ.js",
+        "compressedSize": 1495,
+        "uncompressedSize": 1495,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useMemoryStore-mM9zIUbd.js",
+        "compressedSize": 9530,
+        "uncompressedSize": 9530,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReadingSessionStore-BUowVHBi.js",
+        "compressedSize": 7245,
+        "uncompressedSize": 7245,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useReviewSessionStore-CgFfTlQB.js",
+        "compressedSize": 12097,
+        "uncompressedSize": 12097,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useSettingsStore-CI3NQp50.js",
+        "compressedSize": 6105,
+        "uncompressedSize": 6105,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useShortcutsStore-DNTeu4TE.js",
+        "compressedSize": 816,
+        "uncompressedSize": 816,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useStreakStore-dzFBY5kL.js",
+        "compressedSize": 846,
+        "uncompressedSize": 846,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useToastStore-mHMhaDFN.js",
+        "compressedSize": 665,
+        "uncompressedSize": 665,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/useWordlistStore-DAUuRvHt.js",
+        "compressedSize": 8045,
+        "uncompressedSize": 8045,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-DhRbbkl6.js",
+        "compressedSize": 24929,
+        "uncompressedSize": 24929,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/WordlistPage-DQA668z2.css",
+        "compressedSize": 17522,
+        "uncompressedSize": 17522,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+        "compressedSize": 62,
+        "uncompressedSize": 62,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+        "compressedSize": 50,
+        "uncompressedSize": 50,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/favicon.svg",
+        "compressedSize": 26781,
+        "uncompressedSize": 26781,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-192.png",
+        "compressedSize": 24764,
+        "uncompressedSize": 24764,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons/icon-512.png",
+        "compressedSize": 161094,
+        "uncompressedSize": 161094,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/icons.svg",
+        "compressedSize": 5055,
+        "uncompressedSize": 5055,
+        "method": 0
+      },
+      {
+        "name": "resources/rawfile/dist/index.html",
+        "compressedSize": 3160,
+        "uncompressedSize": 3160,
+        "method": 0
+      },
+      {
+        "name": "ets/modules.abc",
+        "compressedSize": 214724,
+        "uncompressedSize": 214724,
+        "method": 0
+      },
+      {
+        "name": "ets/sourceMaps.map",
+        "compressedSize": 129676,
+        "uncompressedSize": 129676,
+        "method": 0
+      },
+      {
+        "name": "ets/widget/component_collection.json",
+        "compressedSize": 112,
+        "uncompressedSize": 112,
+        "method": 0
+      },
+      {
+        "name": "ets/widgets.abc",
+        "compressedSize": 32028,
+        "uncompressedSize": 32028,
+        "method": 0
+      },
+      {
+        "name": "pack.info",
+        "compressedSize": 802,
+        "uncompressedSize": 802,
+        "method": 0
+      },
+      {
+        "name": "pkgSdkInfo.json",
+        "compressedSize": 132,
+        "uncompressedSize": 132,
+        "method": 0
+      }
+    ]
+  },
+  "topByAbsDelta": [
+    {
+      "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+      "before": 0,
+      "after": 323159,
+      "delta": 323159
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.jpg",
+      "before": 309241,
+      "after": 0,
+      "delta": -309241
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.jpg",
+      "before": 218991,
+      "after": 0,
+      "delta": -218991
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.jpg",
+      "before": 211190,
+      "after": 0,
+      "delta": -211190
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+      "before": 0,
+      "after": 197901,
+      "delta": 197901
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+      "before": 0,
+      "after": 197547,
+      "delta": 197547
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+      "before": 0,
+      "after": 181228,
+      "delta": 181228
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+      "before": 0,
+      "after": 164540,
+      "delta": 164540
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-CTxiUBZP.js",
+      "before": 157175,
+      "after": 0,
+      "delta": -157175
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+      "before": 0,
+      "after": 140828,
+      "delta": 140828
+    },
+    {
+      "name": "resources/rawfile/dist/icons/icon-512.png",
+      "beforeName": "resources/rawfile/dist/icons/icon-512.png",
+      "afterName": "resources/rawfile/dist/icons/icon-512.png",
+      "before": 301412,
+      "after": 161094,
+      "delta": -140318
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-DgiNWmrd.js",
+      "before": 121478,
+      "after": 0,
+      "delta": -121478
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-D4IFkoAc.js",
+      "before": 99439,
+      "after": 0,
+      "delta": -99439
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-DZCfFI-s.js",
+      "before": 97228,
+      "after": 0,
+      "delta": -97228
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-nWvCUWqY.js",
+      "before": 87298,
+      "after": 0,
+      "delta": -87298
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+      "before": 0,
+      "after": 70258,
+      "delta": 70258
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+      "before": 0,
+      "after": 62576,
+      "delta": 62576
+    },
+    {
+      "name": "resources/rawfile/dist/assets/radix-ui.js",
+      "before": 58430,
+      "after": 0,
+      "delta": -58430
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.js",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-_G4wy6OW.js",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-ruMqMb4E.js",
+      "before": 88079,
+      "after": 135347,
+      "delta": 47268
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-BTVq6n1i.js",
+      "before": 35885,
+      "after": 0,
+      "delta": -35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+      "before": 0,
+      "after": 35885,
+      "delta": 35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+      "before": 0,
+      "after": 26255,
+      "delta": 26255
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages.js",
+      "before": 26183,
+      "after": 0,
+      "delta": -26183
+    },
+    {
+      "name": "resources/rawfile/dist/icons/icon-192.png",
+      "beforeName": "resources/rawfile/dist/icons/icon-192.png",
+      "afterName": "resources/rawfile/dist/icons/icon-192.png",
+      "before": 45949,
+      "after": 24764,
+      "delta": -21185
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore.js",
+      "before": 15888,
+      "after": 0,
+      "delta": -15888
+    }
+  ],
+  "allRows": [
+    {
+      "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+      "before": 0,
+      "after": 323159,
+      "delta": 323159
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.jpg",
+      "before": 309241,
+      "after": 0,
+      "delta": -309241
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.jpg",
+      "before": 218991,
+      "after": 0,
+      "delta": -218991
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.jpg",
+      "before": 211190,
+      "after": 0,
+      "delta": -211190
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+      "before": 0,
+      "after": 197901,
+      "delta": 197901
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+      "before": 0,
+      "after": 197547,
+      "delta": 197547
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+      "before": 0,
+      "after": 181228,
+      "delta": 181228
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+      "before": 0,
+      "after": 164540,
+      "delta": 164540
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-CTxiUBZP.js",
+      "before": 157175,
+      "after": 0,
+      "delta": -157175
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+      "before": 0,
+      "after": 140828,
+      "delta": 140828
+    },
+    {
+      "name": "resources/rawfile/dist/icons/icon-512.png",
+      "beforeName": "resources/rawfile/dist/icons/icon-512.png",
+      "afterName": "resources/rawfile/dist/icons/icon-512.png",
+      "before": 301412,
+      "after": 161094,
+      "delta": -140318
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-DgiNWmrd.js",
+      "before": 121478,
+      "after": 0,
+      "delta": -121478
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-D4IFkoAc.js",
+      "before": 99439,
+      "after": 0,
+      "delta": -99439
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-DZCfFI-s.js",
+      "before": 97228,
+      "after": 0,
+      "delta": -97228
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-nWvCUWqY.js",
+      "before": 87298,
+      "after": 0,
+      "delta": -87298
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+      "before": 0,
+      "after": 70258,
+      "delta": 70258
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+      "before": 0,
+      "after": 62576,
+      "delta": 62576
+    },
+    {
+      "name": "resources/rawfile/dist/assets/radix-ui.js",
+      "before": 58430,
+      "after": 0,
+      "delta": -58430
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.js",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-_G4wy6OW.js",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-ruMqMb4E.js",
+      "before": 88079,
+      "after": 135347,
+      "delta": 47268
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-BTVq6n1i.js",
+      "before": 35885,
+      "after": 0,
+      "delta": -35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+      "before": 0,
+      "after": 35885,
+      "delta": 35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+      "before": 0,
+      "after": 26255,
+      "delta": 26255
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages.js",
+      "before": 26183,
+      "after": 0,
+      "delta": -26183
+    },
+    {
+      "name": "resources/rawfile/dist/icons/icon-192.png",
+      "beforeName": "resources/rawfile/dist/icons/icon-192.png",
+      "afterName": "resources/rawfile/dist/icons/icon-192.png",
+      "before": 45949,
+      "after": 24764,
+      "delta": -21185
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore.js",
+      "before": 15888,
+      "after": 0,
+      "delta": -15888
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+      "before": 0,
+      "after": 14615,
+      "delta": 14615
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BX5CpdtB.js",
+      "before": 14611,
+      "after": 0,
+      "delta": -14611
+    },
+    {
+      "name": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+      "before": 0,
+      "after": 12111,
+      "delta": 12111
+    },
+    {
+      "name": "resources/rawfile/dist/assets/react-vendor.js",
+      "beforeName": "resources/rawfile/dist/assets/react-vendor-Cb2kROmx.js",
+      "afterName": "resources/rawfile/dist/assets/react-vendor-CCIEwYL0.js",
+      "before": 178318,
+      "after": 189644,
+      "delta": 11326
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-BNomAn8E.js",
+      "before": 5232,
+      "after": 0,
+      "delta": -5232
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+      "before": 0,
+      "after": 5232,
+      "delta": 5232
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+      "before": 0,
+      "after": 3833,
+      "delta": 3833
+    },
+    {
+      "name": "resources/rawfile/dist/assets/index.js",
+      "beforeName": "resources/rawfile/dist/assets/index-qKimbLy2.js",
+      "afterName": "resources/rawfile/dist/assets/index-DDJO9WAe.js",
+      "before": 29560,
+      "after": 32576,
+      "delta": 3016
+    },
+    {
+      "name": "resources/rawfile/dist/assets/WordlistPage.css",
+      "beforeName": "resources/rawfile/dist/assets/WordlistPage-CBZPlmCY.css",
+      "afterName": "resources/rawfile/dist/assets/WordlistPage-DQA668z2.css",
+      "before": 16825,
+      "after": 17522,
+      "delta": 697
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useReadingSessionStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useReadingSessionStore-D2G8ai_L.js",
+      "afterName": "resources/rawfile/dist/assets/useReadingSessionStore-BUowVHBi.js",
+      "before": 6680,
+      "after": 7245,
+      "delta": 565
+    },
+    {
+      "name": "resources/rawfile/dist/assets/WordlistPage.js",
+      "beforeName": "resources/rawfile/dist/assets/WordlistPage-rHaGrg5T.js",
+      "afterName": "resources/rawfile/dist/assets/WordlistPage-DhRbbkl6.js",
+      "before": 24530,
+      "after": 24929,
+      "delta": 399
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+      "before": 0,
+      "after": 296,
+      "delta": 296
+    },
+    {
+      "name": "resources/rawfile/dist/index.html",
+      "beforeName": "resources/rawfile/dist/index.html",
+      "afterName": "resources/rawfile/dist/index.html",
+      "before": 3406,
+      "after": 3160,
+      "delta": -246
+    },
+    {
+      "name": "resources/rawfile/dist/assets/HomePage.css",
+      "beforeName": "resources/rawfile/dist/assets/HomePage-SIvZucPA.css",
+      "afterName": "resources/rawfile/dist/assets/HomePage-CyvrOVq_.css",
+      "before": 29864,
+      "after": 30097,
+      "delta": 233
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReadingSessionPage.css",
+      "beforeName": "resources/rawfile/dist/assets/ReadingSessionPage-CEA82pYb.css",
+      "afterName": "resources/rawfile/dist/assets/ReadingSessionPage-BvgOinGm.css",
+      "before": 56196,
+      "after": 56051,
+      "delta": -145
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BUtIqBpN.js",
+      "before": 141,
+      "after": 0,
+      "delta": -141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-CIT2ENXs.js",
+      "before": 87,
+      "after": 0,
+      "delta": -87
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+      "before": 0,
+      "after": 87,
+      "delta": 87
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-DHMqzVQQ.js",
+      "before": 77,
+      "after": 0,
+      "delta": -77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CK76Z4JM.js",
+      "before": 0,
+      "after": 77,
+      "delta": 77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+      "before": 0,
+      "after": 77,
+      "delta": 77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/HomePage.js",
+      "beforeName": "resources/rawfile/dist/assets/HomePage-DLxIZ2OC.js",
+      "afterName": "resources/rawfile/dist/assets/HomePage-CmIJDChR.js",
+      "before": 31420,
+      "after": 31490,
+      "delta": 70
+    },
+    {
+      "name": "resources/rawfile/dist/assets/CoursePathPage.js",
+      "beforeName": "resources/rawfile/dist/assets/CoursePathPage-7i0dIAlu.js",
+      "afterName": "resources/rawfile/dist/assets/CoursePathPage-Cuo5k0tM.js",
+      "before": 7930,
+      "after": 7969,
+      "delta": 39
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReviewSessionPage.css",
+      "beforeName": "resources/rawfile/dist/assets/ReviewSessionPage-B3wkNqRl.css",
+      "afterName": "resources/rawfile/dist/assets/ReviewSessionPage-DuzSCQdU.css",
+      "before": 16643,
+      "after": 16607,
+      "delta": -36
+    },
+    {
+      "name": "resources/rawfile/dist/assets/CoursePathPage.css",
+      "beforeName": "resources/rawfile/dist/assets/CoursePathPage-BwD-yvzI.css",
+      "afterName": "resources/rawfile/dist/assets/CoursePathPage-Ctu_IW4t.css",
+      "before": 11167,
+      "after": 11136,
+      "delta": -31
+    },
+    {
+      "name": "resources/rawfile/dist/assets/index.css",
+      "beforeName": "resources/rawfile/dist/assets/index-DeyhoeYx.css",
+      "afterName": "resources/rawfile/dist/assets/index-DyeZKij2.css",
+      "before": 25050,
+      "after": 25072,
+      "delta": 22
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useReviewSessionStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useReviewSessionStore-BeTlIy6g.js",
+      "afterName": "resources/rawfile/dist/assets/useReviewSessionStore-CgFfTlQB.js",
+      "before": 12086,
+      "after": 12097,
+      "delta": 11
+    },
+    {
+      "name": "resources/rawfile/dist/assets/SettingsPanel.js",
+      "beforeName": "resources/rawfile/dist/assets/SettingsPanel-WVsKlptI.js",
+      "afterName": "resources/rawfile/dist/assets/SettingsPanel-RUHU-FJ_.js",
+      "before": 34594,
+      "after": 34602,
+      "delta": 8
+    },
+    {
+      "name": "resources/rawfile/dist/assets/EmptyState.js",
+      "beforeName": "resources/rawfile/dist/assets/EmptyState-7KckjJ76.js",
+      "afterName": "resources/rawfile/dist/assets/EmptyState-I27wxAR-.js",
+      "before": 3690,
+      "after": 3694,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/mockProvider.js",
+      "beforeName": "resources/rawfile/dist/assets/mockProvider-B85UbZcu.js",
+      "afterName": "resources/rawfile/dist/assets/mockProvider-L5BsH_NK.js",
+      "before": 10540,
+      "after": 10544,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/ReviewSessionPage.js",
+      "beforeName": "resources/rawfile/dist/assets/ReviewSessionPage--cOGkJ7L.js",
+      "afterName": "resources/rawfile/dist/assets/ReviewSessionPage-C9-Vrq8g.js",
+      "before": 15751,
+      "after": 15755,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/state-fsrs.js",
+      "beforeName": "resources/rawfile/dist/assets/state-fsrs-CHaxCVod.js",
+      "afterName": "resources/rawfile/dist/assets/state-fsrs-hLJEzDHz.js",
+      "before": 23133,
+      "after": 23137,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useFocusTrap.js",
+      "beforeName": "resources/rawfile/dist/assets/useFocusTrap-Bo7AU5_6.js",
+      "afterName": "resources/rawfile/dist/assets/useFocusTrap-CE6utN8J.js",
+      "before": 714,
+      "after": 718,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useHomeAnalytics.js",
+      "beforeName": "resources/rawfile/dist/assets/useHomeAnalytics-D2ZWWNdv.js",
+      "afterName": "resources/rawfile/dist/assets/useHomeAnalytics-vif_4LBL.js",
+      "before": 727,
+      "after": 731,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useKeyboardShortcuts.js",
+      "beforeName": "resources/rawfile/dist/assets/useKeyboardShortcuts-xOQv1Uix.js",
+      "afterName": "resources/rawfile/dist/assets/useKeyboardShortcuts-CLRMnrFQ.js",
+      "before": 1491,
+      "after": 1495,
+      "delta": 4
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useSettingsStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useSettingsStore-Ctc1Hqhy.js",
+      "afterName": "resources/rawfile/dist/assets/useSettingsStore-CI3NQp50.js",
+      "before": 6101,
+      "after": 6105,
+      "delta": 4
+    },
+    {
+      "name": "module.json",
+      "beforeName": "module.json",
+      "afterName": "module.json",
+      "before": 1957,
+      "after": 1957,
+      "delta": 0
+    },
+    {
+      "name": "resources.index",
+      "beforeName": "resources.index",
+      "afterName": "resources.index",
+      "before": 2348,
+      "after": 2348,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/background.png",
+      "beforeName": "resources/base/media/background.png",
+      "afterName": "resources/base/media/background.png",
+      "before": 18724,
+      "after": 18724,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/foreground.png",
+      "beforeName": "resources/base/media/foreground.png",
+      "afterName": "resources/base/media/foreground.png",
+      "before": 374662,
+      "after": 374662,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/icon.png",
+      "beforeName": "resources/base/media/icon.png",
+      "afterName": "resources/base/media/icon.png",
+      "before": 359333,
+      "after": 359333,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/media/README.md",
+      "beforeName": "resources/base/media/README.md",
+      "afterName": "resources/base/media/README.md",
+      "before": 3612,
+      "after": 3612,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/profile/form_config.json",
+      "beforeName": "resources/base/profile/form_config.json",
+      "afterName": "resources/base/profile/form_config.json",
+      "before": 395,
+      "after": 395,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/profile/main_pages.json",
+      "beforeName": "resources/base/profile/main_pages.json",
+      "afterName": "resources/base/profile/main_pages.json",
+      "before": 23,
+      "after": 23,
+      "delta": 0
+    },
+    {
+      "name": "resources/base/profile/share_card.json",
+      "beforeName": "resources/base/profile/share_card.json",
+      "afterName": "resources/base/profile/share_card.json",
+      "before": 396,
+      "after": 396,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+      "beforeName": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+      "afterName": "resources/rawfile/dist/assets/a2-xJkTxhC_.js",
+      "before": 95660,
+      "after": 95660,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+      "beforeName": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+      "afterName": "resources/rawfile/dist/assets/b1-2U2S12VA.js",
+      "before": 130241,
+      "after": 130241,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+      "beforeName": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+      "afterName": "resources/rawfile/dist/assets/b2-Cm9N14EG.js",
+      "before": 206043,
+      "after": 206043,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/browser.js",
+      "beforeName": "resources/rawfile/dist/assets/browser-C-Xdm27l.js",
+      "afterName": "resources/rawfile/dist/assets/browser-BWJJ37kr.js",
+      "before": 33,
+      "after": 33,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/compoundSplitter.js",
+      "beforeName": "resources/rawfile/dist/assets/compoundSplitter-DxKqV3mx.js",
+      "afterName": "resources/rawfile/dist/assets/compoundSplitter-BnFO-IcG.js",
+      "before": 3724,
+      "after": 3724,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/csvParser.worker.js",
+      "beforeName": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+      "afterName": "resources/rawfile/dist/assets/csvParser.worker-DdgESH2Y.js",
+      "before": 21605,
+      "after": 21605,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/data-parsers.js",
+      "beforeName": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+      "afterName": "resources/rawfile/dist/assets/data-parsers-DEdMOhcp.js",
+      "before": 303489,
+      "after": 303489,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/EmptyState.css",
+      "beforeName": "resources/rawfile/dist/assets/EmptyState-Db3DvPBs.css",
+      "afterName": "resources/rawfile/dist/assets/EmptyState-Db3DvPBs.css",
+      "before": 5109,
+      "after": 5109,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/esm.js",
+      "beforeName": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+      "afterName": "resources/rawfile/dist/assets/esm-BgO1uC0p.js",
+      "before": 72,
+      "after": 72,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/glossPersistentCache.js",
+      "beforeName": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+      "afterName": "resources/rawfile/dist/assets/glossPersistentCache-DiThIyrV.js",
+      "before": 2559,
+      "after": 2559,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/harmonyBridge.js",
+      "beforeName": "resources/rawfile/dist/assets/harmonyBridge-DS8_VkT_.js",
+      "afterName": "resources/rawfile/dist/assets/harmonyBridge-DokzIY99.js",
+      "before": 6494,
+      "after": 6494,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/llmJsonWorker.js",
+      "beforeName": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+      "afterName": "resources/rawfile/dist/assets/llmJsonWorker-Cvc2hnTU.js",
+      "before": 292222,
+      "after": 292222,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/offlineMode.js",
+      "beforeName": "resources/rawfile/dist/assets/offlineMode-qXnrBHJ6.js",
+      "afterName": "resources/rawfile/dist/assets/offlineMode-n9FoKWXD.js",
+      "before": 1389,
+      "after": 1389,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/papaparse.min.js",
+      "beforeName": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+      "afterName": "resources/rawfile/dist/assets/papaparse.min-DIlxKZlb.js",
+      "before": 67,
+      "after": 67,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passageGenerator.js",
+      "beforeName": "resources/rawfile/dist/assets/passageGenerator-7KCYrY_E.js",
+      "afterName": "resources/rawfile/dist/assets/passageGenerator-CJTxa6MX.js",
+      "before": 12556,
+      "after": 12556,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/preload-helper.js",
+      "beforeName": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+      "afterName": "resources/rawfile/dist/assets/preload-helper-DYl5dUZ5.js",
+      "before": 1271,
+      "after": 1271,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/publicAssetUrl.js",
+      "beforeName": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+      "afterName": "resources/rawfile/dist/assets/publicAssetUrl-tw_7hYY3.js",
+      "before": 96,
+      "after": 96,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/readingSummary.js",
+      "beforeName": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+      "afterName": "resources/rawfile/dist/assets/readingSummary-U9EJT3cb.js",
+      "before": 862,
+      "after": 862,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/rolldown-runtime.js",
+      "beforeName": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+      "afterName": "resources/rawfile/dist/assets/rolldown-runtime-QTnfLwEv.js",
+      "before": 694,
+      "after": 694,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/SettingsPanel.css",
+      "beforeName": "resources/rawfile/dist/assets/SettingsPanel-DHt0ARYu.css",
+      "afterName": "resources/rawfile/dist/assets/SettingsPanel-DHt0ARYu.css",
+      "before": 21859,
+      "after": 21859,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-book.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-book.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-book.svg",
+      "before": 993,
+      "after": 993,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-flame.svg",
+      "before": 827,
+      "after": 827,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-medal.svg",
+      "before": 1223,
+      "after": 1223,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/badge-quill.svg",
+      "before": 896,
+      "after": 896,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/divider-sprig.svg",
+      "before": 1642,
+      "after": 1642,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/divider-torn-paper.svg",
+      "before": 582,
+      "after": 582,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/grain-overlay.svg",
+      "before": 604,
+      "after": 604,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/ornament-fleuron.svg",
+      "before": 525,
+      "after": 525,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/spot-seedling.svg",
+      "before": 1310,
+      "after": 1310,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+      "beforeName": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+      "afterName": "resources/rawfile/dist/assets/svg/underline-handdrawn.svg",
+      "before": 380,
+      "after": 380,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useAnalyticsStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useAnalyticsStore-Dtc0jJNM.js",
+      "afterName": "resources/rawfile/dist/assets/useAnalyticsStore-P-7x8Kct.js",
+      "before": 2661,
+      "after": 2661,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useMemoryStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useMemoryStore-Ba65eZyy.js",
+      "afterName": "resources/rawfile/dist/assets/useMemoryStore-mM9zIUbd.js",
+      "before": 9530,
+      "after": 9530,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useShortcutsStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useShortcutsStore-BV257PMp.js",
+      "afterName": "resources/rawfile/dist/assets/useShortcutsStore-DNTeu4TE.js",
+      "before": 816,
+      "after": 816,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useStreakStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useStreakStore-CRBEXlbC.js",
+      "afterName": "resources/rawfile/dist/assets/useStreakStore-dzFBY5kL.js",
+      "before": 846,
+      "after": 846,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useToastStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useToastStore-mtEeyROe.js",
+      "afterName": "resources/rawfile/dist/assets/useToastStore-mHMhaDFN.js",
+      "before": 665,
+      "after": 665,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useWordlistStore.js",
+      "beforeName": "resources/rawfile/dist/assets/useWordlistStore-CkgxloPp.js",
+      "afterName": "resources/rawfile/dist/assets/useWordlistStore-DAUuRvHt.js",
+      "before": 8045,
+      "after": 8045,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/zod.js",
+      "beforeName": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+      "afterName": "resources/rawfile/dist/assets/zod-C2qMpaPZ.js",
+      "before": 62,
+      "after": 62,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/assets/_virtual_pwa-register.js",
+      "beforeName": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+      "afterName": "resources/rawfile/dist/assets/_virtual_pwa-register-CHrnHZ1k.js",
+      "before": 50,
+      "after": 50,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/favicon.svg",
+      "beforeName": "resources/rawfile/dist/favicon.svg",
+      "afterName": "resources/rawfile/dist/favicon.svg",
+      "before": 26781,
+      "after": 26781,
+      "delta": 0
+    },
+    {
+      "name": "resources/rawfile/dist/icons.svg",
+      "beforeName": "resources/rawfile/dist/icons.svg",
+      "afterName": "resources/rawfile/dist/icons.svg",
+      "before": 5055,
+      "after": 5055,
+      "delta": 0
+    },
+    {
+      "name": "ets/modules.abc",
+      "beforeName": "ets/modules.abc",
+      "afterName": "ets/modules.abc",
+      "before": 214724,
+      "after": 214724,
+      "delta": 0
+    },
+    {
+      "name": "ets/sourceMaps.map",
+      "beforeName": "ets/sourceMaps.map",
+      "afterName": "ets/sourceMaps.map",
+      "before": 129676,
+      "after": 129676,
+      "delta": 0
+    },
+    {
+      "name": "ets/widget/component_collection.json",
+      "beforeName": "ets/widget/component_collection.json",
+      "afterName": "ets/widget/component_collection.json",
+      "before": 112,
+      "after": 112,
+      "delta": 0
+    },
+    {
+      "name": "ets/widgets.abc",
+      "beforeName": "ets/widgets.abc",
+      "afterName": "ets/widgets.abc",
+      "before": 32028,
+      "after": 32028,
+      "delta": 0
+    },
+    {
+      "name": "pack.info",
+      "beforeName": "pack.info",
+      "afterName": "pack.info",
+      "before": 802,
+      "after": 802,
+      "delta": 0
+    },
+    {
+      "name": "pkgSdkInfo.json",
+      "beforeName": "pkgSdkInfo.json",
+      "afterName": "pkgSdkInfo.json",
+      "before": 132,
+      "after": 132,
+      "delta": 0
+    }
+  ],
+  "byTopDir": [
+    {
+      "dir": "resources",
+      "before": 4367113,
+      "after": 4247051,
+      "delta": -120062,
+      "count": 110
+    },
+    {
+      "dir": "(root)",
+      "before": 5239,
+      "after": 5239,
+      "delta": 0,
+      "count": 4
+    },
+    {
+      "dir": "ets",
+      "before": 376540,
+      "after": 376540,
+      "delta": 0,
+      "count": 4
+    }
+  ],
+  "onlyAfter": [
+    {
+      "name": "resources/rawfile/dist/assets/a1-BJuC0VG0.js",
+      "before": 0,
+      "after": 140828,
+      "delta": 140828
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-CxMJ2IBN.js",
+      "before": 0,
+      "after": 197547,
+      "delta": 197547
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-B3y9q1Lu.js",
+      "before": 0,
+      "after": 197901,
+      "delta": 197901
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-Bobx25_O.js",
+      "before": 0,
+      "after": 181228,
+      "delta": 181228
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-Bqs1y0lp.js",
+      "before": 0,
+      "after": 323159,
+      "delta": 323159
+    },
+    {
+      "name": "resources/rawfile/dist/assets/courses-BHr9nJY2.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/courses-DqvKV0pT.js",
+      "before": 0,
+      "after": 12111,
+      "delta": 12111
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CK76Z4JM.js",
+      "before": 0,
+      "after": 77,
+      "delta": 77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-CwFlBTiL.js",
+      "before": 0,
+      "after": 35885,
+      "delta": 35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.webp",
+      "before": 0,
+      "after": 62576,
+      "delta": 62576
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.webp",
+      "before": 0,
+      "after": 164540,
+      "delta": 164540
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.webp",
+      "before": 0,
+      "after": 70258,
+      "delta": 70258
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-C-SOBth9.js",
+      "before": 0,
+      "after": 87,
+      "delta": 87
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-xmA4EodR.js",
+      "before": 0,
+      "after": 5232,
+      "delta": 5232
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-DDfvh7-h.js",
+      "before": 0,
+      "after": 26255,
+      "delta": 26255
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages-qWOOnLhe.js",
+      "before": 0,
+      "after": 296,
+      "delta": 296
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BrBMK7Q1.js",
+      "before": 0,
+      "after": 14615,
+      "delta": 14615
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-DYo5EETA.js",
+      "before": 0,
+      "after": 141,
+      "delta": 141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore-Dhn3tx8V.js",
+      "before": 0,
+      "after": 77,
+      "delta": 77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore-we9is_2E.js",
+      "before": 0,
+      "after": 3833,
+      "delta": 3833
+    }
+  ],
+  "onlyBefore": [
+    {
+      "name": "resources/rawfile/dist/assets/a1-D4IFkoAc.js",
+      "before": 99439,
+      "after": 0,
+      "delta": -99439
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a1-DgiNWmrd.js",
+      "before": 121478,
+      "after": 0,
+      "delta": -121478
+    },
+    {
+      "name": "resources/rawfile/dist/assets/a2-DZCfFI-s.js",
+      "before": 97228,
+      "after": 0,
+      "delta": -97228
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b1-nWvCUWqY.js",
+      "before": 87298,
+      "after": 0,
+      "delta": -87298
+    },
+    {
+      "name": "resources/rawfile/dist/assets/b2-CTxiUBZP.js",
+      "before": 157175,
+      "after": 0,
+      "delta": -157175
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-BTVq6n1i.js",
+      "before": 35885,
+      "after": 0,
+      "delta": -35885
+    },
+    {
+      "name": "resources/rawfile/dist/assets/evaluateAnswer-DHMqzVQQ.js",
+      "before": 77,
+      "after": 0,
+      "delta": -77
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/ink-splash-terracotta.jpg",
+      "before": 211190,
+      "after": 0,
+      "delta": -211190
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-dark.jpg",
+      "before": 309241,
+      "after": 0,
+      "delta": -309241
+    },
+    {
+      "name": "resources/rawfile/dist/assets/img/paper-texture-warm.jpg",
+      "before": 218991,
+      "after": 0,
+      "delta": -218991
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-BNomAn8E.js",
+      "before": 5232,
+      "after": 0,
+      "delta": -5232
+    },
+    {
+      "name": "resources/rawfile/dist/assets/jsonParser-CIT2ENXs.js",
+      "before": 87,
+      "after": 0,
+      "delta": -87
+    },
+    {
+      "name": "resources/rawfile/dist/assets/passages.js",
+      "before": 26183,
+      "after": 0,
+      "delta": -26183
+    },
+    {
+      "name": "resources/rawfile/dist/assets/radix-ui.js",
+      "before": 58430,
+      "after": 0,
+      "delta": -58430
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BUtIqBpN.js",
+      "before": 141,
+      "after": 0,
+      "delta": -141
+    },
+    {
+      "name": "resources/rawfile/dist/assets/router-BX5CpdtB.js",
+      "before": 14611,
+      "after": 0,
+      "delta": -14611
+    },
+    {
+      "name": "resources/rawfile/dist/assets/useCourseStore.js",
+      "before": 15888,
+      "after": 0,
+      "delta": -15888
+    }
+  ]
+}

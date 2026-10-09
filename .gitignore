@@ -71,3 +71,10 @@ test-results/
 #       node scripts/optimize-static-assets.mjs --dry-run
 .tmp-metrics/
 .tmp-assets/
+
+# v1.6.3 清理轮: 构建产物报告 (measure-bundle.mjs 默认输出, 留在根目录但不入库)
+# 复现: npm run measure:bundle
+/bundle-report.json
+
+# v1.6.3 清理轮: 无关遗留素材 (非 icon-192/512 的源图, 不参与打包)
+assets-sources/icons/wordaydream_finally_icon.jpg

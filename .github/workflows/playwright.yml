@@ -36,7 +36,7 @@ on:
 
 jobs:
   playwright:
-    name: Playwright 4 场景 E2E (chromium / firefox / webkit / mobile-chrome)
+    name: Playwright E2E (chromium 基线)
     runs-on: ubuntu-latest
     # v2.4.0 fix: 20min 在 linux runner 上余量不足 (npm ci + browser install +
     # webServer build 300s + 4x4 测试), 撞线超时; 放宽到 35min.
@@ -57,13 +57,16 @@ jobs:
       # v2.4.0 fix: 删 microsoft/playwright-github-action@v1 (已废弃, 且其锁定的
       # playwright 版本与 @playwright/test 不匹配, 导致 browser binary 版本冲突).
       # 改用本地 @playwright/test 的 npx playwright install --with-deps, 版本必然一致.
+      # v1.6.3 S4: 矩阵收缩为 chromium 基线 (产品目标平台 ArkWeb/Chromium 内核 +
+      # 桌面 Chrome), 不再安装 firefox/webkit — 全矩阵为手动 opt-in, 见 playwright.config.ts.
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps chromium
 
       # v2.4.0 fix: 删单独 build 步骤.
       # 由 playwright.config.ts webServer 统一 build + preview (带完整 VITE env),
       # 避免 CI 重复 build 导致 20min 超时.
-      - name: Run Playwright tests (4 scenarios)
+      # v1.6.3 S4: 无 E2E_FULL_MATRIX 时 config 默认集合仅 chromium.
+      - name: Run Playwright tests (chromium baseline)
         run: npx playwright test
         env:
           # CI 模式, 启用 retries=1 (在 playwright.config.ts 已判断)
@@ -90,7 +93,6 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "Playwright E2E run completed (4 scenarios: offline / install / SW / streaming)"
-          echo "4 browser projects: chromium / firefox / webkit / mobile-chrome"
-          echo "4 截图归档: debug_shots_v151/T01-T04-*.png (保留 30 天)"
+          echo "Playwright E2E run completed (chromium baseline: offline / install / SW / streaming)"
+          echo "v1.6.3 S4: 默认仅 chromium; 全矩阵为手动 opt-in (E2E_FULL_MATRIX=true, 见 playwright.config.ts)"
           echo "失败时: trace.zip + video.webm 保留 (见 playwright-report/)"

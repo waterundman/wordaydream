@@ -103,25 +103,42 @@ export default defineConfig({
     navigationTimeout: 30 * 1000,
   },
 
-  // v1.5.1 强化: 4 browser projects (chromium 默认, firefox / webkit / mobile-chrome 额外)
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    {
-      name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-  ],
+  // v1.6.3 S4 (决策: E2E 矩阵收缩) — 默认只跑 chromium.
+  //
+  // 依据: 产品目标平台是 ArkWeb (Chromium 内核) + 桌面 Chrome, 故 chromium 是唯一
+  // 受支持基线. 全矩阵基线为 chromium 24/24; 余下 webkit ×6 + firefox ×1 全部是
+  // webkit-on-Windows 能力差异 (30s 超时 / download API / SW / speechSynthesis 四类),
+  // 非本项目回归. 修 webkit 兼容工作量约一个完整 Stage 且产品收益存疑, 故 webkit /
+  // firefox / mobile-chrome 降级为**手动 opt-in**, 不参与 CI 与本地默认:
+  //   E2E_FULL_MATRIX=true npx playwright test --project=webkit
+  //   E2E_FULL_MATRIX=true npx playwright test --project=firefox
+  // (项目定义始终保留, 仅默认集合收缩; 需要全矩阵时加 E2E_FULL_MATRIX=true.)
+  projects:
+    process.env.E2E_FULL_MATRIX === 'true'
+      ? [
+          {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] },
+          },
+          {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+          },
+          {
+            name: 'webkit',
+            use: { ...devices['Desktop Safari'] },
+          },
+          {
+            name: 'mobile-chrome',
+            use: { ...devices['Pixel 5'] },
+          },
+        ]
+      : [
+          {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] },
+          },
+        ],
 
   // v1.5.1 强化: HTML + JSON 双 reporter
   // - HTML: 浏览器查看 (playwright-report/index.html)

@@ -5,6 +5,121 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.4] — 2026-09-30
+
+### 前端体验与数据质量轮 (v1.6.4)
+
+本轮承接 v1.6.3 结转的三条已量化欠账：设置面板信息架构冗余（S-UX2）、德语 A2/B1/B2 例句系统性缺失、前端美术排版遗留债。五阶段中 S1 / S2 / S4 / S5 交付，**S3 如实 NOT DELIVERED**（语料可得，但规模上限低于验收线）。
+
+#### S1 设置面板信息架构精简（S-UX2 落地）
+
+- `SettingsPanel.tsx` **36,356 B → 32,462 B**（884 行）；顶层常显区块 **16 → 3（Web）/ 4（鸿蒙，多「复习提醒」）**；LLM 配置语义块 **5 → 1**（提供商 + 模型 + Key 归属说明 + 测试连接四合一）。
+- 新增折叠原语 `src/components/CollapsibleSection.tsx`：原生 `<details>` + `<summary>`，受控 `open` 为单一来源驱动 `aria-expanded`，`prefers-reduced-motion` 下关闭箭头动效；折叠组头行均带后果说明。
+- 新增 `LlmAdvancedSection.tsx`（折叠层 A：temperature / timeout / maxRetries / streaming / LLM 路由状态 / 预设模板）与 `DataAdvancedSection.tsx`（折叠层 B：FSRS 参数优化 / AI 释义缓存 / 词库管理 / 错词导入导出 / 快捷键 / 配置迁移 / JSON 重试与难度）。
+- `llm.enabled` 交互式写入点由 3 处收敛为 **1 处**（常显层总开关），折叠层只保留状态行 + 指回开关的说明。
+- 「应用安装」由常驻 wrapper 改为整段条件渲染，修掉鸿蒙端空块。
+- 5 个锁定测试断言逐字保留；新增 `SettingsPanel.ia.test.tsx`（10 项）+ `CollapsibleSection.test.tsx`（11 项）。
+
+#### S2 词表数据质量工程化
+
+- `scripts/verify-wordlists.mjs` 由「字段契约（R1–R5）」扩为「数据质量闸门（N1–N9）」，任一违规 `exit 1`：N1 例句覆盖率（每文件 ≥80% / priority=1 ≥95%）· N2 `translation` 非空 + 含 CJK + trim 一致 · N3 跨等级重复 lemma · N4 同等级同 pos 重复（已声明 `semanticConflicts` 的同形异义不计）· N5 例句跨词复用 · N6 弱命中率（`matchTier>=2` ≤10%）· N7 `exampleSource = unknown:*` 占比 ≤20% 且缺出处 = 0 · N8 `courses/*.ts` 纳入校验（由 en 单文件扩为 **en + de**）· N9 courses 跨模块 `targetLemma` 重复。
+- **豁免机制**：显式清单（check + scope + ratchet 基线 + 理由）；未达标但计数 ≤ 基线 → 打印 `EXEMPT` 行不阻断，缺口扩大即 `BLOCK`。当前 8 项豁免（N1×3 de A2/B1/B2、N3 en、N5 global、N6 de/a1、N7 de/a1、N9 en）。
+- 数据清理：de/a1 合并 3 条纯冗余同形条目（条目总量 8081 → **8078**）；en/a1 误译 `a` → 「一个」；de/b2 5 条脏释义修正或标注。
+- 新增单测 `verify-wordlists.gates.test.mjs`（10 项）+ `verify-wordlists.smoke.test.mjs`。
+- **口径偏差（SPEC 基线与实测不符，按实测记录）**：N5 583 → **582**、N7 645 → **642**（de/a1 去重后）；en priority=1 缺例句 SPEC 记 12 条，实测 **13 条**（en/b1 1 + en/b2 12）。
+
+#### S3 de A2/B1/B2 例句回填 — NOT DELIVERED
+
+- 探针实测（报告 `docs/vault/v1.6.4-DE-EXAMPLE-PROBE.md`）：Tatoeba 官方导出全部 HTTP 200 可下载、许可 CC-BY 2.0 FR 允许随应用分发、字段形态可完全映射；但存在**两条独立阻断**：① **覆盖率上界** —— 唯一被裁定允许的直连 de-zh 路径覆盖率 **59.4%**（无任何过滤），即使叠加 6 语中转也只到 **62.4%**，均 < 80% 目标；priority=1 上界 **80.0%** < 95% 目标。② **质量上界** —— `matchTier>=2` 弱命中率 **25.4%**，超出 N6 的 10% 上限（德语屈折复杂度超出 `lemmaForms.mjs` 规则覆盖，naive join 产出语义错配，如 `zuvorkommend → "Lass das nicht noch einmal vorkommen!"`）。
+- 未落盘任何数据、未写 `generate-de-examples.mjs`、未伪造任何 `exampleSource`；N1 对 de 的三个豁免项**原样保留**，缺口保持可见。
+
+#### S4 前端美术排版收敛
+
+- features CSS 内 hex 行 **230 → 6**（仅剩文件头配色注释）；过期/矛盾 `var(--token, #旧值)` fallback 清剿；未定义 token 引用 **6 → 0**；`font-size: Npx` 裸值 **→ 0**；断点魔法值全部改为 `--breakpoint-*` 派生。
+- 新增守护脚本 `check:tokens`（token 闭包：168 定义 / 6 运行时注入 / 未定义引用 0；断点违规 0）与 `check:theme-parity`（base 54 / dark 51 / sepia 51，差集 0），各带单测（8 / 6 项）并接入 `npm run` **与 CI**（`netlify-deploy.yml:60-65`，位于 Test 之前阻断）。
+- `focus-visible` 覆盖 **24/42 → 34/42**。**规格分母有误**：逐一核验 42 个 features CSS 模块后，仅 **34 个模块渲染可聚焦元素**，其余 8 个为纯装饰模块（`role="img"` / `aria-hidden` / 纯动画包裹 span 等），即 **34/34 = 100% 可聚焦模块**；规格原写 ≥35/42，执行期已加勘误注记（见 SPEC §3 S4 / §9）。
+
+#### S5 版本收口
+
+- bump：web **3.6.4** / AppScope·entry **1.6.4** / versionCode **1000085**（1.x 线每版 +5 规则延续）；`check:versions` PASS（1000085 > `last-release.json` 的 1000075，无 WARN）。
+- `harmony/build-profile.json5` **无版本字段**；`check-version-alignment.mjs` 按其读取逻辑（`app.versionName ?? app.version ?? version`）判定为「无版本字段, 跳过」，故本轮不改动该文件（不新增非 schema 字段）。
+
+#### 明确未交付（诚实声明）
+
+- **S3 de A2/B1/B2 例句回填 NOT DELIVERED**：根因为语料**规模上限**（59.4% < 80%）与德语**弱命中率超标**（25.4% > 10%），非语料不可得（Tatoeba 导出 HTTP 200 / CC-BY 2.0 FR 允许分发）。
+- **S4 focus-visible 34/42 < 规格 35/42**：规格分母与实际不符（42 个模块中仅 34 个渲染可聚焦元素），非覆盖缺口。
+- **`verify:wordlists` 未接入任何 CI workflow**：`netlify-deploy` 只跑 lint / check:versions / test:run / tsc / build，N1–N9 的「可阻断」当前只在手动执行时生效；是否接入 CI 属范围决策，本轮未擅自改 CI，记为待决项。
+- **v1.6.3 结转未闭环项**：~~S1 运行时复证 A1–A7~~ **已于 2026-10-09 收口轮结清**（见本节「收口轮」）；仍开放的是 **S2 服务卡跨进程刷新运行时探针**。原文「本轮未改原生 `.ets`」不准确：工作树相对 HEAD 的 `harmony/entry/src/**` 差异（桥 façade + 4 委托 + `Index.ets` 色值资源 + `base/dark` `color.json`）与 v1.6.3 S1 属同一批未提交改动，无法按版本切分，须整体提交。
+- 签名 HAP / 真机验收（TTS / 振动 / 通知触觉）、`reminderAgent` 权益、`.env.harmony` LLM 代理端到端：外部条件不变，仍缺。
+
+#### 测试与门禁证据
+
+- vitest **177 files / 1655 tests 全绿**（v1.6.3 基线 170 / 1604，**净增 7 files / 51 tests，零回归**；2026-10-09 收口轮实测）
+- `tsc --noEmit` 0 errors · `oxlint` 0 warnings 0 errors（399 files）
+- `verify:wordlists` exit 0 —— `PASS 39 / EXEMPT 8 / BLOCK 0`
+- `check:tokens` exit 0 · `check:theme-parity` exit 0 · `check:versions` PASS（web 3.6.4 / harmony 1.6.4 / versionCode 1000085）
+- `build:harmony` / `build:harmony:hap` / E2E chromium 在随后的**统一验证轮**执行（各 Stage 未单独验证）：`build:harmony(:hap)` 通过，HAP **4,815,454 B**（v1.6.3 基线 4,809,670 B，+0.12%）；E2E chromium **24/24 passed**
+
+#### 收口轮（2026-10-09）
+
+本轮把 v1.6.4 遗留的验证缺口与文档真源矛盾一次性结清，并补齐 B1 委托拆分至今缺失的运行时证据。
+
+- **运行时复证结清（鸿蒙端最高风险项归零）**：API 22 模拟器在线，对当前工作树重建的 unsigned HAP（4,815,454 B，与 09-30 产物同尺寸）执行 `verify:harmony-runtime` —— 6 步全 ok、**A1–A7 全 PASS**（A4 `getAllCards done: count=5` 与 A7 `openCard located cardId=debug-seed-1` 均经过 `bridge/delegates/CardBridgeDelegate.ets`，证明委托拆分未破坏 JSProxy 异步通道与 FIFO 派发）；`collect:harmony-perf` 采集 **冷启动 388 ms**（Wave 1 基线 579 ms，−33%）/ **PSS 138496 KB**（144232 KB，−4.0%）。报告入库：`harmony/docs/reports/seed-report-v164-runtime.json`、`harmony/docs/reports/perf-report-v164.json`。
+- **两处守护退化修复**：`bridgeRegistry.test.ts` 的豁免清单用例改为读**桥闭包**（façade + `delegates/*.ets`，并断言委托文件数 > 0）且追加 `store.<name>(` 断言，转发桩不再能冒充实现；新增 `scripts/harmony/assertion-keywords.test.mjs`（5 项）把 A1–A7 关键词与日志源做双向契约，搜索面剥除注释以排除「EntryAbility 注释原文复述 A6 关键词」的假阳性陷阱。
+- **v1.6.4 构建与 Web 侧复证**：`build:harmony` 通过（89 files 口径）· `build:harmony:hap` 通过 · `measure:bundle` 首屏 JS 306.1 KB 零回退 / 全量 2753.4 KB / CSS 180.8 KB / 位图 599.3 KB（预算 640 KB）· E2E chromium **24/24**（3.1m）。
+- **文档真源收敛**：`harmony/CURRENT_STATUS.md` 原「v1.6.4 暂无构建数字」与 spec / CHANGELOG / 质量报告的 4,815,454 B 记录互相矛盾，已按实测统一；`test:harmony-scripts` 由过时的 10 files / 136 tests 更正为 **15 files / 166 tests**；两处 `docs/reports/*` 失效路径改为 `harmony/docs/reports/*`；`[3.6.3]` 补记「从未成为独立提交或发布」的发布状态说明；「本轮未改原生 `.ets`」的不准确口径在 SPEC / 质量报告 / CHANGELOG 三处同步更正。
+- **人工三主题视觉复核补齐**（SPEC §S4 验收的最后一项）：chromium 1280×900 + `reducedMotion` + preview 构建，10 张截图覆盖 base/dark/sepia 首页与课程页、键盘焦点环、设置面板折叠组（收起 + 展开）、词表行 —— **判定无视觉回归**：新 `--color-focus`（#d97757）在 base 与 dark 下焦点环清晰且未被裁切，课程封面全出血渲染正常，两个 `<details>` 组头带后果说明且展开层级正确。未覆盖窄屏断点与阅读页释义面板（如实记录于 SPEC）。
+
+## [3.6.3] — 2026-09-29
+
+> **发布状态说明（2026-10-09 补记）**：3.6.3 从未成为独立提交或发布 —— v1.6.3 轮的全部改动与 v1.6.4 轮同属当前**尚未提交**的工作树；`package.json` 已由 3.6.3 递增到 3.6.4、versionCode 由 1000080 递增到 1000085。本节记录的 `check:versions PASS（3.6.3 / 1.6.3 / 1000080）` 与 `HAP 4,798,144 B` 均为该轮当时的快照，不代表当前树。`scripts/harmony/last-release.json` 仍为 **1000075**（真实最后一次发布），versionCode 单调性护栏据此继续成立。
+
+### 鸿蒙原生质量轮 (v1.6.3)
+
+本轮**不新增产品功能**，目标是清偿鸿蒙原生侧的结构债与证据债：把 1170 行的上帝文件 `HarmonyBridge.ets` 拆成 facade + 域委托、把两笔悬空的 HAP 体积欠账逐条目归因清零、把长期红着的 E2E 全矩阵收敛为 chromium 基线，并修复用户实测的输入面板缺陷。
+
+#### S-UX1 输入释义面板乱跑 + 全局卡顿根因修复（commit `317ed59`）
+
+- **根因**：CSS 级联次序 `animation fill-forwards > inline style > class`。`InlineAnswerPanel` 把 `pageEntrance` 入场动画内联叠加在面板上，动画终态 `transform: translateY(0)`（缺 `translateX(-50%)`）永久压死 `.panel.open` 的居中位移 → 面板右漂约半宽（~170px）→ 溢出视口 → 浏览器 focus 自动滚屏 → `usePanelPosition` 的 capture scroll 监听重算位置 → transform 过渡滑行 → 循环。
+- **修复**：面板与入场动画解耦；新增 `--panel-shift-x` 统一承载水平位移（center = `calc(-50% + Npx)`、edge = 纯 `Npx`）；transform 移出 transition（纠错瞬时化）；`GrammarPanel` 同型 keyframes 硬编码一并修；缺省 `anchorRef` 改稳定引用（此前每 keystroke 强制 reflow）；清除死代码（`useVocabPulseAnimation` + `vocabPulse` keyframes，全仓无规则命中）。
+- **回归**：`panelPositioning.test.ts` 7 项 CSS 契约 + `InlineAnswerPanel` 2 项定位/焦点不变量。
+
+#### S1 上帝文件拆分：`HarmonyBridge.ets` → facade + 4 域委托
+
+- `bridge/HarmonyBridge.ets` **1170 → 533 行**；低风险纯请求-响应域下沉到 `bridge/delegates/`：`CardBridgeDelegate`(288) · `PrefsBridgeDelegate`(146) · `SpeechBridgeDelegate`(168) · `NotifyBridgeDelegate`(280)。
+- **契约面逐字不变**：`BridgeMethodRegistry.ets` 仍是唯一方法真源，20 个方法名与签名保留；`registerJavaScriptProxy` 按名反射 facade 实例。
+- **context 同源刷新**：facade `refreshContext` 同源刷新 Card / Prefs / Notify 三委托；Speech 无 context（TTS 为无 context 单例）。
+- **执行期偏离（缩窄）**：未抽 `LaunchQueueDelegate`（launch 域与冷启动链路强耦合，`runJavaScript` 超时复位与 `pendingLaunchQueries` 上限 16 须逐字不变）；`pages/Index.ets` 未做结构抽取（仅把加载/错误层硬编码色值改为 `$r('app.color.*')`）。
+- **守卫测试**：4 个静态守卫测试读取路径改指委托文件，**断言文本逐字不变**（`harmony-widget` → Card；`cardDataProvider` / `reminderAgentSafety` → Notify；`textToSpeechService` → Speech）。
+- 原生 `.ets` 规模：21 → 25 文件 / 5813 行（facade 变薄 + 4 委托）。
+
+#### S3 HAP 体积归因闭环（两个历史欠账清零）
+
+- 新增 `scripts/attribute-hap-size.mjs`（自读 zip central directory `0x06054b50` / `0x02014b50`，逐条目压缩体积）+ `scripts/attribute-hap-size.test.mjs`（7 项，含归一化反向用例与碰撞回退）。三项必要修正：剥离 Vite 内容 hash、hash 判定须含大写/数字、归一化碰撞回退原名。
+- 3 个 worktree（`f26f613` / `d247f9d` / `73a94ab`）+ junction 同环境重建，定位共同根因 = 记录 v1.6.2 产物时 `ets/sourceMaps.map`（**129,676 B**）未进包。
+- **Wave 1** 记录增量 `+133,600 B` → 真实源码级 **`+15,270 B`**（70% 来自新增 `harmony-chunk-graph.json` sidecar）；**v1.6.2 轮** 记录 `−249,171 B` → 真实源码级 **`−120,062 B`**（与预测 −122.2 KB 吻合到 1.8 KB）。**未归因数字 = 0**。
+
+#### S4 E2E 矩阵收缩
+
+- 默认与 CI 只跑 chromium（产品目标平台 ArkWeb/Chromium 内核）；firefox / webkit / mobile-chrome 降级为手动 opt-in（`E2E_FULL_MATRIX=true`）。`playwright.config.ts` 加定性注释，`.github/workflows/playwright.yml` 同步（`playwright install` 只装 chromium）。
+- 定性依据：webkit ×6 + firefox ×1 失败均为 webkit-on-Windows 能力差异（SW / 下载 API / speechSynthesis），非本项目回归。
+
+#### 明确未交付（诚实声明）
+
+- **S2 服务卡跨进程刷新运行时验证 NOT DELIVERED**：探针先行需模拟器桌面操作，本轮模拟器离线，未执行即不伪造；转真机验收项。
+- **S1 拆分后运行时复证未执行**：S1 改动落在 API 22 运行链路上，`verify:harmony-runtime`（A1–A7）与 `collect:harmony-perf` 未跑（模拟器离线）；本轮只到「自动测试 + HAP 编译」层级，模拟器在线后须补跑。
+- **S-UX2 设置面板信息架构精简**：审计完成（单弹层 13 区块、LLM 4 区块语义重叠），三层 IA 提案已出，**留待 v1.6.4 决策执行**。
+- 签名 HAP / 真机验收（TTS、振动、通知触觉）、`reminderAgent` 权益、`.env.harmony` LLM 代理端到端：外部条件不变，仍缺。
+
+#### 测试与构建证据
+
+- vitest **170 files / 1604 tests 全绿**（v1.6.2 基线 163/1493，**+7 files / +111 tests，零回归**）
+- E2E chromium **24/24**（基线口径 = web 20 + offline-install 4）；全矩阵改为手动 opt-in
+- `tsc --noEmit` 0 errors · `oxlint` 0 warnings 0 errors（387 files）
+- `check:versions` PASS（web **3.6.3** / harmony **1.6.3** / versionCode **1000080**）
+- `build:harmony` `passed (60 ESM/Worker JS, 8 CSS, 89 files, 72 local references)` · `build:harmony:hap` **BUILD SUCCESSFUL** **4,798,144 B**（连续两次构建逐字节相同）
+- `verify:static-assets` PASS（7 项：3 纹理 WebP + 2 图标量化 PNG + 2 课程封面 WebP）· `test:harmony-scripts` 10 files / 136 tests
+
 ## [3.6.2] — 2026-09-25
 
 ### 例句层与数据契约回填 (v1.6.2)
