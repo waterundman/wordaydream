@@ -23,6 +23,7 @@
  *   每页累积 PAGE_SIZE 条 entries 后 flush 到主数组, 避免一次性 getAll 内存峰值
  */
 import type { CsvWordlistEntry, CsvImportResult } from './csvLoader';
+import type { Language } from '../../types';
 
 const DB_NAME = 'wordaydream-csv-wordlists';
 const STORE_NAME = 'wordlists';
@@ -43,6 +44,31 @@ export interface StoredCsvWordlist {
   importedAt: number;
   entries: CsvWordlistEntry[];
   entryCount: number;
+  /**
+   * v1.6.5 S1: 词库语言归属. CSV 文件本身没有 language 列 (不改文件格式, 保持与既有
+   * 导出文件兼容), 因此由导入时选择决定。旧记录缺此字段按 'en' 处理 (与 v1.6.4 里
+   * 那个永远不可达的 `custom:csv` 合成词表所用语言一致)。
+   */
+  language: Language;
+  /**
+   * v1.6.5 S1: 是否参与学习。启用后词条并入对应 language+CEFR 等级词表, 进入阅读生成
+   * 与复习队列; 关掉即回到 v1.6.4 的「只备份不参与」行为。
+   */
+  enabled: boolean;
+}
+
+/**
+ * v1.6.5 S1: 读路径统一补齐元字段.
+ *
+ * IndexedDB 里存的是历史记录 (schema 无版本升级), 缺字段必须在读出时兜底, 否则
+ * `enabled === undefined` 会被当成 false, 让用户已有的词库在升级后静默失效。
+ */
+function normalizeStoredWordlist(raw: StoredCsvWordlist): StoredCsvWordlist {
+  return {
+    ...raw,
+    language: raw.language === 'de' ? 'de' : 'en',
+    enabled: raw.enabled !== false,
+  };
 }
 
 /**
@@ -139,7 +165,10 @@ function getDb(): Promise<IDBDatabase> {
  * 保存 CSV 导入结果到 IndexedDB
  * @returns id = `${fileName}-${importedAt}`
  */
-export async function saveCsvWordlist(result: CsvImportResult): Promise<string> {
+export async function saveCsvWordlist(
+  result: CsvImportResult,
+  language: Language = 'en'
+): Promise<string> {
   const id = `${result.fileName}-${result.importedAt}`;
   const stored: StoredCsvWordlist = {
     id,
@@ -147,6 +176,8 @@ export async function saveCsvWordlist(result: CsvImportResult): Promise<string> 
     importedAt: result.importedAt,
     entries: result.entries,
     entryCount: result.entries.length,
+    language,
+    enabled: true,
   };
   // v0.4.0-harmony Stage 2 D2: 用 getDb() 连接池复用 db 连接 (不再每次 openDb)
   const db = await getDb();
@@ -173,7 +204,8 @@ export async function getCsvWordlist(id: string): Promise<StoredCsvWordlist | nu
     const req = store.get(id);
     req.onsuccess = () => {
       // v0.4.0-harmony Stage 2 D2: 不再 db.close() — 连接池复用
-      resolve((req.result as StoredCsvWordlist | undefined) ?? null);
+      const raw = req.result as StoredCsvWordlist | undefined;
+      resolve(raw ? normalizeStoredWordlist(raw) : null);
     };
     req.onerror = () => {
       reject(req.error ?? new Error('IndexedDB 读取失败'));
@@ -201,7 +233,7 @@ export async function listCsvWordlists(): Promise<StoredCsvWordlist[]> {
     req.onsuccess = () => {
       const cursor = req.result;
       if (cursor) {
-        list.push(cursor.value as StoredCsvWordlist);
+        list.push(normalizeStoredWordlist(cursor.value as StoredCsvWordlist));
         cursor.continue();
       } else {
         // v0.4.0-harmony Stage 2 D2: 不再 db.close() — 连接池复用
@@ -228,6 +260,48 @@ export async function deleteCsvWordlist(id: string): Promise<void> {
     req.onerror = () => reject(req.error ?? new Error('IndexedDB 删除失败'));
     // v0.4.0-harmony Stage 2 D2: 不再 db.close() — 连接池复用
   });
+}
+
+/**
+ * v1.6.5 S1: 切换某个词库是否参与学习.
+ *
+ * 只改元字段, 整条记录原样回写 (entries 不动), 避免大词库读全再写全的额外开销。
+ */
+export async function setCsvWordlistEnabled(
+  id: string,
+  enabled: boolean
+): Promise<void> {
+  const db = await getDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const raw = getReq.result as StoredCsvWordlist | undefined;
+      if (!raw) {
+        reject(new Error(`词库不存在: ${id}`));
+        return;
+      }
+      const putReq = store.put({ ...normalizeStoredWordlist(raw), enabled });
+      putReq.onsuccess = () => resolve();
+      putReq.onerror = () => reject(putReq.error ?? new Error('IndexedDB 写入失败'));
+    };
+    getReq.onerror = () => reject(getReq.error ?? new Error('IndexedDB 读取失败'));
+  });
+}
+
+/**
+ * v1.6.5 S1: 取某语言下所有「已启用」词库的词条, 供 loadWordlist 并入等级词表.
+ *
+ * 由调用方 (loadWordlist) 决定按 CEFR 等级如何落位; 这里只负责语言与启用状态过滤。
+ */
+export async function getEnabledCustomEntries(
+  language: Language
+): Promise<CsvWordlistEntry[]> {
+  const all = await listCsvWordlists();
+  return all
+    .filter((w) => w.enabled && w.language === language)
+    .flatMap((w) => w.entries);
 }
 
 /**

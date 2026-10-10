@@ -55,9 +55,25 @@ function getTodayString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** v1.6.0 Stage 3.5-6: 今日建议新词数默认值 (v1.6.5 S2 起用户可覆盖, 跨日重置保留其设定值) */
+const DEFAULT_NEW_WORDS_TARGET = 10;
+/** v1.6.5 S2: 每日新词目标的合法区间 (与首页进度环、课程 15 词粒度量级匹配) */
+export const NEW_WORDS_TARGET_MIN = 1;
+export const NEW_WORDS_TARGET_MAX = 100;
+
 /** v1.6.0 Stage 3.5-6: 构造一个新的 dailyGoal (跨日重置时使用) */
-function makeFreshDailyGoal(today: string, reviewsTarget: number = 0): DailyGoal {
-  return { date: today, newWordsTarget: 10, newWordsDone: 0, reviewsTarget, reviewsDone: 0 };
+function makeFreshDailyGoal(
+  today: string,
+  reviewsTarget: number = 0,
+  newWordsTarget: number = DEFAULT_NEW_WORDS_TARGET
+): DailyGoal {
+  return {
+    date: today,
+    newWordsTarget,
+    newWordsDone: 0,
+    reviewsTarget,
+    reviewsDone: 0,
+  };
 }
 
 interface WordlistStore {
@@ -131,6 +147,12 @@ interface WordlistStore {
 
   /** v1.6.0 Stage 3.6-C: 设置今日复习目标 (由 App.tsx 从 dueCards.length 计算) */
   setReviewsTarget: (count: number) => void;
+
+  /**
+   * v1.6.5 S2: 设置每日新词目标 (用户在设置面板里可调).
+   * clamp 到 [NEW_WORDS_TARGET_MIN, NEW_WORDS_TARGET_MAX] 并取整; 跨日重置保留该设定值。
+   */
+  setNewWordsTarget: (count: number) => void;
 
   // === 设置 ===
 
@@ -399,8 +421,26 @@ export const useWordlistStore = create<WordlistStore>()(
       resetDailyGoalIfNewDay: (today) => {
         const t = today ?? getTodayString();
         if (get().dailyGoal.date !== t) {
-          set({ dailyGoal: makeFreshDailyGoal(t) });
+          // v1.6.5 S2: 跨日只清零 done, 保留用户设定的每日新词目标
+          set({
+            dailyGoal: makeFreshDailyGoal(
+              t,
+              0,
+              get().dailyGoal.newWordsTarget
+            ),
+          });
         }
+      },
+
+      setNewWordsTarget: (count) => {
+        if (!Number.isFinite(count)) return;
+        const clamped = Math.min(
+          NEW_WORDS_TARGET_MAX,
+          Math.max(NEW_WORDS_TARGET_MIN, Math.round(count))
+        );
+        set((state) => ({
+          dailyGoal: { ...state.dailyGoal, newWordsTarget: clamped },
+        }));
       },
 
       setReviewsTarget: (count) => {

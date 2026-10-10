@@ -18,7 +18,7 @@
  * - lemma 缺失 (词条已删除) → "词条已删除"降级.
  * - 相对时间零依赖 (formatRelativeTime).
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   useWrongWordsStore,
   sortEntriesBy,
@@ -42,6 +42,15 @@ type ReviewLimit = 'all' | 10 | 20;
 export function WrongWordsSection() {
   const entries = useWrongWordsStore((s) => s.entries);
   const removeEntry = useWrongWordsStore((s) => s.removeEntry);
+  const removeEntries = useWrongWordsStore((s) => s.removeEntries);
+
+  /**
+   * v1.6.5 S4: 批量管理。多选 + 两步确认 —— 首点进入确认态并显示数量, 再点才真删,
+   * 任何选择变化都会退回确认态 (清空类操作不可一步到位)。
+   */
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [confirmBulk, setConfirmBulk] = useState(false);
   const startWrongWordsReview = useReviewSessionStore(
     (s) => s.startWrongWordsReview
   );
@@ -72,6 +81,36 @@ export function WrongWordsSection() {
     const filtered = filterEntriesBy({ entries }, { language: langFilter, timeRange: timeFilter });
     return sortEntriesBy({ entries: filtered }, sortMode);
   }, [entries, langFilter, timeFilter, sortMode]);
+
+  const toggleSelected = useCallback((cardId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) next.delete(cardId);
+      else next.add(cardId);
+      return next;
+    });
+    setConfirmBulk(false);
+  }, []);
+
+  const handleSelectAllVisible = useCallback(() => {
+    setSelected((prev) =>
+      prev.size === visibleEntries.length
+        ? new Set<string>()
+        : new Set(visibleEntries.map((e) => e.cardId))
+    );
+    setConfirmBulk(false);
+  }, [visibleEntries]);
+
+  const handleBulkRemove = useCallback(() => {
+    if (!confirmBulk) {
+      setConfirmBulk(true);
+      return;
+    }
+    removeEntries([...selected]);
+    setSelected(new Set<string>());
+    setConfirmBulk(false);
+    setSelectMode(false);
+  }, [confirmBulk, selected, removeEntries]);
 
   // 复习按钮文案联动: recent+全部保持 v1.0.0 文案; 有限 → "(limit · 排序名)".
   const reviewLabel =
@@ -116,6 +155,19 @@ export function WrongWordsSection() {
               <option value="10">10</option>
               <option value="20">20</option>
             </select>
+            <button
+              type="button"
+              className={styles.reviewBtn}
+              data-testid="wrong-words-select-toggle"
+              aria-pressed={selectMode}
+              onClick={() => {
+                setSelectMode((v) => !v);
+                setSelected(new Set<string>());
+                setConfirmBulk(false);
+              }}
+            >
+              {selectMode ? '退出多选' : '多选'}
+            </button>
             <button type="button" className={styles.reviewBtn} onClick={handleReview}>
               {reviewLabel}
             </button>
@@ -164,6 +216,16 @@ export function WrongWordsSection() {
                 const isDeleted = !e.lemma || e.lemma.length === 0;
                 return (
                 <li key={e.cardId} data-testid="wrong-word-item" className={styles.item}>
+                  {selectMode && (
+                    <input
+                      type="checkbox"
+                      className={styles.itemSelect}
+                      data-testid="wrong-word-select"
+                      checked={selected.has(e.cardId)}
+                      onChange={() => toggleSelected(e.cardId)}
+                      aria-label={`选择错词 ${isDeleted ? e.cardId : e.lemma}`}
+                    />
+                  )}
                   <span className={isDeleted ? styles.lemmaDeleted : styles.lemma}>
                     {isDeleted ? '词条已删除' : e.lemma}
                   </span>
@@ -192,6 +254,38 @@ export function WrongWordsSection() {
                 );
               })}
             </ul>
+          )}
+
+          {selectMode && visibleEntries.length > 0 && (
+            <div className={styles.bulkBar} data-testid="wrong-words-bulk-bar">
+              <button
+                type="button"
+                className={styles.reviewBtn}
+                onClick={handleSelectAllVisible}
+              >
+                {selected.size === visibleEntries.length ? '取消全选' : `全选当前 ${visibleEntries.length} 条`}
+              </button>
+              <button
+                type="button"
+                className={styles.reviewBtn}
+                data-testid="wrong-words-bulk-remove"
+                disabled={selected.size === 0}
+                onClick={handleBulkRemove}
+              >
+                {confirmBulk
+                  ? `确认删除 ${selected.size} 条`
+                  : `删除所选 (${selected.size})`}
+              </button>
+              {confirmBulk && (
+                <button
+                  type="button"
+                  className={styles.reviewBtn}
+                  onClick={() => setConfirmBulk(false)}
+                >
+                  取消
+                </button>
+              )}
+            </div>
           )}
         </>
       )}

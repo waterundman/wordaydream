@@ -9,7 +9,9 @@
  */
 
 import type { DifficultyLevel, Language } from '../../types';
-import { getAllCsvEntries } from './csvStorage';
+import type { CsvWordlistEntry } from './csvLoader';
+import { getEnabledCustomEntries } from './csvStorage';
+import { mergeCustomEntries } from './customMerge';
 
 export interface WordlistEntry {
   lemma: string;
@@ -35,6 +37,11 @@ export interface WordlistEntry {
    * 来源不可考时记 `unknown` —— 不伪造 id.
    */
   exampleSource?: string;
+  /**
+   * v1.6.5 S1: 词条来源. 官方 JSON 词表不带此字段; 由用户 CSV 词库并入的词条打 'custom',
+   * 词表页据此标注来源, 也让「哪些词是我自己导进来的」在 UI 上可辨。
+   */
+  source?: 'official' | 'custom';
 }
 
 export interface Wordlist {
@@ -63,29 +70,45 @@ const wordlistLoaders: Record<string, () => Promise<{ default: Wordlist }>> = {
   'de:3': () => import('./de/b1.json') as Promise<{ default: Wordlist }>,
   // v1.9.0 Stage 3: 德语 B2 词表落地 (C1 留不落地)
   'de:4': () => import('./de/b2.json') as Promise<{ default: Wordlist }>,
-  // v2.2.0 Stage 2 (D2): CSV 批量导入词表 (动态条目, 从 IndexedDB 合并所有 CSV)
-  // 用 { default: ... } 包装以匹配 Record 类型契约 (loadWordlist 访问 module.default)
-  'custom:csv': async () => {
-    const entries = await getAllCsvEntries();
-    return {
-      default: {
-        language: 'en' as Language,
-        level: 'custom',
-        difficulty: 1 as DifficultyLevel,
-        version: '1.0.0',
-        total: entries.length,
-        words: entries,
-      },
-    };
-  },
+  // v1.6.5 S1: 原 'custom:csv' loader 已删除 —— 它的键永远不可能被 `${language}:${difficulty}`
+  // 命中, 是 v2.2.0 留下的死通路 (见 docs/vault/v1.6.4-FUNCTIONAL-SWEEP-REPORT.md L1)。
+  // 自定义词库改由 loadWordlist 内的 mergeCustomEntries 真正并入。
 };
 
 // 内存缓存
 const cache = new Map<string, Wordlist>();
 
 /**
- * 加载指定语言+难度的词表
- * @returns 词表对象, 或 null (C1 自由阅读 / 未支持语种)
+ * v1.6.5: 自定义词库读取的硬超时.
+ *
+ * 并入自定义词让 `loadWordlist` 多了一次 IndexedDB 读, 而这条路径在首屏预取
+ * (`preloadWordlist`) 与阅读生成上都是关键路径 —— IDB 被其他标签页占住、配额受限
+ * 或设备慢时, 不能把整个词表加载挂住 (表现为应用停在「加载中」)。超时后按「仅官方
+ * 词表」继续, 下一次读取自然重试。
+ */
+const CUSTOM_READ_TIMEOUT_MS = 800;
+
+async function readCustomEntriesSafely(
+  language: Language
+): Promise<CsvWordlistEntry[]> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<CsvWordlistEntry[]>((resolve) => {
+    timer = setTimeout(() => resolve([]), CUSTOM_READ_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([getEnabledCustomEntries(language), timeout]);
+  } catch {
+    // IndexedDB 不可用 (SSR / 隐私模式 / 配额失败) 时不能让整个词表加载崩掉
+    return [];
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+/**
+ * 加载指定语言+难度的词表 (官方词条 + 该语言下已启用的自定义词库条目)
+ *
+ * @returns 词表对象, 或 null (C1 自由阅读且无自定义词 / 未支持语种)
  */
 export async function loadWordlist(
   language: Language,
@@ -95,10 +118,12 @@ export async function loadWordlist(
   if (cache.has(key)) return cache.get(key)!;
 
   const loader = wordlistLoaders[key];
-  if (!loader) return null;  // C1 或未支持语种
+  const base = loader ? (await loader()).default : null;
 
-  const module = await loader();
-  const wordlist = module.default;
+  const custom = await readCustomEntriesSafely(language);
+  const { wordlist } = mergeCustomEntries(base, language, difficulty, custom);
+  if (!wordlist) return null;
+
   cache.set(key, wordlist);
   return wordlist;
 }

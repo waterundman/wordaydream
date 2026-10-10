@@ -53,6 +53,8 @@ interface WrongWordsState {
   importEntries: (entries: WrongWordEntry[]) => ImportSummary;
   /** v1.4.0 S1: 按 cardId 移除单条 (wordlist 页错词列表行内删除); 不存在时无副作用 */
   removeEntry: (cardId: string) => void;
+  /** v1.6.5 S4: 批量删除错词条目 (一次 set, 避免 N 次持久化) */
+  removeEntries: (cardIds: readonly string[]) => void;
 }
 
 const SCHEMA_VERSION = 1;
@@ -117,6 +119,14 @@ export const useWrongWordsStore = create<WrongWordsState>()(
       removeEntry: (cardId) => {
         set((state) => ({
           entries: state.entries.filter((e) => e.cardId !== cardId),
+        }));
+      },
+
+      removeEntries: (cardIds) => {
+        if (cardIds.length === 0) return;
+        const doomed = new Set(cardIds);
+        set((state) => ({
+          entries: state.entries.filter((e) => !doomed.has(e.cardId)),
         }));
       },
     }),

@@ -32,6 +32,8 @@ interface WordlistRowProps {
   exampleTranslation?: string;
   status: WordStatus;
   isExpanded: boolean;
+  /** v1.6.5 S1: 词条来源; 'custom' 时标注「自定义」, 官方词条不传即不显示. */
+  source?: 'official' | 'custom';
   /**
    * v0.4.0-harmony Stage 1 D1: 接收 lemma 参数, 让父组件传入稳定的 useCallback handler.
    * 避免每次渲染创建新的内联函数 `() => handleToggle(lemma)` 导致 React.memo 失效.
@@ -121,6 +123,7 @@ function WordlistRowBase({
   status,
   isExpanded,
   onToggle,
+  source,
 }: WordlistRowProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -150,6 +153,11 @@ function WordlistRowBase({
           <StatusIcon status={status} />
         </span>
         <span className={styles.lemma}>{lemma}</span>
+        {source === 'custom' ? (
+          <span className={styles.sourceBadge} title="来自我导入的 CSV 词库">
+            自定义
+          </span>
+        ) : null}
         {pos ? <span className={styles.pos}>{pos}</span> : null}
         <span className={`${styles.statusLabel} ${statusClass}`}>
           {statusLabel(status)}

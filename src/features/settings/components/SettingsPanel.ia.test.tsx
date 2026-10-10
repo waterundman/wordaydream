@@ -277,7 +277,7 @@ describe('v1.6.4 Stage 1 T02: SettingsPanel 三层 IA', () => {
     expect(after.enabled).toBe(false);
   });
 
-  it('T02f [critical]: 鸿蒙端常显层恰 4 个区块 (多出「复习提醒」), 仍 ≤ 6, 且复习提醒不在折叠层内', () => {
+  it('T02f [critical]: 鸿蒙端常显层恰 5 个区块 (v1.6.5 加「学习目标」+ 多出「复习提醒」), 仍 ≤ 6, 且复习提醒不在折叠层内', () => {
     Object.defineProperty(navigator, 'userAgent', {
       value: 'Mozilla/5.0 (Linux; Android 12; HarmonyOS) ArkWeb/5.0.0',
       configurable: true,
@@ -290,7 +290,7 @@ describe('v1.6.4 Stage 1 T02: SettingsPanel 三层 IA', () => {
       const top = topLevelSections(container);
 
       expect(top.length).toBeLessThanOrEqual(MAX_TOP_LEVEL);
-      expect(top).toHaveLength(4);
+      expect(top).toHaveLength(5);
 
       const notifications = container.querySelector('[data-testid="notifications-section"]');
       expect(notifications?.getAttribute('data-settings-level')).toBe('top');

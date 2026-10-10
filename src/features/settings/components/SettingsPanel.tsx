@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
+import { useWordlistStore, NEW_WORDS_TARGET_MIN, NEW_WORDS_TARGET_MAX } from '../../wordlist/store/useWordlistStore';
 import { ShortcutsSection } from './ShortcutsSection';
 import { WrongWordsExportSection } from './WrongWordsExportSection';
 import { WrongWordsImportSection } from './WrongWordsImportSection';
@@ -648,6 +648,9 @@ export function SettingsPanel() {
   // v1.6.0: 课程模式 (闯关 / 自由)
   const linearMode = useWordlistStore((s) => s.linearMode);
   const setLinearMode = useWordlistStore((s) => s.setLinearMode);
+  // v1.6.5 S2: 每日新词目标 (原先只有展示, 无控件)
+  const newWordsTarget = useWordlistStore((s) => s.dailyGoal.newWordsTarget);
+  const setNewWordsTarget = useWordlistStore((s) => s.setNewWordsTarget);
 
   // 鸿蒙端 / 未捕获 beforeinstallprompt 时不渲染 wrapper (修「空块」缺陷).
   const installPromptEvent = useOfflineModeStore((s) => s.installPromptEvent);
@@ -835,6 +838,27 @@ export function SettingsPanel() {
             {linearMode
               ? '闯关模式: 完成当前等级 80% 掌握才能解锁下一级'
               : '自由模式: 任意等级自由切换, 仅追踪词表覆盖率'}
+          </p>
+        </div>
+
+        <div className={styles.section} data-settings-level="top">
+          <div className={styles.sectionTitle}>学习目标</div>
+          <label className={styles.field}>
+            <span className={styles.label}>每日新词数</span>
+            <input
+              type="number"
+              className={styles.input}
+              data-testid="settings-new-words-target"
+              min={NEW_WORDS_TARGET_MIN}
+              max={NEW_WORDS_TARGET_MAX}
+              step={1}
+              value={newWordsTarget}
+              onChange={(e) => setNewWordsTarget(Number(e.target.value))}
+            />
+          </label>
+          <p className={styles.hint} style={{ marginTop: 'var(--space-2)' }}>
+            首页「今日新词」按此目标计数; 取值 {NEW_WORDS_TARGET_MIN}–{NEW_WORDS_TARGET_MAX},
+            跨日只清零不改设定。
           </p>
         </div>
 

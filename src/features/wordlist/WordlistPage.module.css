@@ -570,8 +570,32 @@
   margin: 0 0 var(--space-2) 0;
 }
 
-.myWordlistsHint {
-  margin: 0 0 var(--space-3) 0;
+/* v1.6.5 S1: 词库「参与学习 / 仅备份」开关与自定义词条来源标注 */
+.wordlistToggleBtn {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.wordlistToggleBtn[aria-pressed='true'] {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.sourceBadge {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.myWordlistsHint {  margin: 0 0 var(--space-3) 0;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }

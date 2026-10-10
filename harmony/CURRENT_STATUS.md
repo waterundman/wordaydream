@@ -25,7 +25,7 @@ Wordaydream 的鸿蒙端不是 ArkUI 全量重写，而是一个 **HarmonyOS 6.0
 | DevEco Node | `18.20.1` |
 | Hvigor | `6.22.7` |
 | ohpm | `6.0.1` |
-| 应用版本 | 单一版本真源（仓库根包 `3.6.4=harmony major+2`）；AppScope `1.6.4`、entry `1.6.4` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验；v3.0.0 起 harmony 跨入 major 1.0.0，versionCode 线性规则（`VERSION_CODE_BASES[1]`）为 `1000035 + minor*5 + patch*5`，实测 `1000085`（v1.6.4 S5 收口，上次发布 `1000075`）。`harmony/build-profile.json5` 的 `app` 段**不含版本字段**，校验器按「无版本字段, 跳过」处理（不新增非 schema 字段） |
+| 应用版本 | 单一版本真源（仓库根包 `3.6.5=harmony major+2`）；AppScope `1.6.5`、entry `1.6.5` 与之对齐，由 `scripts/check-version-alignment.mjs` 自动校验；v3.0.0 起 harmony 跨入 major 1.0.0，versionCode 线性规则（`VERSION_CODE_BASES[1]`）为 `1000035 + minor*5 + patch*5`，实测 `1000090`（v1.6.5 收口，上次发布 `1000075`）。`harmony/build-profile.json5` 的 `app` 段**不含版本字段**，校验器按「无版本字段, 跳过」处理（不新增非 schema 字段） |
 | 原生权限 | `ohos.permission.INTERNET`、`ohos.permission.VIBRATE` |
 | 签名 | `signingConfigs` 为空；当前只能生成 unsigned HAP |
 | 模拟器 | `nova 16 Pro`、HarmonyOS 6.0.2（API 22）；content-ready unsigned HAP 已覆盖安装，冷启动、显式内容 ACK、首页渲染和热启动 FIFO 通过。Wave 1（2026-09-26）运行时复证已当日补齐（A1–A7 全 PASS，见 §5）。**v1.6.3 S1 委托拆分的运行时复证已于 2026-10-09 补齐：对当前工作树重建的 v1.6.4 HAP 执行 `verify:harmony-runtime`，A1–A7 全 PASS（含 A4 经 `delegates/CardBridgeDelegate` 的 `getAllCards done: count=5` 与 A7 复习页真实到达），冷启动 388 ms / PSS 138496 KB 同步采集** —— 见 §5 v1.6.4 两条目。**口径更正**：原文「v1.6.4 未改动 `harmony/entry/src/**`」不成立 —— 工作树相对 HEAD 的 `harmony/entry/src/**` 差异（桥 façade + 4 个委托 + `Index.ets` 色值资源引用 + `base/dark/element/color.json`）与 v1.6.3 S1 属**同一批未提交改动**，无法按版本切分；该批现已整体通过运行时复证，但仍须整体提交，半提交会使委托目录与守卫测试脱钩 |
@@ -132,7 +132,7 @@ React/Vite source (src/)
 | 检查 | 结果 |
 |---|---|
 | `npm run typecheck` | 通过（tsc 0 errors） |
-| `npm run test:run` | **177 个测试文件、1655 项测试全部通过**（2026-10-09 收口轮实测；v1.6.3 基线 170/1604，v1.6.4 净增 **7 files / 51 tests**：`SettingsPanel.ia.test.tsx` +10、`CollapsibleSection.test.tsx` +11、`check-tokens.test.mjs` +8、`check-theme-parity.test.mjs` +6、`verify-wordlists.gates.test.mjs` +10、`verify-wordlists.smoke.test.mjs` +1、**`scripts/harmony/assertion-keywords.test.mjs` +5（收口轮新增）**，**零回归**） |
+| `npm run test:run` | **181 个测试文件、1683 项测试全部通过**（2026-10-10 v1.6.5 实测；v1.6.4 收口基线 177/1655，v1.6.5 净增 4 files / 28 tests：`customMerge.test.ts` +11、`customMerge.integration.test.ts` +5、`useWordlistStore.v165.test.ts` +5、`netlify/edge-functions/providers/stream.test.ts` +5（+ `llm-proxy.test.ts` T07/T08 +2），**零回归**） |
 | `npm run lint` | 通过（oxlint 0 个警告 0 个错误，399 文件） |
 | `npm run verify:wordlists` | 通过（exit 0；**`PASS 39 / EXEMPT 8 / BLOCK 0`**）。v1.6.4 S2 起校验面为 **R1–R5 字段契约 + N1–N9 数据质量闸门**：N1 例句覆盖率（每文件 ≥80% / priority=1 ≥95%）· N2 translation 非空 + 含 CJK + trim 一致 · N3 跨等级重复 lemma · N4 同等级同 pos 重复（已声明 `semanticConflicts` 的同形异义不计）· N5 例句跨词复用 · N6 弱命中率（`matchTier>=2` ≤10%）· N7 `exampleSource=unknown:*` 占比 ≤20% 且缺出处 = 0 · **N8 `courses/*.ts` 纳入校验（由 `courses/en.ts` 单文件扩为 en + de）** · N9 courses 跨模块 `targetLemma` 重复。未达标项经**显式豁免清单**（check + scope + ratchet 基线 + 理由）判定：计数 ≤ 基线打印 `EXEMPT` 不阻断，缺口超过基线即 `BLOCK`；当前 8 项豁免为 N1×3（de A2/B1/B2，待 S3 例句回填）· N3（en 719）· N5（global 582）· N6（de/a1 100）· N7（de/a1 642）· N9（en 11）。**2026-10-09 收口轮起该脚本已接入 CI**（`netlify-deploy` 的 ci job 在 check:tokens / check:theme-parity 之后执行 `npm run verify:wordlists`），N1–N9 的「可阻断」不再只在手动执行时生效 |
 | `npm run check:tokens` | 通过（exit 0；token 闭包：168 定义 / 6 运行时注入 / 未定义引用 0；断点违规 0；`font-size` 裸 px 0）—— v1.6.4 S4 新增守护脚本 + 单测 8 项 |

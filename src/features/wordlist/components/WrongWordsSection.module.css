@@ -106,6 +106,21 @@
   list-style: none;
 }
 
+/* v1.6.5 S4: 多选模式 */
+.itemSelect {
+  width: var(--touch-min-size);
+  height: var(--touch-min-size);
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
 .item {
   display: flex;
   align-items: center;

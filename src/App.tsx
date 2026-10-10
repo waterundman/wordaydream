@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { useReviewSessionStore } from './features/review/store/useReviewSessionStore';
 import { useMemoryStore } from './features/review/store/useMemoryStore';
+import { useToastStore } from './store/useToastStore';
 import { useWordlistStore } from './features/wordlist/store/useWordlistStore';
 import { useSettingsStore } from './features/settings/store/useSettingsStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -180,10 +181,37 @@ function App() {
   // 所以此处第二条 `idle && appMode==='review' → home` 仅作为兜底:
   // 处理 persist 恢复 (刷新后 mode='idle' 但 appMode 仍 'review') 等异常场景。
   // 正常 exitReview 流程中, returnToPrevious 已改 appMode, 此处第二条条件不满足, 不触发。
+  // v1.6.5 S3: `#/review` 深链与刷新后 persist 恢复不再静默弹回首页。
+  // 有到期卡 → 直接开始复习; 没有 → 落到词表页并说明原因。reviewRescueRef 保证
+  // 「尝试开始却仍回到 idle」时只兜一次, 不会与本 effect 互相触发死循环。
+  const reviewRescueRef = useRef(false);
+  /** v1.6.5 S3: 无会话时 `#/review` 的去处; 由动画驱动的镜像 effect 消费, 避免两处各说各话 */
+  const reviewFallbackRef = useRef<AppMode | null>(null);
   useEffect(() => {
     if (reviewMode === 'reviewing' || reviewMode === 'completed') {
+      reviewRescueRef.current = false;
       setAppMode('review');
-    } else if (reviewMode === 'idle' && appMode === 'review') {
+      return;
+    }
+    if (reviewMode !== 'idle' || appMode !== 'review') return;
+
+    if (reviewRescueRef.current) {
+      setAppMode('home');
+      return;
+    }
+    reviewRescueRef.current = true;
+
+    const dueCount = useMemoryStore.getState().getDueCards().length;
+    if (dueCount === 0) {
+      useToastStore.getState().addToast('warning', '当前没有到期复习卡片，已转到词表页');
+      reviewFallbackRef.current = 'wordlist';
+      setAppMode('wordlist');
+      return;
+    }
+    useReviewSessionStore.getState().startReview(
+      useReviewSessionStore.getState().language
+    );
+    if (useReviewSessionStore.getState().mode === 'idle') {
       setAppMode('home');
     }
   }, [reviewMode, appMode, setAppMode]);
@@ -229,11 +257,16 @@ function App() {
   }, [isTransitioning]);
 
   // review store 驱动的模式切换也走过渡动画
+  // v1.6.5 S3: 兜底去处由 reviewFallbackRef 决定 (#/review 深链无到期卡 → 词表页),
+  // 不再无条件 navigateTo('home') —— 那会盖掉上面的判定, 让深链仍然静默弹回首页。
   useEffect(() => {
     if (reviewMode === 'reviewing' || reviewMode === 'completed') {
+      reviewFallbackRef.current = null;
       if (appMode !== 'review') navigateTo('review');
-    } else if (reviewMode === 'idle' && appMode === 'review') {
-      navigateTo('home');
+      return;
+    }
+    if (reviewMode === 'idle' && appMode === 'review') {
+      navigateTo(reviewFallbackRef.current ?? 'home');
     }
   }, [reviewMode, appMode, navigateTo]);
 

@@ -23,7 +23,12 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useSettingsStore } from '../settings/store/useSettingsStore';
 import { useReadingSessionStore } from '../reading/store/useReadingSessionStore';
 import { useWordlistStore, type WordStatus } from './store/useWordlistStore';
-import { loadWordlist, getCachedWordlist, type WordlistEntry } from '../../data/wordlists';
+import {
+  loadWordlist,
+  getCachedWordlist,
+  clearWordlistCache,
+  type WordlistEntry,
+} from '../../data/wordlists';
 import {
   parseCsvWordlistAsync,
   generateCsvTemplate,
@@ -33,6 +38,7 @@ import {
   saveCsvWordlist,
   listCsvWordlists,
   deleteCsvWordlist,
+  setCsvWordlistEnabled,
   type StoredCsvWordlist,
 } from '../../data/wordlists/csvStorage';
 import type { Language, DifficultyLevel } from '../../types';
@@ -87,6 +93,18 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
 
   const isFreeMode = difficulty === 5;
 
+  /**
+   * v1.6.5 S1: 自定义词库变更后强制重读词表.
+   *
+   * loadWordlist 按 `language:difficulty` 缓存合并结果, 因此导入 / 删除 / 切换启用
+   * 都必须先清缓存再触发一次加载, 否则界面继续显示旧集合 (脏读)。
+   */
+  const [wordlistEpoch, setWordlistEpoch] = useState(0);
+  const reloadWordlistView = useCallback(() => {
+    clearWordlistCache();
+    setWordlistEpoch((e) => e + 1);
+  }, []);
+
   // 加载词表
   useEffect(() => {
     if (isFreeMode) return;
@@ -94,7 +112,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
     loadWordlist(language, difficulty).finally(() => {
       setIsLoading(false);
     });
-  }, [language, difficulty, isFreeMode]);
+  }, [language, difficulty, isFreeMode, wordlistEpoch]);
 
   const wordlist = getCachedWordlist(language, difficulty);
   const words: WordlistEntry[] = wordlist?.words ?? EMPTY_WORDS;
@@ -280,17 +298,34 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
     }
     const badRows = new Set(importPreview.errors.map((e) => e.row));
     try {
-      await saveCsvWordlist({
-        ...importPreview,
-        entries: importPreview.entries.filter((_, idx) => !badRows.has(idx + 1)),
-        errors: [],
-      });
+      await saveCsvWordlist(
+        {
+          ...importPreview,
+          entries: importPreview.entries.filter((_, idx) => !badRows.has(idx + 1)),
+          errors: [],
+        },
+        language
+      );
       setImportPreview(null);
       await refreshMyWordlists();
+      reloadWordlistView();
     } catch (e) {
       setCsvError(`导入失败: ${(e as Error).message}`);
     }
-  }, [importPreview, importValidCount, refreshMyWordlists]);
+  }, [importPreview, importValidCount, language, refreshMyWordlists, reloadWordlistView]);
+
+  const handleToggleWordlist = useCallback(
+    async (id: string, enabled: boolean) => {
+      try {
+        await setCsvWordlistEnabled(id, enabled);
+        await refreshMyWordlists();
+        reloadWordlistView();
+      } catch (e) {
+        setCsvError(`切换失败: ${(e as Error).message}`);
+      }
+    },
+    [refreshMyWordlists, reloadWordlistView]
+  );
 
   const handleCancelImport = useCallback(() => {
     setImportPreview(null);
@@ -301,11 +336,12 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
       try {
         await deleteCsvWordlist(id);
         await refreshMyWordlists();
+        reloadWordlistView();
       } catch (e) {
         setCsvError(`删除失败: ${(e as Error).message}`);
       }
     },
-    [refreshMyWordlists],
+    [refreshMyWordlists, reloadWordlistView],
   );
 
   const cefrLabel = CEFR_LABELS[difficulty] ?? `Level ${difficulty}`;
@@ -555,7 +591,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
           我的词库
         </h2>
         <p className={styles.myWordlistsHint}>
-          导入的词库用于备份与导出，暂不参与阅读文本生成与复习队列。
+          启用的词库会按语言与 CEFR 等级并入对应词表，参与阅读文本生成与复习队列；关闭后仅作备份与导出。
         </p>
         {myWordlists.length === 0 ? (
           <div className={styles.myWordlistsEmpty}>
@@ -587,6 +623,18 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
                 <span className={styles.wordlistItemMeta}>
                   {new Date(wl.importedAt).toLocaleDateString()}
                 </span>
+                <span className={styles.wordlistItemMeta}>
+                  {wl.language === 'de' ? '德语' : '英语'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleWordlist(wl.id, !wl.enabled)}
+                  aria-pressed={wl.enabled}
+                  aria-label={`${wl.enabled ? '停用' : '启用'}词库 ${wl.fileName}`}
+                  className={styles.wordlistToggleBtn}
+                >
+                  {wl.enabled ? '参与学习' : '仅备份'}
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDeleteWordlist(wl.id)}
@@ -724,6 +772,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
                   example={entry.example}
                   exampleTranslation={entry.exampleTranslation}
                   status={getStatus(entry.lemma)}
+                  source={entry.source}
                   isExpanded={expandedLemma === entry.lemma}
                   onToggle={handleToggle}
                   language={language}

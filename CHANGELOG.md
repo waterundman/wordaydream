@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.5] — 2026-10-10
+
+### 自定义词库真正参与学习 · 词表与复习管理闭环 (v1.6.5)
+
+选题全部来自 v1.6.4 全功能探测的留档项（`docs/vault/v1.6.4-FUNCTIONAL-SWEEP-REPORT.md` L1/L3/L4 与 L2），SPEC 见 `docs/spec/v1.6.5/main.md`。
+
+#### S1 自定义 CSV 词库并入等级词表（结清 L1 死功能）
+
+- 删掉 `src/data/wordlists/index.ts` 里那个**按构造永远不可能被命中**的 `custom:csv` loader（键形如 `${language}:${difficulty}`，`Language` 只有 en/de），改由 `loadWordlist()` 内的 `mergeCustomEntries()` 真正并入 —— 阅读生成（`passageGenerator` 取 `getUnlearnedWords` / `getLearningWords`）与复习队列因此零改动即受益。
+- 新增纯函数模块 `customMerge.ts`：CEFR→difficulty 映射、**官方词条优先**（同 lemma 丢弃自定义，避免一个 lemma 两套进度语义）、批内去重、`source: 'custom'` 标注、单等级 1000 条上限截断、脏 cefr 计数跳过不抛错、无匹配时幂等返回原对象（`loadWordlist` 按 key 缓存，引用不能抖）。
+- `StoredCsvWordlist` 增 `language` 与 `enabled` 两个元字段，读路径统一 `normalizeStoredWordlist` 兜底（老记录缺字段按 en + 启用处理，避免升级后用户词库静默失效）；新增 `setCsvWordlistEnabled` 与 `getEnabledCustomEntries`；CSV 文件格式不加列，语言跟随导入时的词表页语言。
+- 缓存一致性：导入 / 删除 / 切换启用三处一律 `clearWordlistCache()` 并触发重读（`WordlistPage` 以 `wordlistEpoch` 驱动）。
+- UI：词库行显示语言标签与「参与学习 / 仅备份」开关，词表行显示「自定义」徽标，区块文案改为陈述事实。
+
+#### S2 每日新词目标可调（结清 L4）
+
+`useWordlistStore` 增 `setNewWordsTarget`（clamp 1–100 取整，非有限值忽略）；`makeFreshDailyGoal` 改为可携带用户设定值，**跨日重置只清零 `newWordsDone`，不再把目标打回 10**。设置面板常显层新增「学习目标」区块，首页「今日新词 0/N」实时联动。
+
+#### S3 `#/review` 深链语义（结清 L2）
+
+无复习会话时不再静默弹回首页：有到期卡 → 直接开始复习；无到期卡 → 落到词表页并给一条 warning toast。两处互相覆盖的 effect（状态完整性判定 + 过渡动画镜像）统一由 `reviewFallbackRef` 决定去处。
+
+#### S4 错词本批量管理（结清 L3）
+
+`useWrongWordsStore` 增 `removeEntries`（一次 set，避免 N 次持久化）；错词本区块增「多选」模式、全选当前筛选结果、批量删除，破坏性操作两步确认（可取消）。
+
+#### 验证
+
+- 单测：`customMerge.test.ts` 11 项（边界全覆盖）+ `customMerge.integration.test.ts` 5 项（fake-indexeddb 跑真实导入→并入→关开关→删除→去重）+ `useWordlistStore.v165.test.ts` 5 项（目标 clamp / 跨日保留 / 批量删除幂等）；全量 vitest **181 files / 1683 tests** 全绿零回归。
+- 真实浏览器端到端（`verify-v165.mjs`，chromium + production 构建）：导入含 2 个合成词形的 CSV → 词库行显示「英语 / 参与学习」→ 搜索命中 2 条且带 2 个「自定义」徽标；每日目标设 25 生效、999 被 clamp 到 100 且首页同步显示 `0/100`；`#/review` 在无到期卡时落 `#/wordlist` 并出现提示；**控制台错误 0**。
+- `tsc --noEmit` 0 · `oxlint` 0w0e · `check:versions` PASS（web 3.6.5 / harmony 1.6.5 / versionCode 1000090）。
+
 ## [3.6.4] — 2026-09-30
 
 ### 前端体验与数据质量轮 (v1.6.4)
