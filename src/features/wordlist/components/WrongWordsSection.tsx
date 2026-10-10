@@ -66,11 +66,12 @@ export function WrongWordsSection() {
     return seen;
   }, [entries]);
 
-  // 列表数据 = filterEntriesBy(当前 entries, {language, timeRange}) 后再 sortEntriesBy('recent').
+  // 列表数据 = filterEntriesBy(当前 entries, {language, timeRange}) 后再按 sortMode 排序.
+  // v1.6.4 探测修复: 这里曾硬编码 'recent', 导致排序下拉只改按钮文案、不改本列表顺序.
   const visibleEntries = useMemo(() => {
     const filtered = filterEntriesBy({ entries }, { language: langFilter, timeRange: timeFilter });
-    return sortEntriesBy({ entries: filtered }, 'recent');
-  }, [entries, langFilter, timeFilter]);
+    return sortEntriesBy({ entries: filtered }, sortMode);
+  }, [entries, langFilter, timeFilter, sortMode]);
 
   // 复习按钮文案联动: recent+全部保持 v1.0.0 文案; 有限 → "(limit · 排序名)".
   const reviewLabel =

@@ -131,11 +131,24 @@ function readEnvFloat(key: string): number | undefined {
  *
  * 测试: 使用 resetLLMConfig() 清空缓存, 重新读取
  */
+/**
+ * VITE_LLM_PROVIDER 允许写 'mock' (沙箱 / 演示构建), 而本 schema 只描述真实上游
+ * provider (openai / anthropic / deepseek). 直接送进 parse 会抛 ZodError, 并原样冒到
+ * 设置面板的「测试连接」上 (v1.6.4 探测实测). 非真实值一律按未设置处理, 回退 schema
+ * 默认; 真正的 mock 短路发生在 router 里 (settings.provider === 'mock'), 不依赖本字段.
+ */
+const REAL_UPSTREAM_PROVIDERS: readonly string[] = ['openai', 'anthropic', 'deepseek'];
+
+function readEnvProvider(): string | undefined {
+  const value = readEnvString('VITE_LLM_PROVIDER');
+  return value && REAL_UPSTREAM_PROVIDERS.includes(value) ? value : undefined;
+}
+
 export function getLLMConfig(): LLMConfig {
   if (cachedConfig) return cachedConfig;
   const configuredProxyUrl = readProxyUrl();
   cachedConfig = LLMConfigSchema.parse({
-    provider: readEnvString("VITE_LLM_PROVIDER"),
+    provider: readEnvProvider(),
     proxyUrl:
       configuredProxyUrl === HARMONY_PROXY_DISABLED
         ? ''

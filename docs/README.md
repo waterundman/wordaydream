@@ -83,7 +83,8 @@
 | [v1.6.3-HAP-SIZE-ATTRIBUTION-REPORT.md](vault/v1.6.3-HAP-SIZE-ATTRIBUTION-REPORT.md) | v1.6.3 S3 HAP 体积归因闭环（两个历史欠账清零） |
 | [v1.6.3-HARMONY-QUALITY-REPORT.md](vault/v1.6.3-HARMONY-QUALITY-REPORT.md) | v1.6.3 收口报告（S1–S5 执行结果 + 门禁证据 + 偏离/未交付项） |
 | [v1.6.4-DE-EXAMPLE-PROBE.md](vault/v1.6.4-DE-EXAMPLE-PROBE.md) | v1.6.4 S3 de A2/B1/B2 例句回填探针报告（覆盖率/质量上界实测，判定 NOT DELIVERED） |
-| [v1.6.4-QUALITY-REPORT.md](vault/v1.6.4-QUALITY-REPORT.md) | v1.6.4 收口报告（S1–S5 执行结果 + 门禁证据 + 偏离/未交付项 + 与 v1.6.3 对比）(最新) |
+| [v1.6.4-QUALITY-REPORT.md](vault/v1.6.4-QUALITY-REPORT.md) | v1.6.4 收口报告（S1–S5 执行结果 + 门禁证据 + 偏离/未交付项 + 与 v1.6.3 对比） |
+| [v1.6.4-FUNCTIONAL-SWEEP-REPORT.md](vault/v1.6.4-FUNCTIONAL-SWEEP-REPORT.md) | v1.6.4 全功能探测报告（真实浏览器点击链，9 项缺陷修复 + 6 项如实留档）(最新) |
 
 ---
 

@@ -260,16 +260,37 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
     [],
   );
 
+  /**
+   * 预览里 errors 按行号标红, 但 entries 仍包含这些非法行 (缺 lemma / 非 CEFR 等级 /
+   * 空行). 整体落库会让它们进词库并永久无法通过校验, 故只持久化有效行.
+   */
+  const importValidCount = useMemo(() => {
+    if (!importPreview) return 0;
+    const badRows = new Set(importPreview.errors.map((e) => e.row));
+    return importPreview.entries.filter((_, idx) => !badRows.has(idx + 1)).length;
+  }, [importPreview]);
+
   const handleConfirmImport = useCallback(async () => {
     if (!importPreview) return;
+    if (importValidCount === 0) {
+      setCsvError(
+        `没有可导入的有效行 (${importPreview.errors.length} 行全部校验失败)`
+      );
+      return;
+    }
+    const badRows = new Set(importPreview.errors.map((e) => e.row));
     try {
-      await saveCsvWordlist(importPreview);
+      await saveCsvWordlist({
+        ...importPreview,
+        entries: importPreview.entries.filter((_, idx) => !badRows.has(idx + 1)),
+        errors: [],
+      });
       setImportPreview(null);
       await refreshMyWordlists();
     } catch (e) {
       setCsvError(`导入失败: ${(e as Error).message}`);
     }
-  }, [importPreview, refreshMyWordlists]);
+  }, [importPreview, importValidCount, refreshMyWordlists]);
 
   const handleCancelImport = useCallback(() => {
     setImportPreview(null);
@@ -464,15 +485,19 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
         >
           <div className={styles.csvPreviewHeader}>
             <h2 className={styles.csvPreviewTitle}>
-              导入预览 · {importPreview.fileName} · {importPreview.entries.length} 条
+              导入预览 · {importPreview.fileName} · {importValidCount} 条有效
+              {importPreview.errors.length > 0
+                ? ` · ${importPreview.errors.length} 行待跳过`
+                : ''}
             </h2>
             <div className={styles.csvPreviewActions}>
               <button
                 type="button"
                 onClick={handleConfirmImport}
+                disabled={importValidCount === 0}
                 className={styles.csvPreviewBtnConfirm}
               >
-                确认导入
+                确认导入 {importValidCount} 条
               </button>
               <button
                 type="button"
@@ -485,7 +510,7 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
           </div>
           {importPreview.errors.length > 0 && (
             <div className={styles.csvPreviewError}>
-              发现 {importPreview.errors.length} 个错误 (错误行已标红)
+              发现 {importPreview.errors.length} 个错误 (错误行已标红, 确认导入时自动跳过)
             </div>
           )}
           <div className={styles.csvPreviewRows}>
@@ -529,6 +554,9 @@ export function WordlistPage({ onGoHome }: WordlistPageProps) {
         <h2 className={styles.myWordlistsTitle}>
           我的词库
         </h2>
+        <p className={styles.myWordlistsHint}>
+          导入的词库用于备份与导出，暂不参与阅读文本生成与复习队列。
+        </p>
         {myWordlists.length === 0 ? (
           <div className={styles.myWordlistsEmpty}>
             暂无自定义词库, 点击"导入 CSV"上传

@@ -575,8 +575,20 @@ export async function testProviderConnection(
       ok: false,
       error: `Server returned ${response.status}${errBody?.message ? `: ${errBody.message}` : ''}`,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     log('error', `Connection test threw error: ${(error as Error).message}`);
+    // ZodError 的 message 是一整段 JSON, 直接透传会让用户看到 schema 转储.
+    const issues = (error as { issues?: Array<{ path: unknown[] }> }).issues;
+    if (Array.isArray(issues)) {
+      const fields = issues
+        .map((i) => i.path.join('.'))
+        .filter(Boolean)
+        .join(', ');
+      return {
+        ok: false,
+        error: `LLM 构建配置无效${fields ? ` (${fields})` : ''}，请检查 VITE_LLM_* 环境变量`,
+      };
+    }
     return { ok: false, error: (error as Error).message };
   }
 }

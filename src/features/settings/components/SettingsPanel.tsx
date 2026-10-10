@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useWordlistStore } from '../../wordlist/store/useWordlistStore';
 import { ShortcutsSection } from './ShortcutsSection';
@@ -147,7 +148,7 @@ export function FsrsOptimizationSection() {
       });
     } catch (e) {
       if (e instanceof OptimizationUnavailableError) {
-        addToast('error', 'FSRS 参数优化不可用: 优化器未正确加载, 请确保已安装 @open-spaced-repetition/binding');
+        addToast('error', 'FSRS 参数优化不可用: 当前构建未包含优化器 (浏览器版不打包 @open-spaced-repetition/binding)');
       } else {
         addToast('error', `优化失败: ${(e as Error).message}`);
       }
@@ -170,7 +171,7 @@ export function FsrsOptimizationSection() {
 
       {!isAvailable && (
         <div className={styles.fsrsUnavailable}>
-          FSRS 参数优化不可用, 请确保已安装 @open-spaced-repetition/binding
+          浏览器版构建未打包 FSRS 参数优化器 (@open-spaced-repetition/binding)，此功能当前不可用；复习继续使用默认参数，学习记录不受影响。
         </div>
       )}
 
@@ -681,9 +682,14 @@ export function SettingsPanel() {
       ? '构建时已通过 VITE_* 环境变量注入 Key。'
       : 'Key 由代理服务端持有, 客户端无需填写; 用下方「测试连接」验证服务端是否已配置。';
 
+  // v1.6.4 探测修复: 面板此前无焦点陷阱, Tab 会穿到遮罩后面的页面内容
+  // (AchievementListModal / GraduationModal / KeyboardShortcutsHelp 都有).
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, true);
+
   return (
     <div className={styles.backdrop} onClick={(e) => e.target === e.currentTarget && useSettingsStore.getState().closeSettings()}>
-      <div className={styles.panel} role="dialog" aria-modal="true" aria-label="设置">
+      <div className={styles.panel} ref={panelRef} role="dialog" aria-modal="true" aria-label="设置">
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>设置</h2>

@@ -156,7 +156,7 @@ describe('T02: LessonCard locked 状态', () => {
       <LessonCard lesson={lesson} progress={progress} onStartLesson={() => {}} />
     );
 
-    expect(screen.getByText('Locked')).toBeInTheDocument();
+    expect(screen.getByText('未解锁')).toBeInTheDocument();
   });
 
   it('locked 状态点击不触发 onStartLesson', () => {
@@ -168,9 +168,10 @@ describe('T02: LessonCard locked 状态', () => {
       <LessonCard lesson={lesson} progress={progress} onStartLesson={onStartLesson} />
     );
 
-    // 卡片应为 disabled button
+    // v1.6.4: 锁定卡改用 aria-disabled (原生 disabled 会让键盘整个跳过这张卡,
+    // 用户无从知道它存在); 拦截改由 handleClick 的 isLocked 早退负责.
     const card = screen.getByTestId(`lesson-card-${lesson.id}`);
-    expect(card).toBeDisabled();
+    expect(card).toHaveAttribute('aria-disabled', 'true');
 
     // 点击不触发回调 (即使强行 dispatch click)
     fireEvent.click(card);
@@ -191,7 +192,7 @@ describe('T03: LessonCard available 状态', () => {
       <LessonCard lesson={lesson} progress={progress} onStartLesson={() => {}} />
     );
 
-    expect(screen.getByText('Start')).toBeInTheDocument();
+    expect(screen.getByText('开始')).toBeInTheDocument();
   });
 
   it('available 状态点击触发 onStartLesson(lessonId)', () => {
@@ -224,7 +225,7 @@ describe('T03: LessonCard available 状态', () => {
       <LessonCard lesson={lesson} progress={progress} onStartLesson={onStartLesson} />
     );
 
-    expect(screen.getByText('Continue')).toBeInTheDocument();
+    expect(screen.getByText('继续')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId(`lesson-card-${lesson.id}`));
     expect(onStartLesson).toHaveBeenCalledWith('ip-lesson-1');
@@ -244,7 +245,7 @@ describe('T03: LessonCard available 状态', () => {
       <LessonCard lesson={lesson} progress={progress} onStartLesson={onStartLesson} />
     );
 
-    expect(screen.getByText('Review')).toBeInTheDocument();
+    expect(screen.getByText('复习')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId(`lesson-card-${lesson.id}`));
     expect(onStartLesson).toHaveBeenCalledWith('done-lesson-1');

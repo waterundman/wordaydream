@@ -613,63 +613,74 @@ export function InteractivePassage({ language, isReplay = false, hideTitle = fal
     }
   }, [focusedTokenId, tokenIds, session, activateFocusedToken]);
 
+  /**
+   * 词位光标是 roving-cursor 复合控件: 光标命令只在焦点落在文本容器内 (或尚未落在
+   * 任何控件上) 时才生效. 否则 Enter / Space 会从按钮和链接上被抢走 —— 全局派发器
+   * 只放行 INPUT / TEXTAREA / contenteditable, 不含 button.
+   */
+  const passageRef = useRef<HTMLDivElement>(null);
+  const cursorOwnsKeyEvent = useCallback(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body) return true;
+    const root = passageRef.current;
+    return !!root && (root === active || root.contains(active));
+  }, []);
+
   const shortcuts = useMemo(
     () => [
-      {
-        id: 'tab-next',
-        key: 'Tab',
-        shift: false,
-        scope: 'reading' as const,
-        handler: (e: KeyboardEvent) => {
-          e.preventDefault();
-          focusNextToken();
-        },
-        description: '下一个词汇',
-      },
-      {
-        id: 'shift-tab-prev',
-        key: 'Tab',
-        shift: true,
-        scope: 'reading' as const,
-        handler: (e: KeyboardEvent) => {
-          e.preventDefault();
-          focusPrevToken();
-        },
-        description: '上一个词汇',
-      },
       {
         id: 'arrow-right-next',
         key: 'ArrowRight',
         scope: 'reading' as const,
-        handler: () => focusNextToken(),
+        preventDefault: false,
+        handler: () => {
+          if (!cursorOwnsKeyEvent()) return;
+          focusNextToken();
+        },
         description: '下一个词汇',
       },
       {
         id: 'arrow-left-prev',
         key: 'ArrowLeft',
         scope: 'reading' as const,
-        handler: () => focusPrevToken(),
+        preventDefault: false,
+        handler: () => {
+          if (!cursorOwnsKeyEvent()) return;
+          focusPrevToken();
+        },
         description: '上一个词汇',
       },
       {
         id: 'enter-activate',
         key: 'Enter',
         scope: 'reading' as const,
-        handler: () => activateFocusedToken(),
+        preventDefault: false,
+        handler: () => {
+          if (!cursorOwnsKeyEvent()) return;
+          activateFocusedToken();
+        },
         description: '激活词汇',
       },
       {
         id: 'space-activate',
         key: ' ',
         scope: 'reading' as const,
+        preventDefault: false,
         handler: (e: KeyboardEvent) => {
+          if (!cursorOwnsKeyEvent()) return;
           e.preventDefault();
           handleSpace();
         },
         description: '开始阅读/继续',
       },
     ],
-    [focusNextToken, focusPrevToken, activateFocusedToken, handleSpace]
+    [
+      focusNextToken,
+      focusPrevToken,
+      activateFocusedToken,
+      handleSpace,
+      cursorOwnsKeyEvent,
+    ]
   );
 
   useKeyboardShortcuts('interactive-passage', shortcuts);
@@ -701,7 +712,14 @@ export function InteractivePassage({ language, isReplay = false, hideTitle = fal
           {session.passage.title}
         </h1>
       )}
-      <div className={styles.text} data-passage-root>
+      <div
+        className={styles.text}
+        data-passage-root
+        ref={passageRef}
+        tabIndex={0}
+        role="group"
+        aria-label="阅读文本词位光标：用左右方向键移动光标，空格或回车打开释义并作答"
+      >
         {paragraphSegments.map((paragraph, paragraphIdx) => {
           const isVisible = visibleParagraphs.has(paragraphIdx);
           // v1.5.5 fix: 激活 token/grammar 的段落提升 z-index, 避免后续段落 stacking context 覆盖面板.

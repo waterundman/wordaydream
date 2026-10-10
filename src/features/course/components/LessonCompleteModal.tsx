@@ -84,6 +84,9 @@ export function LessonCompleteModal() {
   const handleNextLesson = () => {
     if (nextLessonId) {
       startLesson(nextLessonId);
+      // 只 startLesson 不切页: 模态关掉后仍停在原页, 用户看不到已开始的下一课
+      // (与 CoursePathPage 的 startLesson + onStartReading 成对语义对齐).
+      window.location.hash = '#/reading';
     }
     handleClose();
   };

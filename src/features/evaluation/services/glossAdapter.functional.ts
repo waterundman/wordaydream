@@ -89,14 +89,15 @@ export async function mockGloss(
 }
 
 /**
- * v1.5.0 Stage 3: LLM provider — v1.6.0 真实 LLM 调用
+ * v1.5.0 Stage 3: LLM provider — 至今仍是 stub, 输出 `[LLM] surfaceForm` 占位.
  *
- * v1.5.0 仅 stub, 输出 `[LLM] surfaceForm` 格式 (v1.6.0 将集成 glossaryAdapter 改写).
+ * 注释从 v1.5.0 起一直写「v1.6.0 真实 LLM 调用」, 但到 v1.6.4 并未实现; 且本模块
+ * 没有应用侧调用方 (线上释义走 glossAdapter.ts, 本文件只被自身单测 import), 所以
+ * 这个 stub 不影响任何用户可见行为. 保留它是为了 v1.5.0 Stage 3 函数化并行路径的
+ * 结构完整. 真要启用 LLM 释义改写, 顺序是: 先把调用方接进本模块, 再在这里走
+ * getLLMConfig() + provider, 失败回退 heuristicGloss —— 不要先改这里.
  *
- * v1.5.2 Stage 4 升级:
- * - 加 try/catch 包装, 失败时返回 source='mock' 的最小占位
- * - selector 现在可以真正命中 'llm' 路径 (openai/anthropic/deepseek/kimi/qwen/minimax + enabled)
- * - 真实 LLM gloss 改写是 v1.6.0 计划, 当前仍 stub 输出 `[LLM] surfaceForm`
+ * v1.5.2 Stage 4: 加 try/catch 包装, 失败返回 source='mock' 最小占位; selector 可命中 'llm'.
  */
 export async function llmGloss(
   token: TokenOccurrence,

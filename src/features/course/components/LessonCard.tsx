@@ -27,17 +27,17 @@ interface LessonCardProps {
   onStartLesson: (lessonId: string) => void;
 }
 
-/** Status badge 文案 (无 emoji) */
+/** Status badge 文案 (无 emoji; 界面为中文, v1.6.4 探测修掉中英混排) */
 function statusLabel(status: LessonProgress['status']): string {
   switch (status) {
     case 'locked':
-      return 'Locked';
+      return '未解锁';
     case 'available':
-      return 'Start';
+      return '开始';
     case 'in-progress':
-      return 'Continue';
+      return '继续';
     case 'completed':
-      return 'Review';
+      return '复习';
   }
 }
 
@@ -87,7 +87,8 @@ export function LessonCard({ lesson, progress, onStartLesson }: LessonCardProps)
       type="button"
       className={cardClass(status)}
       onClick={handleClick}
-      disabled={isLocked}
+      // 不用 disabled: 那会让键盘完全跳过这张卡, 用户无从知道它存在或被锁的原因.
+      // handleClick 已对 isLocked 早退, 语义不变 (v1.6.4 探测修复).
       aria-disabled={isLocked}
       aria-label={`${lesson.title} — ${statusLabel(status)}`}
       data-testid={`lesson-card-${lesson.id}`}

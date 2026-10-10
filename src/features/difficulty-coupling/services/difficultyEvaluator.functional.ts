@@ -82,15 +82,12 @@ export async function mockEvaluate(
 }
 
 /**
- * v1.5.0 Stage 3: LLM provider — v1.6.0 真实 LLM 评估
+ * v1.5.0 Stage 3: LLM provider — 至今仍是 stub, 恒返回 null.
  *
- * v1.5.0 仅 stub, 返回 null (与 difficultyAdvisor.ts `suggests` 行为一致).
- * v1.6.0 将实现基于 LLM 的多维度评估 (morphological / abstractness / frequencyPercentile).
- *
- * v1.5.2 Stage 4 升级:
- * - 加 try/catch 包装 (双保险, 即便主入口 catch 失效, 这里也兜底)
- * - selector 现在可以真正命中 'llm' 路径 (openai/anthropic/deepseek/kimi/qwen/minimax + enabled)
- * - 真实 LLM 集成是 v1.6.0 计划, 当前仍 stub 返回 null
+ * 注释从 v1.5.0 起写「真实 LLM 集成是 v1.6.0 计划」, 到 v1.6.4 未实现; 本模块也没有
+ * 应用侧调用方 (线上难度建议走 difficultyAdvisor.ts 的 heuristic, 本文件只被自身单测
+ * import), 所以返回 null 不会让用户看到空建议 —— 上层本来就按 heuristic 走.
+ * 真要启用 LLM 难度评估: 先接调用方, 再在这里出三维度评分, 失败回 null 让 heuristic 兜底.
  */
 export async function llmEvaluate(
   _currentLevel: DifficultyLevel,
