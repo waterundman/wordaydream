@@ -255,9 +255,13 @@ async function runStream(
     err.status = response.status;
     err.body = body;
 
-    // v1.5.2 fix H6: 501 = provider 不支持流式, 显式报错而非静默降级
+    // v1.5.2 fix H6: 501 = 该 provider 不支持流式, 显式报错而非静默降级.
+    // v1.6.4 起三家 provider 的 edge function 流式都已实现, 仍保留此分支兜底
+    // 前端与已部署 Edge Function 的版本差 (旧版对非 openai 返回 501).
     if (response.status === 501) {
-      finalize.fail(new Error('当前 provider 不支持流式生成，请切换到 OpenAI 或在设置中关闭流式模式'));
+      finalize.fail(
+        new Error('流式接口版本过旧或当前 provider 不支持流式，请在设置中关闭流式模式后重试')
+      );
       return;
     }
 

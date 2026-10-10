@@ -644,11 +644,11 @@ netlify env:set OPENAI_API_KEY "sk-proj-xxxxx"
 
 ### Q6: SSE 流式没反应, 一直 loading
 
-**原因**: 1) 浏览器不支持 (用 Chrome 90+); 2) Netlify 端 stream 路径仅支持 openai; 3) CORS 问题.
+**原因**: 1) 浏览器不支持 (用 Chrome 90+); 2) 部署的 Edge Function / 自托管代理版本过旧 (v1.6.4 前 Netlify 端仅 openai 有 stream 路径, 其余返回 501); 3) CORS 问题.
 
 **解法**:
 1. 切到 Chrome / Edge 浏览器
-2. 确认 provider = openai (其它 provider 返回 501)
+2. 三家 provider (openai / anthropic / deepseek) 均可流式; 若收到 501 说明线上代理是旧版, 关闭流式或重新部署代理
 3. 检查 DevTools Network, `llm-proxy` 请求的 Response headers 是否有 `Content-Type: text/event-stream`
 4. 如有 CORS 错误, 检查 `netlify/edge-functions/utils/cors.ts` 的 `Access-Control-Allow-Origin`
 

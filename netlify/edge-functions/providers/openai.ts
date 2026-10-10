@@ -11,6 +11,8 @@
  *   (single JSON response, parsed into ProviderResult).
  */
 
+import { createUnifiedSSEStream } from "../utils/sse.ts";
+
 export interface ProviderArgs {
   apiKey: string;
   system?: string;
@@ -150,67 +152,10 @@ export async function openaiStreamProvider(
 
   // 转换 OpenAI SSE 格式 (choices[].delta.content) 为客户端约定的统一 delta 格式
   // 客户端 (parseSSEStream) 期望 data: {"delta":"..."} 格式
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder("utf-8");
-  const upstream = response.body;
-
-  return new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const reader = upstream.getReader();
-      let buffer = "";
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) {
-            // 流结束, 发 [DONE] 哨兵
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-            return;
-          }
-          buffer += decoder.decode(value, { stream: true });
-          // OpenAI SSE 事件也是 \n\n 分隔
-          const events = buffer.split(/\n\n/);
-          buffer = events.pop() ?? "";
-          for (const eventBlock of events) {
-            for (const line of eventBlock.split(/\n/)) {
-              if (!line.startsWith("data: ")) continue;
-              const payload = line.slice(6);
-              if (payload === "[DONE]") {
-                // v1.5.2 fix M6: 收到 [DONE] 时显式 close controller,
-                // 否则 client reader.read() 会一直 pending, 造成 SSE 流悬挂.
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                controller.close();
-                return;
-              }
-              try {
-                const parsed = JSON.parse(payload) as {
-                  choices?: Array<{ delta?: { content?: string } }>;
-                };
-                const content = parsed.choices?.[0]?.delta?.content ?? "";
-                if (content) {
-                  // 转换为客户端约定的 { delta: "..." } 格式
-                  controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ delta: content })}\n\n`)
-                  );
-                }
-              } catch {
-                // 忽略单行 JSON 解析错误 (OpenAI 偶发心跳包)
-              }
-            }
-          }
-        }
-      } catch (e: unknown) {
-        const err = e as { message?: string };
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ error: err.message ?? "stream error" })}\n\n`
-          )
-        );
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-      } finally {
-        reader.releaseLock();
-      }
-    },
+  return createUnifiedSSEStream(response.body, (payload) => {
+    const parsed = JSON.parse(payload) as {
+      choices?: Array<{ delta?: { content?: string } }>;
+    };
+    return parsed.choices?.[0]?.delta?.content ?? null;
   });
 }

@@ -12,6 +12,8 @@
  *   T04: Missing provider returns 400
  *   T05: Missing API key returns 500 + MISSING_API_KEY
  *   T06: OpenAI success returns 200 + parsed text/model
+ *   T07: anthropic + stream=true returns 200 text/event-stream (v1.6.4 起三家皆有流式)
+ *   T08: stream=true 且 provider 未知 → 400 UNKNOWN_PROVIDER
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -130,5 +132,55 @@ describe("llm-proxy edge function", () => {
     expect(body.text).toBe("Hello world");
     expect(body.model).toBe("gpt-4o-mini");
     expect(body.language).toBe("en");
+  });
+
+  it("T07: anthropic + stream=true 返回 200 text/event-stream (v1.6.4 移除 501)", async () => {
+    setEnv({ ANTHROPIC_API_KEY: "test-key" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(c) {
+              c.enqueue(
+                new TextEncoder().encode(
+                  'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"text":"嗨"}}\n\n'
+                )
+              );
+              c.close();
+            },
+          }),
+          { status: 200 }
+        )
+      )
+    );
+
+    const handler = await importHandler();
+    const req = new Request("http://localhost/.netlify/edge-functions/llm-proxy", {
+      method: "POST",
+      body: JSON.stringify({ provider: "anthropic", prompt: "test", stream: true }),
+    });
+    const ctx = { ip: "127.0.0.1" } as unknown as Parameters<typeof handler>[1];
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("text/event-stream");
+    const text = await res.text();
+    expect(text).toContain('{"delta":"嗨"}');
+    expect(text).toContain("[DONE]");
+    vi.unstubAllGlobals();
+  });
+
+  it("T08: stream=true 且 provider 未知时返回 400 UNKNOWN_PROVIDER", async () => {
+    setEnv({ KIMI_API_KEY: "test-key" });
+    const handler = await importHandler();
+    const req = new Request("http://localhost/.netlify/edge-functions/llm-proxy", {
+      method: "POST",
+      body: JSON.stringify({ provider: "kimi", prompt: "test", stream: true }),
+    });
+    const ctx = { ip: "127.0.0.1" } as unknown as Parameters<typeof handler>[1];
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("UNKNOWN_PROVIDER");
   });
 });

@@ -29,8 +29,15 @@ import { handleCors, JSON_HEADERS } from "./utils/cors.ts";
 import { checkRateLimit } from "./utils/rateLimit.ts";
 import { withRetry } from "./utils/retry.ts";
 import { openaiProvider, openaiStreamProvider, type ProviderArgs, type ProviderResult } from "./providers/openai.ts";
-import { anthropicProvider } from "./providers/anthropic.ts";
-import { deepseekProvider } from "./providers/deepseek.ts";
+import { anthropicProvider, anthropicStreamProvider } from "./providers/anthropic.ts";
+import { deepseekProvider, deepseekStreamProvider } from "./providers/deepseek.ts";
+
+/** v1.6.4: 三家 provider 的流式实现 (与 non-stream 分支一一对应) */
+const STREAM_PROVIDERS = {
+  openai: openaiStreamProvider,
+  anthropic: anthropicStreamProvider,
+  deepseek: deepseekStreamProvider,
+} as const;
 
 interface LLMRequest {
   provider: "openai" | "anthropic" | "deepseek";
@@ -134,28 +141,27 @@ export default async (request: Request, context: Context) => {
 /**
  * v1.4.1 Stage 1: 处理 SSE stream 请求
  *
- * 当前仅 openai provider 实现 stream 路径 (openaiStreamProvider).
- * anthropic / deepseek 暂未实现, 返回 501 Not Implemented
- * (沙箱不部署, Edge Function 在 Deno 运行时才执行).
+ * v1.6.4: 三家 provider 全部实现 stream 路径, 统一经 utils/sse.ts 转成客户端约定的
+ * `data: {"delta":"..."}` 帧. 此前 anthropic / deepseek 返回 501 并由客户端显式报错
+ * (v1.5.2 fix H6), 而设置面板的流式开关不按 provider 门控, 用户一开就踩错误.
  */
 async function handleStreamRequest(
   body: LLMRequest,
   apiKey: string
 ): Promise<Response> {
-  // v1.4.1 Stage 1: 当前仅 openai provider 支持 SSE
-  // 其它 provider 返回 501, 客户端 fallback 到 mock (streamingProvider.runMockStream)
-  if (body.provider !== "openai") {
+  const streamProvider = STREAM_PROVIDERS[body.provider];
+  if (!streamProvider) {
     return new Response(
       JSON.stringify({
-        error: "Stream not implemented for this provider",
-        code: "STREAM_NOT_IMPLEMENTED",
+        error: `Unsupported provider: ${body.provider}`,
+        code: "UNKNOWN_PROVIDER",
       }),
-      { status: 501, headers: JSON_HEADERS }
+      { status: 400, headers: JSON_HEADERS }
     );
   }
 
   try {
-    const stream = await openaiStreamProvider({ ...body, apiKey });
+    const stream = await streamProvider({ ...body, apiKey });
     return new Response(stream, {
       status: 200,
       headers: SSE_HEADERS,

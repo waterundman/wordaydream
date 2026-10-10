@@ -14,12 +14,12 @@
 |---|---|---|
 | 部署目标 | PM2 / 自管 Node.js | 华为云 FunctionGraph / DevEco 内嵌 / 独立 PM2 |
 | 路由 | `POST /api/llm-proxy` | `POST /api/llm` + `POST /api/llm-proxy` (别名) |
-| 响应模式 | JSON only | JSON + SSE 双模式 (支持 `stream: true`) |
+| 响应模式 | JSON + SSE 双模式 (v1.6.4 起三家 provider 均可 `stream: true`) | JSON + SSE 双模式 (支持 `stream: true`) |
 | CORS | 通配符 (`cors()`) | 显式白名单 (ArkWeb origin) |
 | 依赖 | 项目根 `package.json` | 本目录 `package.json` (独立) |
 | 部署文档 | 项目根 README | `deploy-huaweicloud-functiongraph.md` (本目录) |
 
-> 注: 项目根 `server/llm-proxy.js` 保持不变 (Web 端继续使用), 本目录是鸿蒙 Stage 4 新增的独立版本.
+> 注: 项目根 `server/llm-proxy.js` 是 Web 端自托管部署目标, 本目录是鸿蒙 Stage 4 新增的独立版本 (显式 ArkWeb origin 白名单). 两者的 SSE 帧语义一致: `data: {"delta":"..."}\n\n` 增量 + `data: [DONE]\n\n` 收尾, 与客户端 `src/features/llm/services/streamingProvider.ts` 的 `parseSSEStream` 约定对齐.
 
 ---
 

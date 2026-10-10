@@ -193,6 +193,143 @@ const providerMap = {
   anthropic: anthropicProvider,
 };
 
+// ======================== 流式 (SSE) 代理 ========================
+
+/**
+ * v1.6.4: 三家 provider 的 SSE 流式支持.
+ *
+ * 此前 body.stream 被整个忽略: 代理照常走 non-stream provider 并返回 JSON, 客户端
+ * (streamingProvider) 判定「响应不是 SSE」后静默降级到 mock 文本 —— 用户以为在用
+ * 真流式, 其实拿到的是内置示例数据.
+ *
+ * 帧语义与 netlify/edge-functions/utils/sse.ts 逐字一致: 统一 `data: {"delta":"..."}\n\n`
+ * 增量 + `data: [DONE]\n\n` 收尾, 因为客户端 parseSSEStream 只认这一种格式.
+ */
+const openaiCompatExtract = (payload) =>
+  JSON.parse(payload)?.choices?.[0]?.delta?.content ?? null;
+
+const STREAM_SPECS = {
+  openai: {
+    url: 'https://api.openai.com/v1/chat/completions',
+    headers: (k) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${k}` }),
+    body: (a) => ({
+      model: a.model || 'gpt-4o-mini',
+      messages: [
+        ...(a.system ? [{ role: 'system', content: a.system }] : []),
+        { role: 'user', content: a.prompt },
+      ],
+      temperature: a.temperature ?? 0.7,
+      max_tokens: a.maxTokens ?? 2048,
+      stream: true,
+    }),
+    extract: openaiCompatExtract,
+  },
+  deepseek: {
+    url: 'https://api.deepseek.com/v1/chat/completions',
+    headers: (k) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${k}` }),
+    body: (a) => ({
+      model: a.model || 'deepseek-chat',
+      messages: [
+        ...(a.system ? [{ role: 'system', content: a.system }] : []),
+        { role: 'user', content: a.prompt },
+      ],
+      temperature: a.temperature ?? 0.7,
+      max_tokens: a.maxTokens ?? 2048,
+      stream: true,
+    }),
+    extract: openaiCompatExtract,
+  },
+  anthropic: {
+    url: 'https://api.anthropic.com/v1/messages',
+    headers: (k) => ({
+      'Content-Type': 'application/json',
+      'x-api-key': k,
+      'anthropic-version': '2023-06-01',
+    }),
+    body: (a) => ({
+      model: a.model || 'claude-3-5-sonnet-20241022',
+      max_tokens: a.maxTokens ?? 2048,
+      temperature: a.temperature ?? 0.7,
+      system: a.system ?? '',
+      messages: [{ role: 'user', content: a.prompt }],
+      stream: true,
+    }),
+    // Anthropic 增量只在 content_block_delta 事件里; ping / message_* 事件无文本
+    extract: (payload) => {
+      const p = JSON.parse(payload);
+      return p.type === 'content_block_delta' ? p.delta?.text ?? null : null;
+    },
+  },
+};
+
+async function streamProxy(args, apiKey, res) {
+  const spec = STREAM_SPECS[args.provider];
+  const response = await fetch(spec.url, {
+    method: 'POST',
+    headers: spec.headers(apiKey),
+    body: JSON.stringify(spec.body(args)),
+  });
+
+  if (!response.ok) {
+    const err = new Error(`${args.provider} API error: ${response.status}`);
+    err.status = response.status;
+    err.code = `${String(args.provider).toUpperCase()}_ERROR`;
+    throw err;
+  }
+  if (!response.body) {
+    const err = new Error(`${args.provider} stream returned no body`);
+    err.status = 500;
+    err.code = 'STREAM_EMPTY';
+    throw err;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // SSE 事件以空行分隔; 末段可能是半截帧, 留在 buffer 等下一次 read
+      const events = buffer.split(/\n\n/);
+      buffer = events.pop() ?? '';
+      for (const block of events) {
+        for (const line of block.split(/\n/)) {
+          if (!line.startsWith('data: ')) continue; // 跳过 event: / id: / 注释行
+          const payload = line.slice(6);
+          if (payload === '[DONE]') {
+            res.write('data: [DONE]\n\n');
+            res.end();
+            return;
+          }
+          let delta = null;
+          try {
+            delta = spec.extract(payload);
+          } catch {
+            continue; // 容忍上游非 JSON 心跳包
+          }
+          if (delta) res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+        }
+      }
+    }
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (e) {
+    // 已开始流式, 无法再改状态码: 以错误帧收尾, 客户端据此判定失败
+    res.write(`data: ${JSON.stringify({ error: e?.message ?? 'stream error' })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } finally {
+    if (typeof reader.releaseLock === 'function') reader.releaseLock();
+  }
+}
+
 // ======================== Express 路由 ========================
 
 app.use(cors());
@@ -237,6 +374,24 @@ app.post('/api/llm-proxy', async (req, res) => {
       code: 'UNSUPPORTED_PROVIDER',
       message: `Provider "${body.provider}" is not supported. Supported: openai, anthropic, deepseek`,
     });
+  }
+
+  // v1.6.4: 流式分支. 必须在 withRetry 之前 —— SSE 一旦开始写字节就不能重试.
+  if (body.stream === true) {
+    try {
+      await streamProxy(body, apiKey, res);
+    } catch (e) {
+      if (res.headersSent) {
+        res.end();
+        return;
+      }
+      res.status(e?.status || 500).json({
+        error: 'Provider stream error',
+        code: e?.code || 'STREAM_ERROR',
+        message: e?.message || 'Unknown error',
+      });
+    }
+    return;
   }
 
   try {
