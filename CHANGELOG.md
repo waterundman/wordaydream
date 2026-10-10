@@ -31,10 +31,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 `useWrongWordsStore` 增 `removeEntries`（一次 set，避免 N 次持久化）；错词本区块增「多选」模式、全选当前筛选结果、批量删除，破坏性操作两步确认（可取消）。
 
+#### S5 离线横幅冷启动不出现（结清 L6 之一）
+
+`offlineMode.init` 原先只把 `navigator.onLine` 写进 `isOffline`、刻意「不派发 banner 避免冷启动误报」，但 `OfflineBanner` 的渲染条件是「通知存在 **且** isOffline」，而 `isOffline` 是持久化字段 —— 于是**在离线状态下打开应用**的用户既看不到提示，之后 `setOffline(true)` 又因 `prev === true` 直接早退，横幅再也没机会出现。改为按 `navigator.onLine` 权威值同步派发/清除通知（在线时顺带清掉残留横幅），并加 T06/T07 回归锁。
+
+#### S6 课程完成链纳入 CI E2E（结清 L5）
+
+mock provider 的词形与课程目标词零交集，课程完成链无法靠生成链路自然走到。没有伪造语料，而是用种子 `wordaydream:course` 状态把这条链纳入 CI（新增 `e2e/web.spec.ts` T21）：完成态弹模态、三项统计无 `NaN`/`undefined`、点「下一课」必须落到 `#/reading` 且 store 里出现下一课 id —— 同时锁住 v1.6.4 探测 D6 的修复（此前「下一课」只 `startLesson` 不切页）。种子必须铺满整模块的 `locked` 课程，因为 `unlockNext` 只认「下一课状态恰为 locked」。
+
 #### 验证
 
-- 单测：`customMerge.test.ts` 11 项（边界全覆盖）+ `customMerge.integration.test.ts` 5 项（fake-indexeddb 跑真实导入→并入→关开关→删除→去重）+ `useWordlistStore.v165.test.ts` 5 项（目标 clamp / 跨日保留 / 批量删除幂等）；全量 vitest **181 files / 1683 tests** 全绿零回归。
+- 新增 4 个测试文件 21 项（含 fake-indexeddb 跑真实导入→并入→关开关→删除→去重）+ `offlineMode` T06/T07；全量 vitest **181 files / 1685 tests** 全绿零回归。
 - 真实浏览器端到端（`verify-v165.mjs`，chromium + production 构建）：导入含 2 个合成词形的 CSV → 词库行显示「英语 / 参与学习」→ 搜索命中 2 条且带 2 个「自定义」徽标；每日目标设 25 生效、999 被 clamp 到 100 且首页同步显示 `0/100`；`#/review` 在无到期卡时落 `#/wordlist` 并出现提示；**控制台错误 0**。
+- E2E chromium **25/25**（v1.6.5 起基线 = web 21 + offline-install 4）。
 - `tsc --noEmit` 0 · `oxlint` 0w0e · `check:versions` PASS（web 3.6.5 / harmony 1.6.5 / versionCode 1000090）。
 
 ## [3.6.4] — 2026-09-30

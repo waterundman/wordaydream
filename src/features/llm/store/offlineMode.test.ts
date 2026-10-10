@@ -120,4 +120,41 @@ describe('useOfflineModeStore (Stage 2 T01..T05)', () => {
     expect(s.cachedProvider).toBeNull();
     expect(dismissSpy).toHaveBeenCalledWith(OFFLINE_MODE_NOTIFICATION_KEY);
   });
+
+  it('T06 [critical]: 冷启动即离线 (含持久化 isOffline=true) 时 init 必须派发横幅', () => {
+    // v1.6.4 探测 L6 的回归锁: 原先 init 只 set 状态不派发通知, 而 isOffline 是持久化
+    // 字段 —— 离线状态下打开应用的用户永远看不到离线提示。
+    useOfflineModeStore.setState({ isOffline: true, lastOfflineAt: 1000 });
+    useToastStore.setState({ notifications: {} });
+    const onlineSpy = vi.spyOn(navigator, 'onLine', 'get');
+    onlineSpy.mockReturnValue(false);
+
+    const showSpy = vi.spyOn(useToastStore.getState(), 'showNotification');
+    const cleanup = useOfflineModeStore.getState().init();
+
+    expect(useOfflineModeStore.getState().isOffline).toBe(true);
+    expect(showSpy).toHaveBeenCalledWith(
+      OFFLINE_MODE_NOTIFICATION_KEY,
+      OFFLINE_MODE_NOTIFICATION_MESSAGE,
+    );
+    expect(
+      useToastStore.getState().notifications[OFFLINE_MODE_NOTIFICATION_KEY],
+    ).toBe(OFFLINE_MODE_NOTIFICATION_MESSAGE);
+    cleanup();
+  });
+
+  it('T07: 冷启动在线时 init 清掉残留的离线横幅', () => {
+    useToastStore
+      .getState()
+      .showNotification(OFFLINE_MODE_NOTIFICATION_KEY, OFFLINE_MODE_NOTIFICATION_MESSAGE);
+    const onlineSpy = vi.spyOn(navigator, 'onLine', 'get');
+    onlineSpy.mockReturnValue(true);
+
+    const dismissSpy = vi.spyOn(useToastStore.getState(), 'dismissNotification');
+    const cleanup = useOfflineModeStore.getState().init();
+
+    expect(useOfflineModeStore.getState().isOffline).toBe(false);
+    expect(dismissSpy).toHaveBeenCalledWith(OFFLINE_MODE_NOTIFICATION_KEY);
+    cleanup();
+  });
 });

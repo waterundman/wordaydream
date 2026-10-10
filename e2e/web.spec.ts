@@ -28,6 +28,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { expandAllSettingsGroups } from './settingsPanelGroups';
+import { enCourse } from '../src/data/courses/en';
 
 const SHOTS_DIR = 'debug_shots_web';
 
@@ -1018,5 +1019,98 @@ test.describe('Wordaydream v1.2.0 Web 主链路 E2E', () => {
     await noExampleRow.click();
     // 该词条无例句: 例句区的 <p> 不应出现 (释义仍是 <div>)
     await expect(page.locator('[aria-expanded="true"]').locator('p')).toHaveCount(0);
+  });
+
+  // v1.6.5 (留档 L5): mock provider 的词形与课程目标词零交集, 课程完成链无法靠生成
+  // 链路自然走到 —— 这里用种子 wordaydream:course 状态把这条链纳入 CI, 同时锁住
+  // v1.6.4 探测 D6 的修复 (「下一课」原先只 startLesson 不切页, 用户停在原地)。
+  test('T21 [critical]: 课程完成链 — 完成态弹模态 · 统计无 NaN · 点「下一课」进入阅读页', async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(90_000);
+
+    const lesson = enCourse.modules[0].lessons[0];
+    const nextLesson = enCourse.modules[0].lessons[1];
+    const learnedCount = Math.min(8, lesson.targetLemmas.length);
+
+    await page.addInitScript(
+      (seed) => {
+        // unlockNext 只认「下一课在 lessonProgress 里状态恰为 locked」(见
+        // useCourseStore.unlockNext 第 1 步), 所以种子必须铺满整模块 —— 真实流程里
+        // 这份初始化由 enrollCourse 完成, 只写完成的那一课会让它返回 null。
+        const progress: Record<string, unknown> = {};
+        for (const id of seed.lockedLessonIds) {
+          progress[id] = {
+            status: 'locked',
+            wordsEncountered: [],
+            wordsLearned: [],
+            reviewCorrectCount: 0,
+            reviewTotalCount: 0,
+            startedAt: null,
+            completedAt: null,
+          };
+        }
+        progress[seed.lessonId] = {
+          status: 'completed',
+          wordsEncountered: seed.targets,
+          wordsLearned: seed.targets.slice(0, seed.learnedCount),
+          reviewCorrectCount: 8,
+          reviewTotalCount: 10,
+          startedAt: Date.now() - 60_000,
+          completedAt: Date.now(),
+        };
+
+        window.localStorage.setItem(
+          'wordaydream:course',
+          JSON.stringify({
+            state: {
+              enrolledCourseIds: [seed.courseId],
+              currentCourseId: seed.courseId,
+              currentModuleId: seed.moduleId,
+              currentLessonId: seed.lessonId,
+              lessonProgress: progress,
+            },
+            version: 1,
+          })
+        );
+      },
+      {
+        courseId: enCourse.id,
+        moduleId: lesson.moduleId,
+        lessonId: lesson.id,
+        targets: lesson.targetLemmas,
+        learnedCount,
+        lockedLessonIds: enCourse.modules[0].lessons
+          .map((l) => l.id)
+          .filter((id) => id !== lesson.id),
+      }
+    );
+
+    await page.goto('/');
+    const modal = page.getByTestId('lesson-complete-modal');
+    await modal.waitFor({ state: 'visible', timeout: 20_000 });
+
+    await expect(page.getByTestId('stat-encountered')).toContainText(
+      String(lesson.targetLemmas.length)
+    );
+    await expect(page.getByTestId('stat-learned')).toContainText(String(learnedCount));
+    await expect(page.getByTestId('stat-accuracy')).toContainText('80%');
+    // 断言的是渲染管线而非数据: 任何 NaN / undefined 说明字段没流到组件
+    await expect(modal).not.toContainText('NaN');
+    await expect(modal).not.toContainText('undefined');
+
+    await page.screenshot({
+      path: `${SHOTS_DIR}/T21-lesson-complete-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
+
+    await page.getByTestId('lesson-complete-next').click();
+    await expect(page).toHaveURL(/#\/reading/, { timeout: 15_000 });
+    await expect(modal).toHaveCount(0);
+    await expect
+      .poll(async () => page.evaluate(() => localStorage.getItem('wordaydream:course')), {
+        timeout: 10_000,
+      })
+      .toContain(nextLesson.id);
   });
 });

@@ -63,6 +63,14 @@ v1.6.4 全功能探测证实：**用户导入的 CSV 词库是写入即失效的
 - `package.json` 3.6.5 / AppScope·entry 1.6.5 / versionCode 按 1.x 线 +5 规则递增。
 - CHANGELOG、`docs/README.md` 索引、`harmony/CURRENT_STATUS.md` 数字条目同步; 留档项 L1–L4 标注结清或仍开放。
 
+### S5 离线横幅冷启动（追加，结清 L6 之一）
+
+`offlineMode.init` 原先只把 `navigator.onLine` 写进持久化的 `isOffline` 而刻意不派发通知，但 `OfflineBanner` 要求「通知存在且 isOffline」，且 `setOffline(true)` 会因 `prev === true` 早退 —— 离线状态下打开应用的用户永远看不到离线提示。改为按 `navigator.onLine` 权威值同步派发/清除通知，加 T06/T07 回归锁。
+
+### S6 课程完成链纳入 CI E2E（追加，结清 L5）
+
+不伪造 mock 语料，改用种子 `wordaydream:course` 状态覆盖该链（`e2e/web.spec.ts` T21）：完成态弹模态、统计无 `NaN`/`undefined`、点「下一课」落 `#/reading` 且 store 出现下一课 id —— 同时锁住 v1.6.4 探测 D6 的修复。E2E 基线因此从 24 升为 **25**（web 21 + offline-install 4）。
+
 ## 4. 明确不做
 
 - 词库跨设备云同步 / 冲突合并（无后端）。
@@ -80,4 +88,4 @@ v1.6.4 全功能探测证实：**用户导入的 CSV 词库是写入即失效的
 | 4 | 每日目标 | 设 20 → 首页显示 `/20`; 跨日重置后仍 `/20` 且 `newWordsDone` 归零 |
 | 5 | 深链 | 无会话 + 有到期卡 → `#/review` 进入复习; 无到期卡 → 落词表页且有 toast |
 | 6 | 批量删除 | 多选后删除, 剩余 entries 与 store 一致; 清空需二次确认 |
-| 7 | 门禁 | `tsc --noEmit` 0 · `oxlint` 0w0e · 全量 vitest 全绿零回归 · `npm run test:e2e` chromium 24/24 · `check:versions` PASS · `verify:wordlists` 不新增 BLOCK |
+| 7 | 门禁 | `tsc --noEmit` 0 · `oxlint` 0w0e · 全量 vitest **181 files / 1685 tests** 全绿零回归 · `npm run test:e2e` chromium **25/25** · `check:versions` PASS（3.6.5 / 1.6.5 / 1000090）· `verify:wordlists` 不新增 BLOCK |

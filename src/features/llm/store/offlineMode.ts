@@ -131,11 +131,30 @@ export const useOfflineModeStore = create<OfflineModeState>()(
         if (typeof window === 'undefined') {
           return () => undefined;
         }
-        // 初始镜像 navigator.onLine
+        // v1.6.5: 冷启动就处于离线时也必须出横幅.
+        //
+        // OfflineBanner 的渲染条件是「通知存在 且 isOffline」, 而原先这里只 set 状态、
+        // 不派发通知; isOffline 又是持久化字段 —— 于是「离线状态下打开应用」的用户
+        // 既看不到离线提示, 之后 setOffline(true) 还会因 prev===true 直接早退,
+        // 横幅从此再也没机会出现 (v1.6.4 全功能探测 L6 实测到的现象)。
         const initialOnline = window.navigator.onLine !== false;
-        if (initialOnline !== get().isOffline) {
-          // 初始化阶段不派发 banner (避免冷启动误报)
-          set({ isOffline: !initialOnline });
+        set({
+          isOffline: !initialOnline,
+          ...(initialOnline ? {} : { lastOfflineAt: Date.now() }),
+        });
+        try {
+          if (initialOnline) {
+            useToastStore.getState().dismissNotification(OFFLINE_MODE_NOTIFICATION_KEY);
+          } else {
+            useToastStore
+              .getState()
+              .showNotification(
+                OFFLINE_MODE_NOTIFICATION_KEY,
+                OFFLINE_MODE_NOTIFICATION_MESSAGE
+              );
+          }
+        } catch {
+          // 通知派发失败不应阻塞初始化
         }
 
         const handleOnline = () => get().setOffline(false);
