@@ -64,6 +64,11 @@ jobs:
           npm run check:tokens
           npm run check:theme-parity
 
+      - name: Check WCAG contrast ratchet
+        # v1.6.6 债闸门: 三主题文字/非文本对比度棘轮 —— 存量 17 组不达标已入基线,
+        # 任何**新增**不达标即 exit 1; 修好的组合会提示收紧基线。不擅自改配色。
+        run: npm run check:contrast
+
       - name: Verify wordlist data quality gates
         # v1.6.4 收口轮: N1–N9 闸门接入 CI (当前 PASS 39 / EXEMPT 8 / BLOCK 0).
         # 已声明豁免按 ratchet 基线放行, 缺口扩大即 BLOCK 并 exit 1.
