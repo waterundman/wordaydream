@@ -21,7 +21,19 @@
 
 set -euo pipefail
 
-echo "[pre-commit-secret-scan] Scanning staged files for API key patterns..."
+# 扫描模式:
+#   (默认)          扫 git diff --cached —— pre-commit 用
+#   --worktree      扫 git ls-files 全量跟踪文件 —— CI / 本地体检用
+#                   (CI 里没有 staged 文件, 默认模式在 CI 等于永不命中)
+MODE="staged"
+for ARG in "$@"; do
+  case "$ARG" in
+    --worktree) MODE="worktree" ;;
+    *) echo "[pre-commit-secret-scan] unknown arg: $ARG" >&2; exit 2 ;;
+  esac
+done
+
+echo "[pre-commit-secret-scan] Scanning ($MODE) for API key patterns..."
 
 # v1.5.1 强化: 3 provider 模式
 # 1. sk- 通用前缀 (OpenAI / DeepSeek 共用, sk- 开头 + 至少 20 字符)
@@ -33,41 +45,57 @@ PATTERNS=(
   "sk-proj-[a-zA-Z0-9_-]{20,}"      # OpenAI project-scoped
 )
 
-# 1. 扫描 git diff --cached
-STAGED_DIFF=$(git diff --cached --diff-filter=ACMR --no-color)
-
-# 2. 扫描 staged files 全文 (避免 diff 上下文不全)
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
-
 HIT=0
-for PATTERN in "${PATTERNS[@]}"; do
-  # 2a. diff 扫描
-  if echo "$STAGED_DIFF" | grep -E -n "$PATTERN" >/dev/null 2>&1; then
-    echo "[FAIL] Found '$PATTERN' in staged diff:"
-    echo "$STAGED_DIFF" | grep -E -n "$PATTERN" | head -3
-    HIT=1
-  fi
-
-  # 2b. 文件全文扫描 (更严格, 避免 diff 跨行漏检)
-  for FILE in $STAGED_FILES; do
-    if [ -f "$FILE" ]; then
-      # 跳过二进制文件 / node_modules / dist / .git
-      case "$FILE" in
-        *.png|*.jpg|*.jpeg|*.gif|*.webp|*.ico|*.pdf|*.zip|*.tar|*.gz) continue ;;
-        node_modules/*|dist/*|.git/*) continue ;;
-      esac
-      if grep -E -l "$PATTERN" "$FILE" >/dev/null 2>&1; then
-        echo "[FAIL] Found '$PATTERN' in file: $FILE"
-        grep -E -n "$PATTERN" "$FILE" | head -3
-        HIT=1
-      fi
+if [ "$MODE" = "worktree" ]; then
+  # 单次 git grep 扫全部跟踪文件 (-I 跳过二进制; node_modules/dist/.env 属未跟踪,
+  # 天然不在范围内)。逐文件 spawn grep 在 Windows 上会慢到不可用, 已实测。
+  for PATTERN in "${PATTERNS[@]}"; do
+    if HITS=$(git grep -I -n -E "$PATTERN" -- . 2>/dev/null); then
+      [ -n "$HITS" ] || continue
+      # 占位符不算泄露: 文档 runbook 与 .env.example 里的 sk-proj-xxxx / your-key-here
+      # 之类是教学文本, 真实 Key 是随机 base62, 不会同时带这些标记。
+      CLEAN=$(printf '%s\n' "$HITS" | grep -Ev 'x{6,}|X{6,}|y{6,}|your[-_]|example|changeme|replace|placeholder|<[^>]*>|\$\{[A-Z_]+\}' || true)
+      [ -n "$CLEAN" ] || continue
+      echo "[FAIL] Found '$PATTERN' in tracked files:"
+      echo "$CLEAN" | head -5
+      HIT=1
     fi
   done
-done
+else
+  # 1. 扫描 git diff --cached
+  STAGED_DIFF=$(git diff --cached --diff-filter=ACMR --no-color)
+  # 2. 扫描 staged files 全文 (避免 diff 上下文不全)
+  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+
+  for PATTERN in "${PATTERNS[@]}"; do
+    # 2a. diff 扫描
+    if [ -n "$STAGED_DIFF" ] && echo "$STAGED_DIFF" | grep -E -n "$PATTERN" >/dev/null 2>&1; then
+      echo "[FAIL] Found '$PATTERN' in staged diff:"
+      echo "$STAGED_DIFF" | grep -E -n "$PATTERN" | head -3
+      HIT=1
+    fi
+
+    # 2b. 文件全文扫描 (更严格, 避免 diff 跨行漏检)
+    for FILE in $STAGED_FILES; do
+      if [ -f "$FILE" ]; then
+        # 跳过二进制文件 / node_modules / dist / .git
+        case "$FILE" in
+          *.png|*.jpg|*.jpeg|*.gif|*.webp|*.ico|*.pdf|*.zip|*.tar|*.gz) continue ;;
+          node_modules/*|dist/*|.git/*) continue ;;
+        esac
+        if grep -E -l "$PATTERN" "$FILE" >/dev/null 2>&1; then
+          echo "[FAIL] Found '$PATTERN' in file: $FILE"
+          grep -E -n "$PATTERN" "$FILE" | head -3
+          HIT=1
+        fi
+      fi
+    done
+  done
+fi
 
 if [ "$HIT" -eq 1 ]; then
   echo ""
-  echo "[pre-commit-secret-scan] COMMIT BLOCKED. Possible API key in staged files."
+  echo "[pre-commit-secret-scan] BLOCKED ($MODE): possible API key found."
   echo "  Fix:"
   echo "    1. Remove the key from the file"
   echo "    2. If key is real, revoke it immediately at the provider dashboard"

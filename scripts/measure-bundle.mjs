@@ -141,6 +141,35 @@ function gitHead() {
   }
 }
 
+/**
+ * v1.6.6 债闸门: 体积预算 (棘轮语义, 与 check-contrast 一致)。
+ *
+ * - 超过 `baseline * (1 + tolerance)` → status 'over' → --gate 退出 1
+ * - 低于 baseline → status 'under'，提示把预算收紧 (欠账只能变小, 不能变大)
+ * - 预算表缺该指标 → status 'missing' (不得静默放行)
+ */
+export const BUDGET_METRICS = [
+  { key: 'firstScreenJs', label: '首屏 JS', get: (r) => r.dist.firstScreen.bytes },
+  { key: 'totalJs', label: '全量 JS', get: (r) => r.dist.js.bytes },
+  { key: 'css', label: 'CSS', get: (r) => r.dist.css.bytes },
+  { key: 'staticAssets', label: '公共静态资源', get: (r) => r.publicAssets.bytes },
+  { key: 'bitmaps', label: '其中位图', get: (r) => r.publicAssets.bitmaps.bytes },
+];
+
+export function evaluateBudget(budgets, current, tolerance = 0.02) {
+  const table = budgets && budgets.budgets ? budgets.budgets : budgets ?? {};
+  return BUDGET_METRICS.map((m) => {
+    const baseline = table[m.key];
+    const value = m.get(current);
+    if (typeof baseline !== 'number') {
+      return { key: m.key, label: m.label, baseline: null, value, allowed: null, status: 'missing' };
+    }
+    const allowed = Math.ceil(baseline * (1 + tolerance));
+    const status = value > allowed ? 'over' : value < baseline ? 'under' : 'ok';
+    return { key: m.key, label: m.label, baseline, value, allowed, status };
+  });
+}
+
 function printCompare(baseline, current) {
   const rows = [
     ['首屏 JS', baseline.dist.firstScreen.bytes, current.dist.firstScreen.bytes],
@@ -207,4 +236,52 @@ if (invokedDirectly) {
     `[${label}]   其中位图: ${report.publicAssets.bitmaps.kb} KB (${report.publicAssets.bitmaps.fileCount} 文件)`
   );
   console.log(`报告已写入: ${outPath}`);
+
+  const budgetPath = argOf('--budget', 'scripts/bundle-budget.json');
+
+  if (process.argv.includes('--update-budget')) {
+    const rows = BUDGET_METRICS.map((m) => [m.key, m.get(report)]);
+    const payload = {
+      note: 'check:bundle-budget 的基线 (字节)。--update-budget 从当前 dist 覆写；' +
+        '闸门语义: 超过 baseline*(1+tolerance) 即 exit 1, 低于 baseline 提示收紧。',
+      tolerance: 0.02,
+      gitHead: report.gitHead,
+      budgets: Object.fromEntries(rows),
+    };
+    writeFileSync(budgetPath, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+    console.log(`[budget] 预算表已更新: ${budgetPath}`);
+    for (const [k, v] of rows) console.log(`  ${k} = ${v} B (${kb(v)} KB)`);
+  } else if (process.argv.includes('--gate')) {
+    if (!existsSync(budgetPath)) {
+      console.error(`[gate] 预算表不存在: ${budgetPath} (先跑 npm run measure:bundle -- --update-budget)`);
+      process.exit(2);
+    }
+    const budgets = JSON.parse(readFileSync(budgetPath, 'utf8'));
+    const rows = evaluateBudget(budgets, report, budgets.tolerance ?? 0.02);
+    console.log('');
+    console.log('=== 体积预算闸门 ===');
+    for (const r of rows) {
+      const mark = r.status === 'over' ? 'OVER ' : r.status === 'under' ? 'TIGHT' : r.status === 'missing' ? 'NODBUD' : 'OK   ';
+      const base = r.baseline === null ? 'n/a' : `${kb(r.baseline)} KB`;
+      console.log(
+        `${mark} ${r.label.padEnd(14)} 实测 ${(kb(r.value) + ' KB').padStart(10)} · 预算 ${base.padStart(10)} · 上限 ${r.allowed === null ? 'n/a' : kb(r.allowed) + ' KB'}`
+      );
+    }
+    const over = rows.filter((r) => r.status === 'over');
+    const under = rows.filter((r) => r.status === 'under');
+    const missing = rows.filter((r) => r.status === 'missing');
+    if (missing.length) {
+      console.error(`[gate] 预算表缺少 ${missing.length} 项指标, 拒绝静默放行`);
+    }
+    if (under.length) {
+      console.log(`[gate] ${under.map((r) => r.label).join(' / ')} 低于预算 —— 收紧基线: npm run measure:bundle -- --update-budget`);
+    }
+    if (over.length || missing.length) {
+      console.error(
+        `[gate] FAIL: ${over.map((r) => `${r.label}(+${kb(r.value - r.allowed)} KB 超上限)`).join(' / ')}${missing.length ? ` · 缺表项 ${missing.map((r) => r.label).join(' / ')}` : ''}`
+      );
+      process.exit(1);
+    }
+    console.log('[gate] PASS (无体积回退)');
+  }
 }

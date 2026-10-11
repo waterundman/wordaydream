@@ -23,6 +23,15 @@ export function useFocusTrap(
     const container = ref.current;
     if (!container) return;
 
+    // v1.6.6 红队修复: 记住打开弹窗的元素, 关闭后把焦点还回去。
+    // 此前 Escape / 点遮罩关闭后 activeElement 落回 body, 键盘与读屏用户要从文档
+    // 开头重新 Tab 一遍才能继续 (设置面板与三个模态都中招)。
+    const opener = document.activeElement as HTMLElement | null;
+    const restoreFocus = () => {
+      if (!opener || !opener.isConnected || typeof opener.focus !== 'function') return;
+      opener.focus();
+    };
+
     const focusable = Array.from(
       container.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -50,6 +59,9 @@ export function useFocusTrap(
     container.addEventListener('keydown', onKeyDown);
     first?.focus();
 
-    return () => container.removeEventListener('keydown', onKeyDown);
+    return () => {
+      container.removeEventListener('keydown', onKeyDown);
+      restoreFocus();
+    };
   }, [ref, isActive]);
 }

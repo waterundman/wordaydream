@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — v1.6.6 全量红队与债闸门收口
+
+### 用户行为全量红队（23 项探测 · production 构建 + 真实 chromium）
+
+探测脚本 `scripts/redteam-sweep.mjs`（一次性工具，不入 CI）。首轮 18 条 finding，逐条定点复核后**其中 5 条是探测手法自己的假阳性**，如实记为「非缺陷」：离线冷启动横幅（`ctx.setOffline` 把首次导航一起掐断，页面根本没启动，该场景归 `e2e/offline-install.spec.ts` 的真实 SW 路径）、Web 端通知分组未渲染（`supportsNotifications()=false` 时按设计 `return null`）、API Key 非 password 型与代理地址无校验（mock provider 下两字段不渲染）、错词本无多选入口（0 条数据）。CSV 导入的 11 个对抗样本（XSS payload / 未闭合引号 / BOM+CRLF / 5000 字符字段 / 二进制 / 300 行 / 脏 CEFR）与搜索框 11 种正则元字符**均无脚本执行、无白屏、无 `undefined`/`NaN`、控制台 0 未捕获错误**。
+
+### 缺陷修复（9 项，每项带复验证据）
+
+- **D1 导航意图丢失**：`#/review` 无到期卡的自动兜底是「入队」的，而 hash 导航直接改 store，队列 `shift` 会把用户随后选的 `#/reading` 盖回 `#/wordlist`。`src/App.tsx` 新增 `autoFallbackRef`（登记目标 + 登记时的模式），用户改去向时把该条从队列撤掉；兜底分支不再同帧「直切 + 入队」。
+- **D2 复习兜底粘滞**：`reviewRescueRef` 只在 `reviewMode→reviewing` 时复位，于是一次无卡兜底之后的每次 `#/review` 都直接弹回首页、不再看 `dueCount`（学生词后点复习被弹走）。改为离开复习页即作废。
+- **D3 焦点丢失**：`useFocusTrap` 现记录 opener 并在卸载时归还焦点（设置面板与三个模态同时受益）；`InlineAnswerPanel` 在**首次渲染时**取 opener（面板自身的聚焦 effect 更早跑，等到 cleanup 里再读 `activeElement` 拿到的已是 textarea），关闭后焦点回词位。
+- **D4 320px 横向溢出**：词表页 header 的 4 个按钮 + 标题不换行，`_exportBtn`（下载模板）右边界 384px、document 溢出 64px。`.header` 加 `flex-wrap: wrap` 与 `.title{min-width:0}`。此前 CHANGELOG 的「6 视口溢出全 0」只测了 390/768，未覆盖 320。
+- **D5 读屏外语标签**：`ScrollProgressBar.tsx` 硬编码 `aria-label="Lesefortschritt"`，四条路由全命中 → 改「阅读进度」并同步其单测。
+- **D6 Anthropic 流式 dev/prod 分叉**：`api/llm-proxy.ts`（vite dev 挂载的代理）对 `provider=anthropic + stream` 直接 501，而生产 edge function 早有 `anthropicStreamProvider`。现按 Messages 协议转发（`x-api-key`/`anthropic-version`，增量取 `content_block_delta.delta.text`），三家在 dev 与 prod 同构。
+- **D7「建议降级」永久不可达**：`DifficultySuggestion` 的 `errorRate` 恒为 0，使 `difficultyAdvisor` 的 `errorRate>=0.4` 分支按构造不成立。`useHomeAnalytics` 新增 `byLevelErrorRate`（该等级内 `lapses>0` 的卡占比，无卡等级不除零）并接入组件。
+- **D8 通知时段跨零点两端打架**：Web `SettingsPanel` 对 `startHour>=endHour` 报红「开始时间必须早于结束时间」但**照样保存**，原生 `NotificationService.isInNotificationWindow` 同条件 `return true`（全天允许）→ 想设「只在 22:00–06:00 提醒」的用户实际得到「任何时候都提醒」。先把文案改为陈述真实后果；真正的跨零点支持要改原生并过 HAP/模拟器，属需签字的产品决策（本轮未擅动）。
+- **D9 释义终态假承诺**：`glossAdapter` 兜底返回 `['释义加载中...']`（终态、无重试）→ 改「离线未命中该词释义」。
+
+### 功能结清
+
+- **U1 记忆库导出整条链从「存在但不可达」变可用**：`ExportButton` → `ExportService`（CSV / JSON / Anki）自 v1.5.2 首提交起从未被挂载，只有 parity 测试断言「它是有效 React 组件」。新增 `MemoryExportSection` 寄生在设置面板既有的「数据与高级」折叠组（与错词导出同层，不单开栏目），空记忆库时不渲染死按钮。
+
+### 债闸门结清
+
+- **密钥扫描从空转变真闸门**：`scripts/pre-commit-secret-scan.sh` 此前**没有任何执行入口**（`.git/hooks` 无 pre-commit、package.json 无脚本、CI 无引用），而 `docs/OPERATIONS.md` 已打勾宣称「命中即 exit 1 阻断 commit」。现补 `--worktree` 模式（单次 `git grep -I` 扫全部跟踪文件，逐文件 spawn 在 Windows 上慢到超时，已实测）+ 占位符白名单（`xxxx` / `your-key` / `<…>` / `${VAR}`，否则会假阳在 runbook 与 `.env.example` 上）+ `npm run check:secrets` + CI 步骤。正对照：真实形态 `sk-ant-api03-<24 位随机>` 会被拦。
+- **首屏体积回退有了闸门**：`measure:bundle` 此前手动跑、数字只活在表里。新增 `evaluateBudget()` 棘轮（`scripts/bundle-budget.json`，2% 容差，超即 exit 1、低于基线提示收紧、缺表项不放行）+ `npm run check:bundle-budget` + 4 项单测 + CI 步骤。
+- **`verify:static-assets` 入 CI**（此前位图预算虽由 `staticAssets.test.ts` 守着，「资源是否已优化」没人跑）。
+
+### 文档真源勘误
+
+- `harmony/CURRENT_STATUS.md`：`check:versions` 行停留在 3.6.4/1.6.4/1000085、`measure:bundle` 行停留在 306.1 KB —— 均按 2026-10-11 实测更正（唯一数字真源自家过期）。
+- `docs/OPERATIONS.md`：§3 整段仍指不存在的 `lighthouse.config.js` 并按「5 项 / PWA≥90 / Performance≥80」口径 —— 改为 `.lighthouserc.cjs` 的真实 4 项断言（0.55/0.85/0.85/0.85），并说明 Lighthouse 11 已无 PWA 类目、PWA 由 manifest/SW 存在性 + e2e SW 断言守；Contract 24 与 §2 的密钥扫描口径同步更正。
+- `docs/spec/v1.6.5/main.md` 验收行的 181 files/1685 tests 与 CHANGELOG/实测的 182/1696 打架 → 按实测收口并注明差值来源。
+- `docs/vault/v1.6.3-HARMONY-TECHDEBT-AUDIT.md` §3.2 仍把已修的 `generate-images.ps1` off-by-one 与根 `entry/` 幽灵目录挂在「待处理」→ 加结清标注（实测 `ls -d entry` 不存在、`git ls-files` 0 条）。
+
+### 未做（如实）
+
+- **U2 分析层死码**：`AnalyticsChart` 未挂载，`useAnalyticsStore` 仅 `incrementLLMRepair` 有生产调用（`jsonParser.ts:604`），`dailyRecords`/`durationMinutes` 等 8 个 action/getter 无写无读。删除整层属结构性改动，按「验证层级」口径留给用户拍板。
+- **U3/U4 鸿蒙侧闲置通道**：`triggerHapticFeedback`（原生 `@ohos.vibrator` 已实现）Web 零调用；`scheduleReviewReminder`/`cancelReviewReminder` 包装零调用（现行提醒走 `registerReminder` 即时发布）。接通需 HAP + 模拟器运行时回归。
+- **T12 对比度 17 组存量欠账**：需要按主题 `--color-accent-text` + sepia 灰阶重排，属配色体系决策，未擅动；棘轮继续拦截新增。
+- **外部条件阻塞**：签名 HAP、真机 TTS/振动/通知、`reminderAgent` 权益、`.env.harmony` 端到端、服务卡实例级刷新、上架素材、德语例句语料天花板。
+
+### 验证
+
+- `tsc --noEmit` 0 · `oxlint` 0w0e · 全量 vitest **184 files / 1708 tests 全绿**（新增 `App.reviewFallbackNav.test.tsx` 2 项 critical、`useFocusTrap` T06、`DifficultySuggestion` T07/T08/T09、`useHomeAnalytics` T06/T07、`measure-bundle` T03/T04、`MemoryExportSection` 2 项）
+- 门禁 exit 0：`check:versions` / `check:tokens` / `check:theme-parity` / `check:contrast` / `verify:wordlists` / `verify:static-assets` / **`check:secrets`** / **`check:bundle-budget`** / `verify:harmony-build`
+- 真实浏览器复验 6/6 PASS：320px 溢出 0px、进度条标签中文化、设置关闭焦点回 `设置`、释义关闭焦点回词位 `artisan`、`#/review`→`#/reading` 停在阅读页、记忆库导出区块渲染
+- E2E chromium **25/25**（修复后对当轮 `dist` 复跑，59.5s，含 build + preview）
+
 ## [3.6.5] — 2026-10-10
 
 ### 自定义词库真正参与学习 · 词表与复习管理闭环 (v1.6.5)

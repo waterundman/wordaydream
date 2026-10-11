@@ -71,6 +71,8 @@ test-results/
 #       node scripts/optimize-static-assets.mjs --dry-run
 .tmp-metrics/
 .tmp-assets/
+# 红队探测的一次性产物 (截图 / findings / 临时 CSV 样本)
+.tmp-sweep/
 
 # v1.6.3 清理轮: 构建产物报告 (measure-bundle.mjs 默认输出, 留在根目录但不入库)
 # 复现: npm run measure:bundle

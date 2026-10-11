@@ -1,0 +1,12 @@
+{
+  "note": "check:bundle-budget 的基线 (字节)。--update-budget 从当前 dist 覆写；闸门语义: 超过 baseline*(1+tolerance) 即 exit 1, 低于 baseline 提示收紧。",
+  "tolerance": 0.02,
+  "gitHead": "f3fa195",
+  "budgets": {
+    "firstScreenJs": 316245,
+    "totalJs": 2826603,
+    "css": 186070,
+    "staticAssets": 654556,
+    "bitmaps": 613650
+  }
+}

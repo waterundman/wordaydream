@@ -392,7 +392,7 @@ export default async function handler(
  *
  * - DeepSeek / OpenAI: 用 OpenAI 兼容协议, 上游返回 SSE choices[].delta.content,
  *   转成统一格式 `data: {"delta":"..."}` 转发给前端, 结束发 `data: [DONE]`
- * - Anthropic: 返回 501 (前端 fallback 到非流式或 mock)
+ * - Anthropic: Messages 协议, 增量在 content_block_delta 的 delta.text; 上游不发 [DONE]
  *
  * Node.js IncomingMessage/ServerResponse 格式, 用 res.write 推送 SSE.
  */
@@ -402,33 +402,56 @@ async function handleStreamRequest(
   body: LLMRequest,
   apiKey: string
 ): Promise<void> {
-  // Anthropic 不支持流式 (协议不同, 暂未实现)
-  if (body.provider === "anthropic") {
-    sendJson(res, 501, {
-      error: "Stream not implemented for this provider",
-      code: "STREAM_NOT_IMPLEMENTED",
-    });
-    return;
-  }
+  // v1.6.6 红队修复: Anthropic 流式此前直接回 501, 而生产 edge function
+  // (netlify/edge-functions/providers/anthropic.ts) 早已支持 —— dev 选 Anthropic +
+  // 流式就报错、线上正常, 属 dev/prod 分叉。这里按 Anthropic Messages 协议转发。
+  const isAnthropic = body.provider === "anthropic";
 
-  // DeepSeek / OpenAI 都用 OpenAI 兼容协议
-  const endpoint =
-    body.provider === "deepseek"
+  const endpoint = isAnthropic
+    ? "https://api.anthropic.com/v1/messages"
+    : body.provider === "deepseek"
       ? "https://api.deepseek.com/v1/chat/completions"
       : "https://api.openai.com/v1/chat/completions";
 
-  const model = body.model || (body.provider === "deepseek" ? "deepseek-chat" : "gpt-4o-mini");
-  const upstreamBody = {
-    model,
-    messages: [
-      ...(body.system ? [{ role: "system", content: body.system }] : []),
-      { role: "user", content: body.prompt },
-    ],
-    temperature: body.temperature ?? 0.7,
-    max_tokens: body.maxTokens ?? 2048,
-    stream: true,
-    ...(body.expectJson ? { response_format: { type: "json_object" } } : {}),
-  };
+  const model =
+    body.model ||
+    (isAnthropic
+      ? "claude-3-5-sonnet-20241022"
+      : body.provider === "deepseek"
+        ? "deepseek-chat"
+        : "gpt-4o-mini");
+
+  const upstreamHeaders: Record<string, string> = isAnthropic
+    ? {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      }
+    : {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      };
+
+  const upstreamBody = isAnthropic
+    ? {
+        model,
+        system: body.system ?? "",
+        messages: [{ role: "user", content: body.prompt }],
+        temperature: body.temperature ?? 0.7,
+        max_tokens: body.maxTokens ?? 2048,
+        stream: true,
+      }
+    : {
+        model,
+        messages: [
+          ...(body.system ? [{ role: "system", content: body.system }] : []),
+          { role: "user", content: body.prompt },
+        ],
+        temperature: body.temperature ?? 0.7,
+        max_tokens: body.maxTokens ?? 2048,
+        stream: true,
+        ...(body.expectJson ? { response_format: { type: "json_object" } } : {}),
+      };
 
   // 设置 SSE 响应头
   res.statusCode = 200;
@@ -446,10 +469,7 @@ async function handleStreamRequest(
   try {
     const upstream = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: upstreamHeaders,
       body: JSON.stringify(upstreamBody),
       signal: upstreamController.signal,
     });
@@ -501,8 +521,17 @@ async function handleStreamRequest(
           try {
             const parsed = JSON.parse(payload) as {
               choices?: Array<{ delta?: { content?: string } }>;
+              type?: string;
+              delta?: { text?: string };
             };
-            const content = parsed.choices?.[0]?.delta?.content ?? "";
+            // OpenAI 兼容协议在 choices[0].delta.content; Anthropic 在
+            // content_block_delta 事件的 delta.text, 其余事件 (message_start /
+            // message_delta / content_block_stop / ping) 一律跳过。
+            const content = isAnthropic
+              ? parsed.type === "content_block_delta"
+                ? (parsed.delta?.text ?? "")
+                : ""
+              : (parsed.choices?.[0]?.delta?.content ?? "");
             if (content) {
               // 转发统一 delta 格式给前端
               res.write(`data: ${JSON.stringify({ delta: content })}\n\n`);

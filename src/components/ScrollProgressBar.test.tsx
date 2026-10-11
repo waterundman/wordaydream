@@ -35,7 +35,7 @@ describe('ScrollProgressBar (Stage 3)', () => {
 
   it('T01 [critical]: 默认渲染 -> progressbar 存在且 aria-valuenow=0', () => {
     render(<ScrollProgressBar />);
-    const bar = screen.getByRole('progressbar', { name: 'Lesefortschritt' });
+    const bar = screen.getByRole('progressbar', { name: '阅读进度' });
     expect(bar).toBeInTheDocument();
     expect(bar).toHaveAttribute('aria-valuemin', '0');
     expect(bar).toHaveAttribute('aria-valuemax', '100');
@@ -66,7 +66,7 @@ describe('ScrollProgressBar (Stage 3)', () => {
       await new Promise((r) => requestAnimationFrame(() => r(null)));
     });
 
-    const bar = screen.getByRole('progressbar', { name: 'Lesefortschritt' });
+    const bar = screen.getByRole('progressbar', { name: '阅读进度' });
     expect(bar).toHaveAttribute('aria-valuenow', '100');
   });
 });

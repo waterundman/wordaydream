@@ -15,6 +15,8 @@
     "verify:static-assets": "node scripts/optimize-static-assets.mjs --check",
     "optimize:static-assets": "node scripts/optimize-static-assets.mjs",
     "measure:bundle": "node scripts/measure-bundle.mjs",
+    "check:bundle-budget": "node scripts/measure-bundle.mjs --gate",
+    "check:secrets": "bash scripts/pre-commit-secret-scan.sh --worktree",
     "test:harmony-build-verifier": "node --test scripts/verify-harmony-build.test.mjs",
     "test:harmony-build-wrapper": "node --test scripts/hvigor-output.test.mjs",
     "test:harmony-scripts": "vitest run scripts",

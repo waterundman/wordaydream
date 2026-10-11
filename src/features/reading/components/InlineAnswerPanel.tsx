@@ -150,6 +150,21 @@ export function InlineAnswerPanel({ token, language, anchorRef }: Props) {
     return () => panel.removeEventListener('keydown', onKeyDown);
   }, [handleClose]);
 
+  // v1.6.6 红队修复: 面板关闭 (Escape / 提交 / X) 后焦点要回到进来时那个词位,
+  // 否则 activeElement 落回 body, 键盘用户得从头 Tab 一遍才能继续读下一个词。
+  // opener 必须在**首次渲染时**取: 面板自己的聚焦 effect 比 cleanup effect 更早跑,
+  // 等到 effect 里再读 activeElement 拿到的已经是面板内的 textarea 了。
+  const openerRef = useRef<HTMLElement | null>(null);
+  if (openerRef.current === null && typeof document !== 'undefined') {
+    openerRef.current = document.activeElement as HTMLElement | null;
+  }
+  useEffect(() => {
+    const opener = openerRef.current;
+    return () => {
+      if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!answer.trim() || isSubmitting) return;

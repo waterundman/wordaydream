@@ -88,4 +88,4 @@ v1.6.4 全功能探测证实：**用户导入的 CSV 词库是写入即失效的
 | 4 | 每日目标 | 设 20 → 首页显示 `/20`; 跨日重置后仍 `/20` 且 `newWordsDone` 归零 |
 | 5 | 深链 | 无会话 + 有到期卡 → `#/review` 进入复习; 无到期卡 → 落词表页且有 toast |
 | 6 | 批量删除 | 多选后删除, 剩余 entries 与 store 一致; 清空需二次确认 |
-| 7 | 门禁 | `tsc --noEmit` 0 · `oxlint` 0w0e · 全量 vitest **181 files / 1685 tests** 全绿零回归 · `npm run test:e2e` chromium **25/25** · `check:versions` PASS（3.6.5 / 1.6.5 / 1000090）· `verify:wordlists` 不新增 BLOCK |
+| 7 | 门禁 | `tsc --noEmit` 0 · `oxlint` 0w0e · 全量 vitest **182 files / 1696 tests** 全绿零回归（SPEC 起草时为 181/1685，S7 对比度棘轮新增 4 文件 21 项后实测收口 182/1696，与 CHANGELOG [3.6.5] 验证段一致）· `npm run test:e2e` chromium **25/25** · `check:versions` PASS（3.6.5 / 1.6.5 / 1000090）· `verify:wordlists` 不新增 BLOCK |

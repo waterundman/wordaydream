@@ -41,6 +41,14 @@ export interface HomeAnalytics {
   masteryRate: number;
   /** 各难度等级词数 */
   byLevel: LevelBuckets;
+  /**
+   * 各难度等级的「答错过的卡占比」(0 = 该等级没有卡)。
+   *
+   * 口径: 该等级下 lapses > 0 的卡片数 / 该等级卡片总数。lapses 是 FSRS 的失败次数,
+   * 一张卡可能答错多次, 这里按「是否出过错」计, 保证值域落在 0-1 (难度顾问的阈值
+   * errorRate >= 0.4 是按比例设计的)。
+   */
+  byLevelErrorRate: LevelBuckets;
   /** 各 FSRS 状态词数 */
   byStatus: StatusBuckets;
 }
@@ -59,6 +67,7 @@ const EMPTY_RESULT: HomeAnalytics = {
   mastered: 0,
   masteryRate: 0,
   byLevel: EMPTY_BY_LEVEL,
+  byLevelErrorRate: EMPTY_BY_LEVEL,
   byStatus: EMPTY_BY_STATUS,
 };
 
@@ -71,6 +80,7 @@ export function useHomeAnalytics(): HomeAnalytics {
     }
 
     const byLevel: LevelBuckets = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const lapsedByLevel: LevelBuckets = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const byStatus: StatusBuckets = {
       new: 0,
       learning: 0,
@@ -85,6 +95,7 @@ export function useHomeAnalytics(): HomeAnalytics {
       const level = card.objectiveDifficulty;
       if (level >= 1 && level <= 5) {
         byLevel[level as DifficultyLevel] += 1;
+        if (card.lapses > 0) lapsedByLevel[level as DifficultyLevel] += 1;
       }
       byStatus[card.status] += 1;
       if (card.status !== 'new') {
@@ -96,6 +107,10 @@ export function useHomeAnalytics(): HomeAnalytics {
     }
 
     const masteryRate = total > 0 ? mastered / total : 0;
+    const byLevelErrorRate: LevelBuckets = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const level of [1, 2, 3, 4, 5] as DifficultyLevel[]) {
+      byLevelErrorRate[level] = byLevel[level] > 0 ? lapsedByLevel[level] / byLevel[level] : 0;
+    }
 
     return {
       total,
@@ -103,6 +118,7 @@ export function useHomeAnalytics(): HomeAnalytics {
       mastered,
       masteryRate,
       byLevel,
+      byLevelErrorRate,
       byStatus,
     };
   }, [cards]);

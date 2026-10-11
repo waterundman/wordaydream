@@ -412,7 +412,7 @@ async function entryToGlossPayload(
  * 1. 调 wiktextractAdapter.fetchEntry -> 优先真实 API, 失败时 mock
  * 2. 拿到 entry 后 -> 调 LLM 改写 / 标注字典原文
  * 3. entry 为空时 -> 退化到 v0.2.0 mock 字典
- * 4. 全部失败时 -> 返回"释义加载中..."占位, 不抛错
+ * 4. 全部失败时 -> 返回「离线未命中」终态占位, 不抛错 (不得写成"加载中"这类假承诺)
  */
 export async function getGloss(
   token: TokenOccurrence,
@@ -448,7 +448,7 @@ export async function getGloss(
   return {
     word: token.lemma,
     partOfSpeech: 'unknown',
-    definitions: ['释义加载中...'],
+    definitions: ['离线未命中该词释义'],
     sourceLabel: 'Mock',
   };
 }

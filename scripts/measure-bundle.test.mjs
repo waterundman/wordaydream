@@ -11,7 +11,11 @@
  * - 断言针对**行为差异**而非恒真式: 去重、缺失文件过滤、降序排序、字节求和都构造了会失败的输入。
  */
 import { describe, expect, it } from 'vitest';
-import { aggregateFirstScreen, extractFirstScreenUrls } from './measure-bundle.mjs';
+import {
+  aggregateFirstScreen,
+  evaluateBudget,
+  extractFirstScreenUrls,
+} from './measure-bundle.mjs';
 
 /** 真实 Vite/rolldown 产出的 index.html 形态（截取了首屏相关片段）。 */
 const SAMPLE_HTML = `<!doctype html>
@@ -74,5 +78,62 @@ describe('measure-bundle (v1.6.1 Stage 5)', () => {
     // 降序: 首屏最大 chunk 在第一位（报告表格依赖）
     expect(summary.chunks.map((c) => c.bytes)).toEqual([4096, 2048, 1024]);
     expect(summary.chunks[0].file).toBe('dist/assets/vendor.js');
+  });
+});
+
+/**
+ * v1.6.6 债闸门: 体积预算判定 (check:bundle-budget)。
+ * 棘轮语义与 check-contrast 一致 —— 只能变小, 变大要人签字。
+ */
+function fakeReport(overrides) {
+  return {
+    dist: {
+      firstScreen: { bytes: overrides.firstScreenJs },
+      js: { bytes: overrides.totalJs },
+      css: { bytes: overrides.css },
+    },
+    publicAssets: {
+      bytes: overrides.staticAssets,
+      bitmaps: { bytes: overrides.bitmaps },
+    },
+  };
+}
+
+describe('evaluateBudget (v1.6.6)', () => {
+  const budgets = {
+    tolerance: 0.02,
+    budgets: { firstScreenJs: 1000, totalJs: 2000, css: 300, staticAssets: 400, bitmaps: 200 },
+  };
+
+  it('T03: 容差内放行 / 超容差判 over / 低于基线判 under', () => {
+    const rows = evaluateBudget(
+      budgets,
+      fakeReport({
+        firstScreenJs: 1020, // 上限 ceil(1000*1.02)=1020 → 恰好等于上限, 放行
+        totalJs: 2041, // 超 ceil(2000*1.02)=2040 → over
+        css: 250, // 低于 300 → under (提示收紧)
+        staticAssets: 400, // 等于基线 → ok
+        bitmaps: 100, // under
+      }),
+      budgets.tolerance
+    );
+    const byKey = Object.fromEntries(rows.map((r) => [r.key, r.status]));
+    expect(byKey.firstScreenJs).toBe('ok');
+    expect(byKey.totalJs).toBe('over');
+    expect(byKey.css).toBe('under');
+    expect(byKey.staticAssets).toBe('ok');
+    expect(byKey.bitmaps).toBe('under');
+  });
+
+  it('T04: 预算表缺项判 missing, 不得当成通过', () => {
+    const rows = evaluateBudget(
+      { budgets: { firstScreenJs: 1000 } },
+      fakeReport({ firstScreenJs: 1, totalJs: 1, css: 1, staticAssets: 1, bitmaps: 1 }),
+      0.02
+    );
+    const byKey = Object.fromEntries(rows.map((r) => [r.key, r.status]));
+    expect(byKey.firstScreenJs).toBe('under');
+    expect(byKey.totalJs).toBe('missing');
+    expect(byKey.bitmaps).toBe('missing');
   });
 });

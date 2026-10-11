@@ -23,7 +23,7 @@ const MIN_TOTAL_AT_LEVEL = 30;
 export function DifficultySuggestion() {
   const difficulty = useSettingsStore((s) => s.difficulty);
   const setDifficulty = useSettingsStore((s) => s.setDifficulty);
-  const { byLevel, masteryRate } = useHomeAnalytics();
+  const { byLevel, byLevelErrorRate, masteryRate } = useHomeAnalytics();
 
   const totalAtLevel = byLevel[difficulty];
 
@@ -49,11 +49,12 @@ export function DifficultySuggestion() {
   // 构造 stats 并请求方向建议
   // - masteredAtLevel: 用 byLevel[difficulty] * masteryRate 作为粗略估算
   //   (Stage 1 hook 未暴露 per-level mastered, 后续阶段可扩展)
-  // - errorRate: Stage 1 暂无错误率数据, 默认 0
+  // - errorRate: 该等级下「答错过的卡占比」(v1.6.6 起接真实数据; 此前恒 0,
+  //   导致顾问的降级分支永久不可达, 「内容偏难, 建议降级」是死文案)
   const stats: DifficultyStats = {
     totalAtLevel,
     masteredAtLevel: Math.round(totalAtLevel * masteryRate),
-    errorRate: 0,
+    errorRate: byLevelErrorRate[difficulty],
     avgDifficulty: difficulty,
   };
   const suggested = suggests(difficulty, stats);

@@ -154,4 +154,26 @@ describe('useHomeAnalytics', () => {
       relearning: 1,
     });
   });
+
+  // v1.6.6 红队修复: DifficultySuggestion 的 errorRate 此前恒 0, 顾问降级分支不可达
+  it('T06: byLevelErrorRate = 该等级内 lapses>0 的卡占比', () => {
+    seedCards([
+      makeCard({ lexemeGroupId: 'g1', lemma: 'a', objectiveDifficulty: 3, lapses: 0 }),
+      makeCard({ lexemeGroupId: 'g2', lemma: 'b', objectiveDifficulty: 3, lapses: 1 }),
+      makeCard({ lexemeGroupId: 'g3', lemma: 'c', objectiveDifficulty: 3, lapses: 4 }),
+      makeCard({ lexemeGroupId: 'g4', lemma: 'd', objectiveDifficulty: 2, lapses: 0 }),
+    ]);
+
+    const { result } = renderHook(() => useHomeAnalytics());
+
+    expect(result.current.byLevelErrorRate[3]).toBeCloseTo(2 / 3, 6);
+    expect(result.current.byLevelErrorRate[2]).toBe(0);
+    // 没有卡的等级不得除零
+    expect(result.current.byLevelErrorRate[5]).toBe(0);
+  });
+
+  it('T07: cards 为空时 byLevelErrorRate 齐整且全 0', () => {
+    const { result } = renderHook(() => useHomeAnalytics());
+    expect(result.current.byLevelErrorRate).toEqual({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+  });
 });

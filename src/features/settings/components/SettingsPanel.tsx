@@ -4,6 +4,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { useWordlistStore, NEW_WORDS_TARGET_MIN, NEW_WORDS_TARGET_MAX } from '../../wordlist/store/useWordlistStore';
 import { ShortcutsSection } from './ShortcutsSection';
 import { WrongWordsExportSection } from './WrongWordsExportSection';
+import { MemoryExportSection } from './MemoryExportSection';
 import { WrongWordsImportSection } from './WrongWordsImportSection';
 import { LlmAdvancedSection } from './LlmAdvancedSection';
 import {
@@ -602,7 +603,7 @@ export function NotificationsSection() {
           style={{ color: 'var(--color-danger, #c0392b)' }}
           data-testid="notifications-window-warning"
         >
-          开始时间必须早于结束时间.
+          结束时间要晚于开始时间。当前这组取值不会只在夜间提醒 —— 原生按「全天允许」处理。
         </div>
       )}
     </div>
@@ -878,6 +879,7 @@ export function SettingsPanel() {
           <FsrsOptimizationSection />
           <GlossCacheSection />
           <CsvWordlistManagementSection />
+          <MemoryExportSection />
           <WrongWordsExportSection />
           <WrongWordsImportSection />
           <ShortcutsSection />

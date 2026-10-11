@@ -362,12 +362,12 @@ curl -X POST https://your-site-name.netlify.app/.netlify/edge-functions/llm-prox
 API key 安全:
 
 - API key 仅在 Netlify env 注入, 不进入 client bundle (无 VITE_ 前缀)
-- pre-commit hook (`scripts/pre-commit-secret-scan.sh`) 拦截误入代码的 sk-/ant- 字符串
+- secret scan (`scripts/pre-commit-secret-scan.sh`) 拦截误入代码的 sk-/ant- 字符串：CI 每次跑 `--worktree` 全跟踪文件扫描，本地可另装 pre-commit 钩子扫 staged
 - Netlify env 在 dashboard 加密存储, 仅 deployment 可访问
 
 ---
 
-## 3. Lighthouse 5 项真实跑分 (5 步骤)
+## 3. Lighthouse 4 项评级真实跑分 (5 步骤)
 
 > 沙箱无 Lighthouse CLI + Chrome, 配置层 100% 写完, 真实跑分由用户执行.
 
@@ -384,15 +384,17 @@ lhci --version
 
 > 备选: 也可 `npx -p @lhci/cli lhci autorun` 不全局安装.
 
-### 3.2 用户本地: 跑分 (5 项阈值 PWA>=90/Performance>=80/A11y>=90/BP>=90/SEO>=90)
+### 3.2 用户本地: 跑分 (4 项评级阈值: Performance>=0.55 / A11y>=0.85 / BP>=0.85 / SEO>=0.85)
 
 ```bash
 # 方式 A: lhci autorun (推荐, 自动跑 3 次取中位数)
-lhci autorun --config=./lighthouse.config.js
+lhci autorun --config=./.lighthouserc.cjs
 
-# 方式 B: 单次直接跑
+# 方式 B: 单页人工看报告 (不接闸门)。注意 LHCI 的 --config 与 lighthouse 的
+# --config-path 不是同一种格式, 本仓库不单独提供 lighthouse config 文件。
 npx -p lighthouse lighthouse https://your-site-name.netlify.app \
-  --config-path=./lighthouse.config.js \
+  --form-factor=mobile --throttling-method=simulate \
+  --output=html --output-path=./lighthouse-report.html \
   --output=json \
   --output-path=./lighthouse-report.json \
   --chrome-flags="--headless --no-sandbox"
@@ -404,7 +406,7 @@ npx -p lighthouse lighthouse https://your-site-name.netlify.app \
 - `lighthouse-*.html` (人类可读, 浏览器打开看)
 - `manifest.json` (汇总)
 
-> **重要**: 5 项阈值在 `lighthouse.config.js` 中以 `assertScore` 隐式实现 (v1.5.1 强化: 5% buffer + retry 3, 见 Section 8).
+> **重要**: 阈值写在 `.lighthouserc.cjs` 的 `assert.assertions` 里 (LHCI 概念, 不能写进 lighthouse config), 4 项评级各 `['error', {minScore}]`, 并留 5% buffer + 3 次取中位数 (见 Section 8)。PWA 不再是 Lighthouse 11 的评分类目 —— 它由 `dist/manifest.webmanifest` + `dist/sw.js` 的存在性检查与 e2e 的 SW 注册断言来守 (见 §3.3 与本节末尾)。
 
 ### 3.3 CI 集成: `.github/workflows/lighthouse.yml`
 
@@ -424,20 +426,18 @@ npx -p lighthouse lighthouse https://your-site-name.netlify.app \
     LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 ```
 
-### 3.4 报告解读: 5 项分数 + 优化建议
+### 3.4 报告解读: 4 项评级 + 优化建议
 
-打开 `lighthouse-report.html` 浏览器查看, 5 项分数显示在顶部:
+打开 `lighthouseci/lighthouse-*.html` 浏览器查看, 4 项分数显示在顶部:
 
-| 维度 | 阈值 | 优化 tips (典型问题 + 解法) |
+| 维度 | 闸门阈值 (`.lighthouserc.cjs`) | 优化 tips (典型问题 + 解法) |
 |------|------|---------------------------|
-| **PWA** | >= 90 | - 缺 manifest / icon: 检查 `public/manifest.webmanifest` + `public/icons/icon-192.png` + `icon-512.png`<br>- SW 注册失败: 检查 `public/sw.js` 是否在 build 后复制到 `dist/sw.js`<br>- 缺 themed-omnibox: 检查 `manifest.theme_color = '#1c1917'` |
-| **Performance** | >= 80 | - TTI > 5s: bundle 拆 code split, 动态 import `src/features/llm/*`<br>- FCP > 2s: 关键 CSS inline, 字体 preload<br>- JS bundle > 200KB: `vite build --analyze` 看 chunk 大小<br>- 图像未优化: icon 改 WebP |
-| **Accessibility** | >= 90 | - viewport meta 缺: `index.html` 检查 `<meta name="viewport">`<br>- content-width 错误: viewport content 不能 `width=数值` (用 `width=device-width`)<br>- 颜色对比度: dark ink `#1c1917` on warm paper `#faf8f5` 对比度 13.5:1, OK |
-| **Best Practices** | >= 90 | - HTTPS: 强制 HTTPS (Netlify 1.6 自动)<br>- 0 console error: 检查 browser console<br>- 0 deprecated API: 升级 React 19 / Vite 8 / VitePWA 1.3 (v1.5.0 已升级) |
-| **SEO** | >= 90 | - meta description 缺: `index.html` 检查 `<meta name="description">` (默认 1.5.0 vite-plugin-pwa manifest.description)<br>- viewport: 同 A11y<br>- robots.txt: 部署 `public/robots.txt` |
+| **Performance** | `minScore 0.55` (v2.4.0 临时现实水位; 实测 0.64, 每收回 5 分阈值 +0.05, 目标回到 0.76) | - LCP 6.0s / FCP 3.8s / TTI > 5s: 语料 chunk (b1/b2 ~330KB / data-parsers 303KB) 按路由懒加载<br>- 关键 CSS inline + 字体 preload<br>- 首屏图片 modern format<br>- 体积回退先撞 `npm run check:bundle-budget` (首屏 JS 预算见 `scripts/bundle-budget.json`) |
+| **Accessibility** | `minScore 0.85` | - viewport meta 缺: `index.html` 检查 `<meta name="viewport">`<br>- 颜色对比度: 由 `npm run check:contrast` 棘轮单独守 (三主题 30 组测量, 存量 17 组欠账), 比 Lighthouse 抽样细 |
+| **Best Practices** | `minScore 0.85` | - HTTPS: 强制 HTTPS (Netlify 自动)<br>- 0 console error: e2e 侧有「控制台错误 0」断言<br>- 0 deprecated API: React 19 / Vite 8 / VitePWA 1.3 |
+| **SEO** | `minScore 0.85` | - meta description 缺: `index.html`<br>- **坑位记录**: `staticDistDir` 会把 `dist/` 下每个 HTML 当独立页面审 —— visualizer 的 `dist/stats.html` 无 title/description/lang 会恒拖到 0.83, 已改为输出到 `.tmp-metrics/` |
 
-> **优先级**: PWA > A11y > Performance > Best Practices > SEO.
-> PWA 是 v1.4.1 合同, 不可破. A11y 必备 (满足基础用户群). Performance 优化看业务需求, 不卡 80 即可.
+> **PWA 不在 Lighthouse 11 的评分类目里**，改由三条独立检查守: `dist/manifest.webmanifest` + `dist/sw.js` 存在性 (CI `Verify PWA manifest + SW` 步骤)、e2e 的 SW 注册断言 (`e2e/offline-install.spec.ts`)、以及 `verify:static-assets` 的资源优化检查。
 
 ### 3.5 持续监控
 
@@ -570,11 +570,18 @@ npx playwright show-trace test-results/T01-offline-banner-chromium/trace.zip
 - [x] **4. Playwright E2E 6 步骤**: 4.1-4.6 (本地安装 + 跑分 + CI + 报告 + 调试 + 监控)
 - [x] **总步骤数**: 8 + 15 + 5 + 6 = 34 步骤
 
-### Contract 24 NEW: pre-commit secret scan 0 命中
+### Contract 24 NEW: secret scan 0 命中
 
-- [x] **脚本**: `scripts/pre-commit-secret-scan.sh` (v1.5.1 NEW)
-- [x] **模式**: 扫描 `git diff --cached` 中 `sk-` / `sk-ant-` / `sk-proj-` 前缀
-- [x] **退出**: 命中则 exit 1 阻断 commit
+- [x] **脚本**: `scripts/pre-commit-secret-scan.sh` (v1.5.1 NEW; v1.6.6 补 `--worktree` 模式)
+- [x] **模式**: `sk-` / `sk-ant-` / `sk-proj-` + ≥20 字符
+  - 默认 (pre-commit): 扫 `git diff --cached` 的 staged diff + staged 文件全文
+  - `--worktree` (CI / 体检): 单次 `git grep -I` 扫全部跟踪文件；文档 runbook 与
+    `.env.example` 里的占位符 (`xxxx` / `your-key` / `<…>` / `${VAR}`) 走白名单放行
+- [x] **执行入口**: v1.6.6 起真正接上 —— `npm run check:secrets` + `netlify-deploy.yml`
+  的 "Scan tracked files for leaked API keys" 步骤。**此前该脚本没有任何入口**
+  (`.git/hooks` 无 pre-commit、package.json 无脚本、CI 无引用)，本节的勾选在 v1.6.6 之前是不实口径
+- [x] **退出**: 命中即 exit 1 (pre-commit 阻断 commit; CI 阻断部署)
+- [x] **本地钩子 (可选)**: `ln -s ../../scripts/pre-commit-secret-scan.sh .git/hooks/pre-commit`
 - [x] **0 命中**: 当前 0 真实 API key 入库
 
 ### 0 regression 验证
@@ -640,7 +647,7 @@ netlify env:set OPENAI_API_KEY "sk-proj-xxxxx"
    # 或: bfg-repo-cleaner --delete-files <文件名>
    git push --force
    ```
-4. 验证 pre-commit hook 生效: `bash scripts/pre-commit-secret-scan.sh`
+4. 验证扫描生效: `npm run check:secrets` (全跟踪文件); 装了本地钩子后再用 `bash scripts/pre-commit-secret-scan.sh` 验 staged 路径
 
 ### Q6: SSE 流式没反应, 一直 loading
 

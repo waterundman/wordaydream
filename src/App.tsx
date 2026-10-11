@@ -187,13 +187,21 @@ function App() {
   const reviewRescueRef = useRef(false);
   /** v1.6.5 S3: 无会话时 `#/review` 的去处; 由动画驱动的镜像 effect 消费, 避免两处各说各话 */
   const reviewFallbackRef = useRef<AppMode | null>(null);
+  /** 队列中属于「自动兜底」的那一条 + 登记时的模式; 用户在其后改了去向时把它从队列撤掉 */
+  const autoFallbackRef = useRef<{ target: AppMode; from: AppMode } | null>(null);
   useEffect(() => {
     if (reviewMode === 'reviewing' || reviewMode === 'completed') {
       reviewRescueRef.current = false;
       setAppMode('review');
       return;
     }
-    if (reviewMode !== 'idle' || appMode !== 'review') return;
+    if (reviewMode !== 'idle') return;
+    if (appMode !== 'review') {
+      // 已经离开复习页 (含被兜底送去词表): 救援标记随之作废, 下一次 #/review 重新按
+      // 当时的 dueCount 判定。粘滞的 rescue 会把「学生词后再点复习」无条件弹回首页。
+      reviewRescueRef.current = false;
+      return;
+    }
 
     if (reviewRescueRef.current) {
       setAppMode('home');
@@ -204,8 +212,9 @@ function App() {
     const dueCount = useMemoryStore.getState().getDueCards().length;
     if (dueCount === 0) {
       useToastStore.getState().addToast('warning', '当前没有到期复习卡片，已转到词表页');
+      // 不在此处直接 setAppMode: 交给下面的镜像 effect 走过渡动画入队，
+      // 否则「直切 + 入队」两条路同帧生效，队列里那条就成了可覆盖用户意图的野条目。
       reviewFallbackRef.current = 'wordlist';
-      setAppMode('wordlist');
       return;
     }
     useReviewSessionStore.getState().startReview(
@@ -266,9 +275,27 @@ function App() {
       return;
     }
     if (reviewMode === 'idle' && appMode === 'review') {
-      navigateTo(reviewFallbackRef.current ?? 'home');
+      const target = reviewFallbackRef.current ?? 'home';
+      if (reviewFallbackRef.current !== null) {
+        autoFallbackRef.current = { target, from: appMode };
+      }
+      navigateTo(target);
     }
   }, [reviewMode, appMode, navigateTo]);
+
+  // v1.6.6 红队修复: 自动兜底不得吃掉用户随后表达的导航意图。
+  // 实测: #/review (无到期卡) 后 150ms 改 #/reading，最终停在 #/wordlist ——
+  // 兜底是「入队」的，而 hash 导航直接改 store，队列 shift 时把更新的目标盖掉了。
+  useEffect(() => {
+    const auto = autoFallbackRef.current;
+    if (auto === null || appMode === auto.from) return; // 登记帧本身不算「用户改了去向」
+    autoFallbackRef.current = null;
+    if (appMode === auto.target) return; // 兜底按预期落地
+    if (reviewFallbackRef.current === auto.target) reviewFallbackRef.current = null;
+    const queue = queueRef.current;
+    const staleAt = queue.lastIndexOf(auto.target);
+    if (staleAt >= 0) queue.splice(staleAt, 1);
+  }, [appMode]);
 
   const handleGoHome = useCallback(() => {
     navigateTo('home');

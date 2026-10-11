@@ -7,14 +7,15 @@
  * - T03: Shift+Tab 在第一个元素上时跳到最后一个 (循环)
  * - T04: isActive=false 时不绑定事件, 不修改焦点
  * - T05: 容器内无可交互元素时 Tab 被阻止 (不逃逸)
+ * - T06: 弹窗卸载后焦点回到打开它的元素 (v1.6.6 红队修复)
  *
  * 注意: useFocusTrap 使用 `el.offsetParent !== null` 过滤隐藏元素,
  * jsdom 默认 offsetParent=null, 故需在 beforeEach 中 mock 返回非 null.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFocusTrap } from './useFocusTrap';
 
 /** 测试用 wrapper: 渲染一个含两个按钮的容器并应用 useFocusTrap */
@@ -123,5 +124,40 @@ describe('useFocusTrap (v2.2.4 Round 2 D3-5)', () => {
     );
     // 焦点未逃逸 (仍在 container 内或 body, 但不会跑到外部按钮)
     expect(document.activeElement).not.toBe(document.body.querySelector('button'));
+  });
+
+  it('T06 [critical]: 弹窗卸载后焦点回到打开它的元素', () => {
+    function Harness(): React.ReactElement {
+      const [open, setOpen] = useState(false);
+      const ref = useRef<HTMLDivElement>(null);
+      useFocusTrap(ref, open);
+      return (
+        <>
+          <button type="button" data-testid="opener" onClick={() => setOpen((v) => !v)}>
+            设置
+          </button>
+          {open && (
+            <div ref={ref} role="dialog" aria-modal="true">
+              <button type="button" data-testid="inside-btn">
+                面板内
+              </button>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    render(<Harness />);
+    const opener = screen.getByTestId('opener');
+
+    // 用户点开: activeElement 是 opener, 随后 trap 把焦点收进面板
+    opener.focus();
+    fireEvent.click(opener);
+    expect(screen.getByTestId('inside-btn')).toHaveFocus();
+
+    // 用户关闭 (Escape / X 都会卸载面板): 焦点必须回到 opener, 而不是掉回 body
+    fireEvent.click(opener);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(opener).toHaveFocus();
   });
 });

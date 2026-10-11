@@ -208,6 +208,7 @@ describe('v1.6.4 Stage 1 T02: SettingsPanel 三层 IA', () => {
       'fsrs-optimization-section',
       'gloss-cache-section',
       'csv-wordlist-management-section',
+      'memory-export-section',
       'wrong-words-export-section',
       'wrong-words-import-section',
     ]) {

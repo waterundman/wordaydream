@@ -8,7 +8,7 @@
  * - rAF + 16ms throttle: 60fps 滚动时最多每帧一次 setState, 避免 React 抖动.
  * - 卸载清理: removeEventListener + cancelAnimationFrame, 路由切换无泄漏.
  * - SSR / 0 window 兼容: 全部 DOM 访问放在 useEffect 内.
- * - a11y: role="progressbar" + aria-valuenow (Math.round 整数) + aria-label 德语 "Lesefortschritt".
+ * - a11y: role="progressbar" + aria-valuenow (Math.round 整数) + aria-label 与界面语言一致 (中文界面).
  * - 0 emoji, 0 icon dependency.
  */
 import { useEffect, useState } from 'react';
@@ -65,7 +65,7 @@ export function ScrollProgressBar() {
     <div
       className={styles.bar}
       role="progressbar"
-      aria-label="Lesefortschritt"
+      aria-label="阅读进度"
       aria-valuenow={Math.round(progress)}
       aria-valuemin={0}
       aria-valuemax={100}
